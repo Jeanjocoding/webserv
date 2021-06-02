@@ -28,6 +28,8 @@ ConnectionClass&	ConnectionClass::operator=(ConnectionClass const& to_copy)
 	return (*this);
 }
 
+
+/* not used for now, we'll see later: */
 int				_findInBuf(char *to_find, char *buf, int findlen, int buflen, int begsearch)
 {
 	int		i = begsearch;
@@ -56,6 +58,19 @@ void				ConnectionClass::_initializeBuffer()
 	_buffer.end = 0;
 }
 
+
+/* This function reads on the socket and assembles responses. It tries to implement a "circular buffer".
+	It maintains a "beginning index" and an "end index" and it just sequentially adds data on the buffer. 
+
+	if the flow of data is over, the content between "deb" (beginning) and "end" is appended to the std::string, 
+	"deb" is set to the current value of "end" to mark the beginning of the next request, and the std::string 
+	is returned.
+
+	if, after a few requests, the buffer is full, the current request data is appended to the string, and
+	"deb" and  "end" are set to 0. The next data will be written at the beginning of the buffer, and so on.
+
+	In the current version, it throws exceptions if recv returns 0 or -1
+ */
 std::string			ConnectionClass::receiveRequest()
 {
 	int				read_ret;
