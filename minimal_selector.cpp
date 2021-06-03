@@ -9,8 +9,10 @@
 #include <fcntl.h>
 #include <map>
 #include <utility>
-#include "ConnectionClass.hpp"
+#include "srcs/connection/ConnectionClass.hpp"
 
+
+/* lis requête et renvoie réponse */
 void	handle_connection(ConnectionClass& connection)
 {
 	int send_ret;
@@ -27,7 +29,7 @@ void	handle_connection(ConnectionClass& connection)
 		return;
 	}
 	std::cout << "message received by server: " << request_infos.second << std::endl;
-	send_ret = connection.sendResponse("HTTP/1.1 200 OK\r\n\r\n<html><body><h1>Welcome to Webser</h1></body></html>");
+	send_ret = connection.sendResponse("HTTP/1.1 200 OK\r\n\r\n<html><body><h1>Welcome to Webser</h1></body></html>\r\n");
 	if (send_ret == -1)
 		perror("send");
 }
@@ -43,6 +45,8 @@ void	launch_server()
 	int					pollmax;
 	int					poll_ret;
 	struct pollfd		poll_tab[1024];
+
+	/* map qui contient les différents objets connection */
 	std::map<int, ConnectionClass>	connection_map; 
 
 
@@ -76,7 +80,9 @@ void	launch_server()
 				perror("fcntl");
 			poll_tab[pollmax].fd = s2;
 			poll_tab[pollmax].events = POLLIN;
-			connection_map.insert(std::pair<int, ConnectionClass>(s2, ConnectionClass(s2)));
+		
+			/* j'initialise un objet connection pour le nouveau client: */
+			connection_map[s2] = ConnectionClass(s2);
 			pollmax++;
 		}
 		poll_ret = poll(poll_tab, pollmax, 0);
@@ -88,13 +94,25 @@ void	launch_server()
 			{
 				if	(poll_tab[pollindex].fd > 0)
 				{
-					if (poll_tab[pollindex].revents & POLLIN)
+					if (poll_tab[pollindex].revents & POLLIN) 
+					{
+						/* send appropriate connection to handler */
 						handle_connection(connection_map[poll_tab[pollindex].fd]);
+					}
 					if (poll_tab[pollindex].revents & POLLHUP)
 					{
 						std::cout << "closing fd " << poll_tab[pollindex].fd << std::endl;
-						if (close(poll_tab[pollindex].fd) < -1)
-							perror("close");
+
+						/* I call the method to close the connection: */
+						
+						if (connection_map[poll_tab[pollindex].fd].getStatus() == CO_ISOPEN)
+						{
+							if (connection_map[poll_tab[pollindex].fd].closeConnection() < 0)
+								perror("close");
+						}
+
+						/* je supprime l'objet connection correspondant dans la map */
+						connection_map.erase(poll_tab[pollindex].fd);
 						poll_tab[pollindex].fd = -1;
 					}
 					poll_tab[pollindex].revents = 0;
