@@ -45,6 +45,8 @@
 
 #include <iostream>
 #include <sys/socket.h>
+#include <unistd.h>
+#include <utility>
 #define	READING_BUF_SIZE 64 //ces tailles sont très petites
 #define	SINGLE_READ_SIZE 8	// pour voir plus facilement les bugs
 
@@ -53,6 +55,7 @@ Ce buffer sert à lire et concaténer les données reçues dans le
 socket. c'est un buffer circulaire (je crois), du coup ça 
 limite les appels a malloc, memset et compagnie. 
 */
+
 struct readingBuffer
 {
 	char			buf[READING_BUF_SIZE];
@@ -67,29 +70,36 @@ de renvoyer une pair<retour de read, contenu de la chaine>.
 */
 
 /*	Exception lancée quand read retourne -1: */
-class RecvErrorException: public std::exception {
+
+/* class RecvErrorException: public std::exception {
 	const char *what() const throw()
 	{
 		return "recv returned -1";
 	}
-};
+}; */
+
+/*	Exception lancée quand read retourne -1: */
+/* class SendErrorException: public std::exception {
+	const char *what() const throw()
+	{
+		return "send returned -1";
+	}
+}; */
 
 /*	Exception lancée quand read retourne 0, et donc ferme si j'ai bien compris: */
-class ConnectionClosedException: public std::exception {
+/* class ConnectionClosedException: public std::exception {
 	const char *what() const throw()
 	{
 		return "connection closed by client";
 	}
-};
-
-
-
+}; */
 
 class ConnectionClass {
 
 public:
-	typedef RecvErrorException RecvExcept;
-	typedef	ConnectionClosedException CloseExcept;
+//	typedef RecvErrorException RecvExcept;
+//	typedef	SendErrorException SendExcept;
+//	typedef	ConnectionClosedException CloseExcept;
 	ConnectionClass(ConnectionClass const& to_copy);
 
 	/* only useful constructor: initializes with socket fd */
@@ -101,16 +111,16 @@ public:
 	ConnectionClass&	operator=(ConnectionClass const& to_copy);
 
 	/* main function, reads on the socket and sends request on std::string format */
-	std::string			receiveRequest(void);
+	std::pair<int, std::string>			receiveRequest(void);
 
 
 
 	/* sends an std::string as a response to the client: */
-	void				sendResponse(std::string response);
+	int				sendResponse(std::string response);
 
 
 
-	void				closeConnection(void);
+	int				closeConnection(void);
 
 
 	int					_socketNbr;
