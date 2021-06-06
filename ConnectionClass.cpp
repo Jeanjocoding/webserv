@@ -1,3 +1,4 @@
+#include <cstring>
 #include "ConnectionClass.hpp"
 
 ConnectionClass::ConnectionClass(void)

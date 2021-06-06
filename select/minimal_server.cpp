@@ -6,7 +6,7 @@
 /*   By: asablayr <marvin@42.fr>                    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2021/06/06 15:27:02 by asablayr          #+#    #+#             */
-/*   Updated: 2021/06/06 20:01:12 by asablayr         ###   ########.fr       */
+/*   Updated: 2021/06/06 22:02:13 by asablayr         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -15,6 +15,8 @@
 #include <sys/socket.h>
 #include <netdb.h>
 #include <unistd.h>
+
+#include "webserv.hpp"
 
 #define PORT "8001"
 #define SELECT_TIMEOUT 10
@@ -26,7 +28,6 @@ int main(void)//void for now
 	struct timeval	tv, tv_copy;
 	int 			server_socket, retval;
 	fd_set			rfds, rfds_copy;
-//	fd_set			wfds, wfds_copy;
 
 	//set addrinfo hint for getaddrinfo
 	hint.ai_family = AF_INET;
@@ -91,7 +92,7 @@ int main(void)//void for now
 			else
 			{
 				std::cout << "handling connection " << i << std::endl;
-//				handle_connection(i);
+				handle_connection(i);
 				FD_CLR(i, &rfds);
 			}
 		}
