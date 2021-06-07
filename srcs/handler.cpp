@@ -6,7 +6,7 @@
 /*   By: asablayr <marvin@42.fr>                    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2021/06/06 21:54:40 by asablayr          #+#    #+#             */
-/*   Updated: 2021/06/06 22:05:30 by asablayr         ###   ########.fr       */
+/*   Updated: 2021/06/07 23:31:54 by asablayr         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -15,11 +15,10 @@
 
 #include "ConnectionClass.hpp"
 
-void	handle_connection(int fd)
+void	handle_connection(ConnectionClass& connection)
 {
-	int retval;
+	int send_ret;
 	std::pair<int, std::string>	request_infos;
-	ConnectionClass connection(fd);
 
 	request_infos = connection.receiveRequest();
 	if (request_infos.first == -1)
@@ -32,7 +31,7 @@ void	handle_connection(int fd)
 		return;
 	}
 	std::cout << "message received by server: " << request_infos.second << std::endl;
-	retval = connection.sendResponse("HTTP/1.1 200 OK\r\n\r\n<html><body><h1>Welcome to Webser</h1></body></html>\r\n");
-	if (retval == -1)
+	send_ret = connection.sendResponse("HTTP/1.1 200 OK\r\n\r\n<html><body><h1>Welcome to Webser</h1></body></html>\r\n");
+	if (send_ret == -1)
 		perror("send");
 }
