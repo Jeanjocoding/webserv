@@ -6,7 +6,7 @@
 /*   By: asablayr <marvin@42.fr>                    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2021/06/06 15:27:02 by asablayr          #+#    #+#             */
-/*   Updated: 2021/06/06 22:02:13 by asablayr         ###   ########.fr       */
+/*   Updated: 2021/06/07 11:52:37 by asablayr         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -81,19 +81,21 @@ int main(void)//void for now
 		}
 		for (int i = 0; i < FD_SETSIZE; i++)
 		{
-			if (!FD_ISSET(i, &rfds_copy))
+			int client_socket;
+			if (FD_ISSET(i, &rfds_copy))
 			{
 				if (i == server_socket)//new connection
 				{
-					int client_socket = accept(i, result->ai_addr, &result->ai_addrlen);
+					client_socket = accept(i, result->ai_addr, &result->ai_addrlen);
 					FD_SET(client_socket, &rfds);
 				}
-			}
-			else
-			{
-				std::cout << "handling connection " << i << std::endl;
-				handle_connection(i);
-				FD_CLR(i, &rfds);
+				else
+				{
+					std::cout << "handling connection " << i << std::endl;
+					handle_connection(i);
+					close(i);
+					FD_CLR(i, &rfds);
+				}
 			}
 		}
 	}
