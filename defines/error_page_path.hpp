@@ -1,18 +1,19 @@
 /* ************************************************************************** */
 /*                                                                            */
 /*                                                        :::      ::::::::   */
-/*   webserv.hpp                                        :+:      :+:    :+:   */
+/*   error_page_path.hpp                                :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
 /*   By: asablayr <marvin@42.fr>                    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
-/*   Created: 2021/06/06 22:00:11 by asablayr          #+#    #+#             */
-/*   Updated: 2021/06/06 22:03:56 by asablayr         ###   ########.fr       */
+/*   Created: 2021/06/07 22:34:09 by asablayr          #+#    #+#             */
+/*   Updated: 2021/06/07 22:36:21 by asablayr         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
-#ifndef WEBSERV_HPP
-# define WEBSERV_HPP
+#ifndef ERROR_PAGE_PATHS
+# define ERROR_PAGE_PATHS
 
-void	handle_connection(int fd);
+#define ERR_400_PATH "./error_400.html"
+#define ERR_404_PATH "./error_404.html"
 
 #endif

@@ -1,3 +1,4 @@
+#include <cstring>
 #include "ConnectionClass.hpp"
 
 ConnectionClass::ConnectionClass(void)
@@ -5,13 +6,13 @@ ConnectionClass::ConnectionClass(void)
 	return;
 }
 
-ConnectionClass::ConnectionClass(ConnectionClass const& to_copy): _socketNbr(to_copy._socketNbr), _status(to_copy._status)
+ConnectionClass::ConnectionClass(ConnectionClass const& to_copy): _socketNbr(to_copy._socketNbr), _server(to_copy._server), _status(to_copy._status)
 {
 	_initializeBuffer();
 	return;	
 }
 
-ConnectionClass::ConnectionClass(int socknum): _socketNbr(socknum)
+ConnectionClass::ConnectionClass(int socknum, serverClass* server): _socketNbr(socknum), _server(server)
 {
 	_status = CO_ISOPEN;
 	_initializeBuffer();
@@ -27,6 +28,7 @@ ConnectionClass&	ConnectionClass::operator=(ConnectionClass const& to_copy)
 {
 	_socketNbr = to_copy._socketNbr;
 	_status = to_copy._status;
+	_server = to_copy._server;
 	return (*this);
 }
 

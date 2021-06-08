@@ -37,6 +37,7 @@
 #include <sys/socket.h>
 #include <unistd.h>
 #include <utility>
+#include "serverClass.hpp"
 #define	READING_BUF_SIZE 64 //ces tailles sont très petites
 #define	SINGLE_READ_SIZE 8	// pour voir plus facilement les bugs
 #define CO_ISOPEN 1
@@ -61,7 +62,7 @@ public:
 	ConnectionClass(ConnectionClass const& to_copy);
 
 	/* only useful constructor: initializes with socket fd */
-	ConnectionClass(int socknum);
+	ConnectionClass(int socknum, serverClass* server);
 
 
 	~ConnectionClass(void);
@@ -76,6 +77,7 @@ public:
 	int				sendResponse(std::string response);
 	int				closeConnection(void);
 	int				_socketNbr;
+	serverClass*	_server;
 	int				getStatus();
 
 	// this constructor should be private, but it doesn't work for now when it is.
@@ -86,7 +88,7 @@ public:
 private:
 	typedef struct readingBuffer readingBuffer;
 
-	readingBuffer	_buffer;
+	readingBuffer			_buffer;
 
 	/* connection status, we'll see if we really need it */
 	int				_status;
