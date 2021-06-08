@@ -20,7 +20,6 @@ HttpMessage&	HttpMessage::operator=(HttpMessage const& to_copy)
 	_headers = to_copy._headers;
 	_body = to_copy._body;
 	_method_status = to_copy._method_status;
-	_isValid = to_copy._isValid;
 	return (*this);
 
 }

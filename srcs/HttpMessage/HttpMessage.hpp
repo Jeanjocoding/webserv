@@ -16,10 +16,11 @@ public:
 	virtual int					parseFromString(std::string) = 0;
 	virtual std::string& const	toString(void) const = 0;
 
-private:
+protected:
 	std::map<std::string, std::string>	_headers;
 	std::string							_body;
-	std::string							_method_status;
+	std::string							_protocol;
+	std::string							_stringMessage;
 };
 
 #endif
