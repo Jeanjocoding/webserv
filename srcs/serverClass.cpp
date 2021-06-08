@@ -6,7 +6,7 @@
 /*   By: asablayr <marvin@42.fr>                    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2021/06/07 18:49:16 by asablayr          #+#    #+#             */
-/*   Updated: 2021/06/08 11:28:52 by asablayr         ###   ########.fr       */
+/*   Updated: 2021/06/08 17:02:13 by asablayr         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -68,6 +68,17 @@ serverClass::serverClass(std::string port, std::string host, std::string server_
 
 serverClass::serverClass(serverClass const& to_copy) : _port(to_copy._port), _host(to_copy._host), _server_name(to_copy._server_name), _default_error_pages(to_copy._default_error_pages), _client_body_size_max(to_copy._client_body_size_max), _server_socket(to_copy._server_socket), _addr(to_copy._addr)
 {
+}
+
+serverClass& serverClass::operator = (serverClass const& to_copy)
+{
+	_port = to_copy._port;
+	_host = to_copy._host;
+	_server_name = to_copy._server_name;
+	_default_error_pages = to_copy._default_error_pages;
+	_client_body_size_max = to_copy._client_body_size_max;
+	_server_socket = to_copy._server_socket;
+	return (*this);
 }
 
 serverClass::~serverClass()
