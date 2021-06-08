@@ -6,7 +6,7 @@
 #    By: asablayr <marvin@42.fr>                    +#+  +:+       +#+         #
 #                                                 +#+#+#+#+#+   +#+            #
 #    Created: 2020/11/26 10:50:04 by asablayr          #+#    #+#              #
-#    Updated: 2021/06/08 10:43:51 by asablayr         ###   ########.fr        #
+#    Updated: 2021/06/08 17:08:31 by asablayr         ###   ########.fr        #
 #                                                                              #
 # **************************************************************************** #
 
@@ -17,7 +17,9 @@ OBJS_PATH = objs/
 HDRS_PATH = includes/
 DEFS_PATH = defines/
 
-HDRS = webserv.hpp
+HDRS =	webserv.hpp \
+		serverClass.hpp \
+		ConnectionClass.hpp
 
 SRCS =	main.cpp \
 		handler.cpp \
