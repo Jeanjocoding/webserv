@@ -6,7 +6,7 @@
 /*   By: asablayr <marvin@42.fr>                    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2021/06/06 22:00:11 by asablayr          #+#    #+#             */
-/*   Updated: 2021/06/07 23:20:27 by asablayr         ###   ########.fr       */
+/*   Updated: 2021/06/08 15:19:11 by asablayr         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -18,7 +18,7 @@
 
 #define DEFAULT_CONF_FILE "conf.conf"
 
-std::map<std::string, serverClass>	setup_server(std::string conf_file);
+std::map<std::string, serverClass*>	setup_server(std::string conf_file);
 void								handle_connection(ConnectionClass& connection);
 
 #endif

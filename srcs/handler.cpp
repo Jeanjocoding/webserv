@@ -6,7 +6,7 @@
 /*   By: asablayr <marvin@42.fr>                    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2021/06/06 21:54:40 by asablayr          #+#    #+#             */
-/*   Updated: 2021/06/07 23:31:54 by asablayr         ###   ########.fr       */
+/*   Updated: 2021/06/08 12:56:51 by asablayr         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -20,6 +20,7 @@ void	handle_connection(ConnectionClass& connection)
 	int send_ret;
 	std::pair<int, std::string>	request_infos;
 
+	std::cout << "connection server on port : " << connection._server->_port << std::endl;
 	request_infos = connection.receiveRequest();
 	if (request_infos.first == -1)
 		return;

@@ -6,7 +6,7 @@
 #    By: asablayr <marvin@42.fr>                    +#+  +:+       +#+         #
 #                                                 +#+#+#+#+#+   +#+            #
 #    Created: 2020/11/26 10:50:04 by asablayr          #+#    #+#              #
-#    Updated: 2021/06/08 10:22:42 by asablayr         ###   ########.fr        #
+#    Updated: 2021/06/08 10:43:51 by asablayr         ###   ########.fr        #
 #                                                                              #
 # **************************************************************************** #
 
@@ -22,6 +22,7 @@ HDRS = webserv.hpp
 SRCS =	main.cpp \
 		handler.cpp \
 		serverClass.cpp \
+		setup_server.cpp \
 		connection/ConnectionClass.cpp
 
 TMP = $(SRCS:.cpp=.o)
