@@ -6,7 +6,7 @@
 #    By: asablayr <marvin@42.fr>                    +#+  +:+       +#+         #
 #                                                 +#+#+#+#+#+   +#+            #
 #    Created: 2020/11/26 10:50:04 by asablayr          #+#    #+#              #
-#    Updated: 2021/06/08 17:08:31 by asablayr         ###   ########.fr        #
+#    Updated: 2021/06/08 18:06:36 by asablayr         ###   ########.fr        #
 #                                                                              #
 # **************************************************************************** #
 
@@ -37,10 +37,10 @@ C_FLAGS = -Wall -Werror -Wextra
 all : $(NAME)
 
 $(NAME): $(OBJS)
-	$(CC) $(C_FLAGS) $(OBJS) -I $(INCS) -o $(NAME)
+	$(CC) $(C_FLAGS) $(OBJS) -o $(NAME)
 
 $(OBJS_PATH)%.o: $(SRCS_PATH)%.cpp $(INCS)
-	mkdir -p $(OBJS_PATH)
+	mkdir -p $(OBJS_PATH) $(OBJS_PATH)connection
 	$(CC) $(C_FLAGS) -c $< -o $@ -I $(HDRS_PATH) -I $(DEFS_PATH)
 
 clean:
