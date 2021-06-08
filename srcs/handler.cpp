@@ -13,6 +13,7 @@
 #include <utility>
 #include <iostream>
 
+#include "webserv.hpp"
 #include "ConnectionClass.hpp"
 
 void	handle_connection(ConnectionClass& connection)
@@ -31,6 +32,7 @@ void	handle_connection(ConnectionClass& connection)
 			perror("close");
 		return;
 	}
+	HttpRequest request(request_infos.second);
 	std::cout << "message received by server: " << request_infos.second << std::endl;
 	send_ret = connection.sendResponse("HTTP/1.1 200 OK\r\n\r\n<html><body><h1>Welcome to Webser</h1></body></html>\r\n");
 	if (send_ret == -1)

@@ -15,6 +15,8 @@
 
 #include "serverClass.hpp"
 #include "ConnectionClass.hpp"
+#include "HttpMessage.hpp"
+#include "HttpRequest.hpp"
 
 #define DEFAULT_CONF_FILE "conf.conf"
 
