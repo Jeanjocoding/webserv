@@ -23,9 +23,9 @@ SRCS =	main.cpp \
 		handler.cpp \
 		serverClass.cpp \
 		setup_server.cpp \
-		ConnectionClass.cpp \
-		HttpMessage.cpp \
-		HttpRequest.cpp
+		connection/ConnectionClass.cpp \
+		HttpMessage/HttpMessage.cpp \
+		HttpMessage/HttpRequest.cpp
 
 TMP = $(SRCS:.cpp=.o)
 OBJS = $(addprefix $(OBJS_PATH), $(TMP))
