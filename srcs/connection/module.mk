@@ -1,0 +1,1 @@
+SRCS += $(CONNECTION_PATH)ConnectionClass.cpp
