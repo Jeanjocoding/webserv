@@ -6,7 +6,7 @@
 /*   By: asablayr <marvin@42.fr>                    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2021/06/07 10:16:05 by asablayr          #+#    #+#             */
-/*   Updated: 2021/06/08 11:03:23 by asablayr         ###   ########.fr       */
+/*   Updated: 2021/06/08 17:04:56 by asablayr         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -25,11 +25,12 @@ class serverClass
 {
 	public:
 
-			serverClass();
 			serverClass(std::string port, std::string host, std::string server_name, std::map<unsigned short, std::string> error_pages, unsigned int client_body_max);//might add setup_routes
 			serverClass(serverClass const& to_copy);
 
 			~serverClass(void);
+
+			serverClass& operator = (serverClass const& to_copy);
 
 			std::string								_port;
 			std::string								_host;
@@ -43,6 +44,7 @@ class serverClass
 
 	private:
 			
+			serverClass();
 
 };
 
