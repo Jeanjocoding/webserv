@@ -6,7 +6,7 @@
 #    By: asablayr <marvin@42.fr>                    +#+  +:+       +#+         #
 #                                                 +#+#+#+#+#+   +#+            #
 #    Created: 2020/11/26 10:50:04 by asablayr          #+#    #+#              #
-#    Updated: 2021/06/08 18:06:36 by asablayr         ###   ########.fr        #
+#    Updated: 2021/06/09 16:28:01 by asablayr         ###   ########.fr        #
 #                                                                              #
 # **************************************************************************** #
 
@@ -18,8 +18,8 @@ HDRS_PATH = includes/
 DEFS_PATH = defines/
 
 
-CONNECTION_PATH = $(SRCS_PATH)connection/
-HTTPMSG_PATH = $(SRCS_PATH)HttpMessage/
+CONNECTION_PATH = connection/
+HTTPMSG_PATH = HttpMessage/
 
 HDRS =	webserv.hpp \
 		serverClass.hpp \
@@ -32,7 +32,7 @@ SRCS =	main.cpp \
 		serverClass.cpp \
 		setup_server.cpp 
 
-include $(CONNECTION_PATH)module.mk $(HTTPMSG_PATH)module.mk
+include $(addprefix $(SRCS_PATH), $(CONNECTION_PATH))module.mk $(addprefix $(SRCS_PATH), $(HTTPMSG_PATH))module.mk
 
 TMP = $(SRCS:.cpp=.o)
 OBJS = $(addprefix $(OBJS_PATH), $(TMP))
@@ -47,12 +47,12 @@ $(NAME): $(OBJS)
 	$(CC) $(C_FLAGS) $(OBJS) -o $(NAME)
 
 $(OBJS_PATH)%.o: $(SRCS_PATH)%.cpp $(INCS)
-	mkdir -p $(OBJS_PATH) $(OBJS_PATH)$(CONNECTION_PATH)connection
+	mkdir -p $(OBJS_PATH) $(OBJS_PATH)$(CONNECTION_PATH)
 #	mkdir -p $(OBJS_PATH) $(OBJS_PATH)$(HTTPMSG_PATH)HttpMessage
 	$(CC) $(C_FLAGS) -c $< -o $@ -I $(HDRS_PATH) -I $(DEFS_PATH)
 
 clean:
-	rm -rf $(OBJS_PATH)
+	rm -rf $(OBJS)
 
 fclean: clean
 	rm -rf $(NAME)
