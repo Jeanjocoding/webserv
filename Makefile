@@ -23,6 +23,8 @@ HTTPMSG_PATH = $(SRCS_PATH)HttpMessage/
 
 HDRS =	webserv.hpp \
 		serverClass.hpp \
+		HttpMessage.hpp \
+		HttpRequest.hpp \
 		ConnectionClass.hpp
 
 SRCS =	main.cpp \
@@ -45,7 +47,8 @@ $(NAME): $(OBJS)
 	$(CC) $(C_FLAGS) $(OBJS) -o $(NAME)
 
 $(OBJS_PATH)%.o: $(SRCS_PATH)%.cpp $(INCS)
-	mkdir -p $(OBJS_PATH) $(OBJS_PATH)connection
+	mkdir -p $(OBJS_PATH) $(OBJS_PATH)$(CONNECTION_PATH)connection
+#	mkdir -p $(OBJS_PATH) $(OBJS_PATH)$(HTTPMSG_PATH)HttpMessage
 	$(CC) $(C_FLAGS) -c $< -o $@ -I $(HDRS_PATH) -I $(DEFS_PATH)
 
 clean:
