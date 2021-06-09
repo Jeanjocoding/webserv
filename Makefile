@@ -6,7 +6,7 @@
 #    By: asablayr <marvin@42.fr>                    +#+  +:+       +#+         #
 #                                                 +#+#+#+#+#+   +#+            #
 #    Created: 2020/11/26 10:50:04 by asablayr          #+#    #+#              #
-#    Updated: 2021/06/09 16:28:01 by asablayr         ###   ########.fr        #
+#    Updated: 2021/06/09 16:36:58 by asablayr         ###   ########.fr        #
 #                                                                              #
 # **************************************************************************** #
 
@@ -47,7 +47,7 @@ $(NAME): $(OBJS)
 	$(CC) $(C_FLAGS) $(OBJS) -o $(NAME)
 
 $(OBJS_PATH)%.o: $(SRCS_PATH)%.cpp $(INCS)
-	mkdir -p $(OBJS_PATH) $(OBJS_PATH)$(CONNECTION_PATH)
+#	mkdir -p $(OBJS_PATH) $(OBJS_PATH)$(CONNECTION_PATH)
 #	mkdir -p $(OBJS_PATH) $(OBJS_PATH)$(HTTPMSG_PATH)HttpMessage
 	$(CC) $(C_FLAGS) -c $< -o $@ -I $(HDRS_PATH) -I $(DEFS_PATH)
 
