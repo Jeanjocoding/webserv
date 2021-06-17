@@ -33,6 +33,10 @@ HttpRequest&	HttpRequest::operator=(HttpRequest const& to_copy)
 	return (*this);
 }
 
+void		HttpRequest::clear(void)
+{
+	std::cout << "clear has not been implemented yet" << std::endl;
+}
 /* probablement optimisable sans trop de difficulté en cas de besoin */
 int				HttpRequest::parseFromString(std::string str_request)
 {

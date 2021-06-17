@@ -37,9 +37,14 @@
 #include <sys/socket.h>
 #include <unistd.h>
 #include <utility>
+#include "HttpMessage.hpp"
+#include "HttpRequest.hpp"
 #include "serverClass.hpp"
+#include <vector>
+
 #define	READING_BUF_SIZE 64 //ces tailles sont très petites
 #define	SINGLE_READ_SIZE 8	// pour voir plus facilement les bugs
+#define	MAX_LINE_LENGTH 12000	// POUR SECURITY
 #define CO_ISOPEN 1
 #define CO_ISCLOSED 2
 
@@ -50,7 +55,7 @@ limite les appels a malloc, memset et compagnie.
 */
 struct readingBuffer
 {
-	char			buf[READING_BUF_SIZE];
+	char			buf[READING_BUF_SIZE + 1];
 	int				deb;
 	int				end;
 	static int const		cap = READING_BUF_SIZE;
@@ -72,7 +77,8 @@ public:
 	/* main function, reads on the socket and returns a pair containing:
 		- return value of the last "recv" call (to see if it failed or if the connection was closed)
 		- std::string containing the request*/
-	std::pair<int, std::string>			receiveRequest(void);
+//	std::pair<int, std::string>			receiveRequest(void);
+	int						receiveRequest(std::vector<HttpRequest>& requestPipeline);
 
 	int				sendResponse(std::string response);
 	int				closeConnection(void);
@@ -88,15 +94,21 @@ public:
 private:
 	typedef struct readingBuffer readingBuffer;
 
-	readingBuffer			_buffer;
+//	readingBuffer			_buffer;
 
 	/* connection status, we'll see if we really need it */
 	int				_status;
 
-	void			_initializeBuffer();
+	int		_read_long_line(std::string& str, readingBuffer buffer);
+	int		_read_buffer(readingBuffer& buffer, std::vector<HttpRequest>& requestPipeline);
+	int		_read_line(readingBuffer& buffer, int& length_parsed);
+	int		_get_next_request(readingBuffer &buffer, HttpRequest& currentRequest, int& length_parsed);
+	void		_initializeBuffer(readingBuffer buffer);
+	int		_read_first_line(readingBuffer& buffer, int& length_parsed);
+	int		_parse_line(const char *line, char len);
 
 	/* method not used yet: */
-	int				_findInBuf(char *to_find, char *buf, char len);
+	int				_findInBuf(char *to_find,char *buf, int findlen, int buflen, int begsearch);
 };
 
 #endif

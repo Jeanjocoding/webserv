@@ -12,6 +12,7 @@
 
 #include <utility>
 #include <iostream>
+#include <vector>
 
 #include "webserv.hpp"
 #include "ConnectionClass.hpp"
@@ -19,21 +20,22 @@
 void	handle_connection(ConnectionClass& connection)
 {
 	int send_ret;
-	std::pair<int, std::string>	request_infos;
+	int retVal;
+	std::vector<HttpRequest>	RequestPipeline;
 
 	std::cout << "connection server on port : " << connection._server->_port << std::endl;
-	request_infos = connection.receiveRequest();
-	if (request_infos.first == -1)
+	retVal = connection.receiveRequest(RequestPipeline);
+	if (retVal == -1)
 		return;
-	else if (request_infos.first == 0)
+	else if (retVal == 0)
 	{
 		std::cout << "connection closed by client" << std::endl;
 		if (connection.closeConnection() == -1)
 			perror("close");
 		return;
 	}
-	HttpRequest request(request_infos.second);
-	std::cout << "message received by server: " << request_infos.second << std::endl;
+//	HttpRequest request(request_infos.second);
+//	std::cout << "message received by server: " << request_infos.second << std::endl;
 	send_ret = connection.sendResponse("HTTP/1.1 200 OK\r\n\r\n<html><body><h1>Welcome to Webser</h1></body></html>\r\n");
 	if (send_ret == -1)
 		perror("send");
