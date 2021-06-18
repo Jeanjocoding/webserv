@@ -106,9 +106,10 @@ private:
 	void		_initializeBuffer(readingBuffer buffer);
 	int		_read_first_line(readingBuffer& buffer, int& length_parsed);
 	int		_parse_line(const char *line, char len);
+	void				_printBufferInfo(readingBuffer& buffer, std::string msg);
 
 	/* method not used yet: */
-	int				_findInBuf(char *to_find,char *buf, int findlen, int buflen, int begsearch);
+	int				_findInBuf(std::string to_find,char *buf, int findlen, int buflen, int begsearch);
 };
 
 #endif

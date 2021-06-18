@@ -17,7 +17,7 @@ public:
 	HttpRequest(void);
 	HttpRequest(HttpRequest const& to_copy);
 	HttpRequest(std::string str_message);
-	~HttpRequest(void);
+	virtual ~HttpRequest(void);
 
 	HttpRequest&	operator=(HttpRequest const& to_copy);
 	virtual int					parseFromString(std::string str_request);
@@ -32,8 +32,6 @@ private:
 
 	int				_parseMethodLine(void);
 	int				_parseHeaderBlock(std::string str_headers);
-
-
 };
 
 #endif
