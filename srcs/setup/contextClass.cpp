@@ -6,7 +6,7 @@
 /*   By: asablayr <marvin@42.fr>                    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2021/06/12 15:24:19 by asablayr          #+#    #+#             */
-/*   Updated: 2021/06/17 20:56:40 by asablayr         ###   ########.fr       */
+/*   Updated: 2021/06/18 13:31:49 by asablayr         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -23,9 +23,10 @@ contextClass::contextClass(std::string name, std::string buff): _name(name)
 	setBlocks();
 	
 	_block_content = getBlock(_name, buff).second;
+	std::cout << "context " << _name << " : " << _block_content << std::endl;
 
-	getDirectivesInContext(_directive_set);
 	getBlocksInContext(_block_set);
+	getDirectivesInContext(_directive_set);
 }
 
 contextClass::contextClass(contextClass const& copy)
@@ -47,6 +48,8 @@ contextClass& contextClass::operator = (contextClass const& copy)
 
 contextClass::~contextClass()
 {
+	for (auto it = _blocks.begin(); it != _blocks.end(); it++)
+		delete *it;
 }
 
 void contextClass::setBlocks(void)
@@ -64,7 +67,7 @@ void contextClass::setBlocks(void)
     else if (_name == "server")
 	{
        _block_set = {
-			"lcation"
+			"location"
 		};
 	}
     else if (_name == "location")
@@ -129,8 +132,7 @@ static bool check_before(std::string buff, std::size_t i)
 	i--;
 	while (i > 0 && buff[i] == ' ')
 		i--;
-    if (i > 0 && (buff[i - 1] != ' ' && buff[i - 1] != '{'
-        && buff[i - 1] != '}' && buff[i - 1] != ';'))
+    if (i > 0 && (buff[i] != '{' && buff[i] != '}' && buff[i] != ';'))
         return false;
     return true;
 }
@@ -197,16 +199,20 @@ std::pair<bool, std::string>	contextClass::getSingleDirective(std::string const&
 	i = buff.find(directive_name);
 	while (i != std::string::npos)
 	{
-		i += directive_name.size();
 		it += i;
+		i += directive_name.size();
 		if (check_before(buff, i - directive_name.size()))
 			break;
 		i = buff.find(directive_name, i);
-		continue;
 	}
 	if (i == std::string::npos)//no block found
 		return res;
-	ite += buff.find(";", i);
+	while (*it == ' ')
+		it++;
+	i = buff.find(";", i);
+	if (i == std::string::npos)
+		return res;
+	ite += i;
 	res.first = true;
 	res.second = std::string(it, ite);
 	return res;
@@ -214,30 +220,28 @@ std::pair<bool, std::string>	contextClass::getSingleDirective(std::string const&
 
 void	contextClass::getBlocksInContext(std::vector<std::string> const& set)
 {
-	std::string tmp = _block_content;
 	for (auto it = set.begin(); it != set.end(); it++)
 	{
-		for (auto check = getBlock(*it, tmp); check.first; check = getBlock(*it, tmp))
+		for (auto check = getBlock(*it, _block_content); check.first; check = getBlock(*it, _block_content))
 		{
-			contextClass new_context(*it, check.second);
-			_blocks.push_back(new_context);
-			tmp.erase(tmp.find(check.second), check.second.size());
+			_blocks.push_back(new contextClass(*it, check.second));
+			_block_content.erase(_block_content.find(check.second), check.second.size());
 		}
 	}
 }
 
 void	contextClass::getDirectivesInContext(std::vector<std::string> const& directive_set)
 {
-	std::string tmp = _block_content;
 	for (auto it = _directive_set.begin(); it != directive_set.end(); it++)
 	{
-		std::pair<bool, std::string>check = getSingleDirective(*it, tmp);
+		std::pair<bool, std::string>check = getSingleDirective(*it, _block_content);//get directive and erase it from buffer
 		if (check.first)
 		{
 			_directives[*it] = check.second;
-			tmp.erase(tmp.find(check.second), check.second.size());
+			std::cout << "directive found : " << _directives[*it] << "in context " << _name << std::endl;
+			_block_content.erase(_block_content.find(_directives[*it]), _directives[*it].size());
 		}
-		if (getSingleDirective(*it, tmp).first)
+		if (getSingleDirective(*it, _block_content).first)//check for same directive
 		{
 			std::cerr << "error configuration file : twice the same directive in same context" << std::endl;//switch to define
 			exit(EXIT_FAILURE);

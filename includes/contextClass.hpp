@@ -6,7 +6,7 @@
 /*   By: asablayr <marvin@42.fr>                    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2021/06/12 14:11:07 by asablayr          #+#    #+#             */
-/*   Updated: 2021/06/17 20:56:16 by asablayr         ###   ########.fr       */
+/*   Updated: 2021/06/18 13:26:13 by asablayr         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -35,7 +35,7 @@ class contextClass
 			std::vector<std::string>				_directive_set;
 			std::vector<std::string>				_block_set;
 			std::map<std::string, std::string>		_directives;
-			std::vector<contextClass>				_blocks;
+			std::vector<contextClass*>				_blocks;
 
 	private:
 			contextClass();
