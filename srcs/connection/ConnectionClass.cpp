@@ -60,7 +60,7 @@ int				ConnectionClass::_findInBuf(std::string to_find, char *buf, int findlen, 
 	return (-1);
 }
 
-void				ConnectionClass::_initializeBuffer(readingBuffer buffer)
+void				ConnectionClass::_initializeBuffer(readingBuffer& buffer)
 {
 	std::memset(buffer.buf, 0, READING_BUF_SIZE + 1);
 	buffer.deb = 0;
@@ -114,8 +114,10 @@ int		ConnectionClass::_read_buffer(readingBuffer& buffer, std::vector<HttpReques
 	_printBufferInfo(buffer, "in _read_buffer");
 	std::cout << std::endl;
 	HttpRequest	currentRequest;
+	//* procédure insatisfaisante, il faut réussir a faire en sorte que ça s'arrete une fois la dernière reuqête lue: */
 	while (length_parsed < READING_BUF_SIZE && length_parsed < buffer.end) // je chope toutes les requêtes qui sont dans le buffer
 	{
+		std::cout << "length_parsed: " << length_parsed << std::endl;
 		getnr_ret = _get_next_request(buffer, currentRequest, length_parsed);
 		if (getnr_ret == -1)
 			return (-1);
@@ -129,22 +131,30 @@ int		ConnectionClass::_read_buffer(readingBuffer& buffer, std::vector<HttpReques
 	return (1);
 }
 
-int		ConnectionClass::_read_long_line(std::string& str, readingBuffer buffer)
+/* 	this function launches a  rather slow procedure but that is used very rarely. it reads on the
+***	socket and append buffers to a std::string object until crlf is found. after, it moves
+***	the rest of the string (after the crlf)	in the readingBuffer. buf and set buffer.deb and buffer.end
+***	accordingly */
+int		ConnectionClass::_read_long_line(std::string& str, readingBuffer& buffer, int& length_parsed)
 {
 	char buf[SINGLE_READ_SIZE + 1];
 	int read_ret;
 	size_t	pos;
 
+	std::cout << "we're inside _read_long_line" << std::endl;
 	while ((read_ret = recv(_socketNbr, buf, SINGLE_READ_SIZE, 0)) > 0)
 	{
 		buf[read_ret] = '\0';
+		length_parsed += read_ret;
 		str.append(buf);
+//		std::cout << "str after append: " << std::endl;
 		pos = str.find("\r\n", str.length() - (SINGLE_READ_SIZE + 2));
 		if (pos != str.npos)
 		{
-			std::memmove(buffer.buf, &(str.data()[pos + 2]), str.length() - (pos + 2)); // j'ajoute au buffer ce qu'il y avait après le crlf
+			std::memmove(buffer.buf, &(str.data()[pos + 2 ]), str.length() - (pos + 2)); // j'ajoute au buffer ce qu'il y avait après le crlf
+			buffer.deb = 0;
+			buffer.end = str.length() - (pos + 2);
 			str.erase(pos, str.length()); // j'enleve ce qu'il y avait après le crlf dans la string
-
 			return (1);
 		}
 		if (str.length() > MAX_LINE_LENGTH)
@@ -161,7 +171,7 @@ int		ConnectionClass::_read_long_line(std::string& str, readingBuffer buffer)
 	return (1);
 }
 
-int		ConnectionClass::_parse_line(const char *line, char len)
+int		ConnectionClass::_parse_line(const char *line, int len)
 {
 	std::string	test_string(line, len);
 
@@ -198,7 +208,8 @@ int		ConnectionClass::_read_line(readingBuffer& buffer, int& length_parsed)
 				return (-1);
 			if (read_ret == 0)
 				return (0);
-			deb_read = buffer.end - 1; // j'enleve 1 au cas ou crlf est coupé en 2 ; a protéger segfault			
+			if (deb_read)
+				deb_read = buffer.end - 1; // j'enleve 1 au cas ou crlf est coupé en 2 ; a protéger segfault			
 			buffer.end += read_ret;
 			length_parsed += read_ret;
 		}
@@ -218,7 +229,8 @@ int		ConnectionClass::_read_line(readingBuffer& buffer, int& length_parsed)
 				return (-1);
 			if (read_ret == 0)
 				return (0);
-			deb_read = buffer.end - 1; // j'enleve 1 au cas ou crlf est coupé en 2 ; a protéger segfault			
+			if (deb_read)
+				deb_read = buffer.end - 1; // j'enleve 1 au cas ou crlf est coupé en 2 ; a protéger segfault			
 			buffer.end += read_ret;
 			length_parsed += read_ret;
 		}
@@ -226,21 +238,34 @@ int		ConnectionClass::_read_line(readingBuffer& buffer, int& length_parsed)
 		{
 			std::cout << "we need to launch long line procedure: " << std::endl;
 			_printBufferInfo(buffer, "before long_line procedure");
+
 			std::string	long_request_string;
+			int		long_line_length;
+
 			long_request_string.append(buffer.buf, buffer.deb, buffer.end - buffer.deb);
-			read_ret = _read_long_line(long_request_string, buffer);
+			read_ret = _read_long_line(long_request_string, buffer, length_parsed);
 			if (read_ret == -1)
 				return (-1);
 			if (read_ret == 0)
 				return (0);
+			long_line_length = long_request_string.length();
 			std::cout << "line optained through long line procedure: " << long_request_string << std::endl;
-			_parse_line(long_request_string.c_str(), long_request_string.length());
+			std::cout << "line length: " << long_line_length << std::endl;
+			_parse_line(long_request_string.c_str(), long_line_length);
+//			buffer.deb = 0;
+//			buffer.end = 0;
+			deb_read = 0;
 			_printBufferInfo(buffer, "after long line procedure");
 			return (1);
-
 		}
 	}
 	std::cout << "out of main loop, we found a line" << std::endl;
+	if (buffer.buf[buffer.deb] == '\r' && buffer.buf[buffer.deb + 1] == '\n')
+	{
+		std::cout << " _read_line returned 2 because it considers it read the whole header part" << std::endl;
+		buffer.deb = crlf_index + 2;
+		return (2);
+	}
 	_parse_line(&(buffer.buf[buffer.deb]), crlf_index - buffer.deb);
 	_printBufferInfo(buffer, "after main loop and line found");
 	buffer.deb = crlf_index + 2;
@@ -249,9 +274,26 @@ int		ConnectionClass::_read_line(readingBuffer& buffer, int& length_parsed)
 
 }
 
+int		ConnectionClass::_check_header_compliancy(HttpRequest& CurrentRequest)
+{
+	(void)CurrentRequest; //a supprimer
+	std::cout << "_check_header_compliancy has not been implemented yet. it always returns 1" << std::endl;
+	return (1);
+}
+
+int		ConnectionClass::_read_request_content(HttpRequest& CurrentRequest, int& length_parsed)
+{
+	(void)CurrentRequest; //a supprimer
+	std::cout << "_read_request_content has not been implemented yet. it always returns 1" << std::endl;
+	length_parsed += 1; // a supprimer
+	return (1);
+
+}
+
 int		ConnectionClass::_get_next_request(readingBuffer &buffer, HttpRequest& currentRequest, int& length_parsed)
 {
-	int ret_read_line;
+	int	ret_read_line;
+	int	ret_read_content;	
 //	int	line_count = 0; // a utiliser
 	//faire une protection contre segfaulkt/buffer overflow ici
 	currentRequest.toString(); //juste pour virer warnings
@@ -280,7 +322,22 @@ int		ConnectionClass::_get_next_request(readingBuffer &buffer, HttpRequest& curr
 		return (0);
 	}
 	if (ret_read_line == 2)
+	{
+		if (_check_header_compliancy(currentRequest) == -1)
+		{
+			std::cout << "headers are not compliant, need to setup a bad request procedure. for now, function returns -1" << std::endl;
+			return (-1);
+		}
+		ret_read_content = _read_request_content(currentRequest, length_parsed);
+		if (ret_read_content == -1 || ret_read_content == 0)
+		{
+			std::cout << "ret_read_content returned -1 OR 0, meaning an error occured. For now, get_next_request forwards this ret_value" << std::endl;
+			return (ret_read_content);
+		}
+
+
 		return (1);
+	}
 	std::cout << "unexpected return in _get_next_request" << std::endl;
 	return (1);
 }
@@ -296,6 +353,8 @@ int		ConnectionClass::_get_next_request(readingBuffer &buffer, HttpRequest& curr
 
 	
 }*/
+
+
 
 int			ConnectionClass::receiveRequest(std::vector<HttpRequest>& requestPipeline)
 {

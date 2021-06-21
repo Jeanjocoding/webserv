@@ -42,8 +42,8 @@
 #include "serverClass.hpp"
 #include <vector>
 
-#define	READING_BUF_SIZE 64 //ces tailles sont très petites
-#define	SINGLE_READ_SIZE 8	// pour voir plus facilement les bugs
+#define	READING_BUF_SIZE 8 //ces tailles sont très petites
+#define	SINGLE_READ_SIZE 3	// pour voir plus facilement les bugs
 #define	MAX_LINE_LENGTH 12000	// POUR SECURITY
 #define CO_ISOPEN 1
 #define CO_ISCLOSED 2
@@ -56,6 +56,9 @@ limite les appels a malloc, memset et compagnie.
 struct readingBuffer
 {
 	char			buf[READING_BUF_SIZE + 1];
+	/* 	IMPORTANT: deb corresponds to the index of the first character of the relevant
+	***	buffer part (usually beginnin of the current line), however end corresponds to the
+	***	index of the character AFTER the last character read.  */
 	int				deb;
 	int				end;
 	static int const		cap = READING_BUF_SIZE;
@@ -99,13 +102,15 @@ private:
 	/* connection status, we'll see if we really need it */
 	int				_status;
 
-	int		_read_long_line(std::string& str, readingBuffer buffer);
+	int		_read_long_line(std::string& str, readingBuffer& buffer, int& length_parsed);
 	int		_read_buffer(readingBuffer& buffer, std::vector<HttpRequest>& requestPipeline);
 	int		_read_line(readingBuffer& buffer, int& length_parsed);
 	int		_get_next_request(readingBuffer &buffer, HttpRequest& currentRequest, int& length_parsed);
-	void		_initializeBuffer(readingBuffer buffer);
+	void		_initializeBuffer(readingBuffer& buffer);
 	int		_read_first_line(readingBuffer& buffer, int& length_parsed);
-	int		_parse_line(const char *line, char len);
+	int		_parse_line(const char *line, int len);
+	int		_check_header_compliancy(HttpRequest& CurrentRequest);
+	int		_read_request_content(HttpRequest& CurrentRequest, int&	length_parsed);
 	void				_printBufferInfo(readingBuffer& buffer, std::string msg);
 
 	/* method not used yet: */
