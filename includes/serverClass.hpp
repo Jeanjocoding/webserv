@@ -6,7 +6,7 @@
 /*   By: asablayr <marvin@42.fr>                    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2021/06/07 10:16:05 by asablayr          #+#    #+#             */
-/*   Updated: 2021/06/17 20:05:43 by asablayr         ###   ########.fr       */
+/*   Updated: 2021/06/22 14:43:50 by asablayr         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -20,6 +20,7 @@
 
 #define	DEFAULT_PORT "8001"
 #define	DEFAULT_HOST "*"
+#define	DEFAULT_LISTEN "*:8001"
 #define	DEFAULT_SERVER_NAME "webserver"
 #define DEFAULT_ROOT "/"
 #define DEFAULT_INDEX "/"
@@ -44,6 +45,7 @@ class serverClass
 			void	startServer(void);
 
 			bool									_default_server;
+			std::string								_listen;
 			std::string								_port;
 			std::string								_host;
 			std::string								_server_name;

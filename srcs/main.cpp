@@ -6,7 +6,7 @@
 /*   By: asablayr <marvin@42.fr>                    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2021/06/06 15:27:02 by asablayr          #+#    #+#             */
-/*   Updated: 2021/06/10 10:38:57 by asablayr         ###   ########.fr       */
+/*   Updated: 2021/06/22 15:56:03 by asablayr         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -34,7 +34,11 @@ int main(int ac, char** av)
 
 	FD_ZERO(&rfds);//memset fd_set
 	for (std::vector<serverClass*>::iterator it = server_map.begin(); it != server_map.end(); it++)
+	{
+		(*it)->startServer();
+		std::cout << "server started on : " << (*it)->_listen << std::endl;
 		FD_SET((*it)->_server_socket, &rfds);//add server socket to fd_set
+	}
 	while (true)
 	{
 		rfds_copy = rfds;
@@ -66,7 +70,6 @@ int main(int ac, char** av)
 				}
 				if (check)
 					continue;
-				std::cout << "handling connection on fd " << i << std::endl;
 				handle_connection(connection_map[i]);
 				connection_map.erase(i);//maybe not for keep alive
 				close(i);//maybe not

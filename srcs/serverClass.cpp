@@ -6,7 +6,7 @@
 /*   By: asablayr <marvin@42.fr>                    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2021/06/07 18:49:16 by asablayr          #+#    #+#             */
-/*   Updated: 2021/06/17 20:05:35 by asablayr         ###   ########.fr       */
+/*   Updated: 2021/06/22 15:58:15 by asablayr         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -24,6 +24,9 @@ serverClass::serverClass()
 	_default_server = false;
 	_port = DEFAULT_PORT;
 	_host = DEFAULT_HOST;
+	_listen = DEFAULT_HOST;
+	_listen += ":";
+	_listen += DEFAULT_PORT;
 	_server_name = DEFAULT_SERVER_NAME;
 	_root = DEFAULT_ROOT;
 	_index = DEFAULT_INDEX;
@@ -38,6 +41,7 @@ serverClass::serverClass()
 serverClass::serverClass(serverClass const& to_copy)
 {
 	_default_server = to_copy._default_server;
+	_listen = to_copy._listen;
 	_port = to_copy._port;
 	_host = to_copy._host;
 	_server_name = to_copy._server_name;
@@ -56,6 +60,7 @@ serverClass::serverClass(serverClass const& to_copy)
 serverClass& serverClass::operator = (serverClass const& to_copy)
 {
 	_default_server = false;
+	_listen = to_copy._listen;
 	_port = to_copy._port;
 	_host = to_copy._host;
 	_server_name = to_copy._server_name;
@@ -74,7 +79,9 @@ serverClass& serverClass::operator = (serverClass const& to_copy)
 
 std::string*	serverClass::operator [] (std::string setting_name)
 {
-	if (setting_name == "port")
+	if (setting_name == "listen")
+		return &_listen;
+	else if (setting_name == "port")
 		return &_port;
 	else if (setting_name == "host")
 		return &_host;
@@ -120,11 +127,18 @@ void serverClass::startServer()
 	hint.ai_next = NULL;
 
 	_addr = 0;
+	if (!_listen.empty())
+	{
+		_port = _host = _listen;
+		_port.erase(0, _port.find(":") + 1);
+		_host.erase(_host.find(_port) - 1, _port.size());
+	}
 
 	retval = getaddrinfo(NULL, _port.c_str(), &hint, &_addr);
 	if (retval)
 	{
-		std::cerr << "getaddrinfo: " << retval << std::endl;
+		std::cerr << "getaddrinfo: " << gai_strerror(retval) << std::endl;
+		std::cout << "port : " << _port << std::endl;
 		exit(EXIT_FAILURE);
 	}
 	_server_socket = socket(_addr->ai_family, _addr->ai_socktype, _addr->ai_protocol);
