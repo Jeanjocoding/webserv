@@ -16,7 +16,8 @@ public:
 
 	virtual int					parseFromString(std::string) = 0;
 	virtual std::string const&	toString(void) const = 0;
-	void				addHeader(std::pair<std::string, std::string> header);
+	void				addHeader(std::pair<std::string, std::string>& header);
+	void				printHeaders();
 
 
 protected:

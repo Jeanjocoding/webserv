@@ -123,6 +123,8 @@ int		ConnectionClass::_read_buffer(readingBuffer& buffer, std::vector<HttpReques
 			return (-1);
 		if (getnr_ret == 0)
 			return (0);
+		if (getnr_ret == HTTP_ERROR)
+			return (HTTP_ERROR);
 		requestPipeline.push_back(currentRequest);
 		currentRequest.clear();
 	}
@@ -201,6 +203,7 @@ int		ConnectionClass::_parseProtocol(HttpRequest& currentRequest, std::string& p
 		return (_invalidRequestProcedure(currentRequest, 400));
 	while (protocol[index] != '.')
 	{
+		std::cout << "protocol[" << index <<"] : " << protocol[index] << std::endl;
 		if (!isnumber(protocol[index]))
 			return (_invalidRequestProcedure(currentRequest, 400));
 		bigVersion = bigVersion * 10 + protocol[index] - '0';
@@ -213,12 +216,13 @@ int		ConnectionClass::_parseProtocol(HttpRequest& currentRequest, std::string& p
 		return (_invalidRequestProcedure(currentRequest, 400));
 	while (index < length)
 	{
+		std::cout << "protocol[" << index <<"] : " << protocol[index] << std::endl;
 		if (!isnumber(protocol[index]))
 			return (_invalidRequestProcedure(currentRequest, 400));
 		smallVersion = smallVersion * 10 + protocol[index] - '0';
 		index++;
-		if (index == length)
-			return (_invalidRequestProcedure(currentRequest, 400));
+//		if (index == length)
+//			return (_invalidRequestProcedure(currentRequest, 400));
 	}
 	std::cout << "protocol version post atoi: " <<  bigVersion << ":" << smallVersion << std::endl;
 	currentRequest.setProtocolVersion(bigVersion, smallVersion);
@@ -232,59 +236,97 @@ int		ConnectionClass::_parseProtocol(HttpRequest& currentRequest, std::string& p
 int		ConnectionClass::_parse_first_line(const char *line, int len, HttpRequest& currentRequest)
 {
 //	std::string	to_parse(line, len);
-	int		index;
+	int		index = 0;
 	int		lastWordIndex;
 	int		protocol_length = 0;
 
+	while (line[index] != ' ')
+	{
+		if (!std::isupper(line[index]))
+			return (_invalidRequestProcedure(currentRequest, 400));
+		index++;
+		if (index >= len)
+		return (_invalidRequestProcedure(currentRequest, 400));
+
+	}
+	std::string method(line, index);
+	index++;
+	if (line[index] == ' ')
+			return (_invalidRequestProcedure(currentRequest, 400));
+	lastWordIndex = index;
+	while (line[index] != ' ')
+	{
+		index++;
+		if (index >= len)
+			return (_invalidRequestProcedure(currentRequest, 400));
+	}
+	std::string target(line, lastWordIndex, index - lastWordIndex);
+	index++;
+	if (line[index] == ' ')
+			return (_invalidRequestProcedure(currentRequest, 400));
+	lastWordIndex = index;
 	while (index < len)
 	{
-		while (line[index] != ' ')
-		{
-			if (!std::isupper(line[index]))
-				return (_invalidRequestProcedure(currentRequest, 400));
-			index++;
-			if (index >= len)
-				return (_invalidRequestProcedure(currentRequest, 400));
-
-		}
-		std::string method(line, index);
+		protocol_length++;
+		if (line[index] == ' ' || protocol_length > 20)
+			return (_invalidRequestProcedure(currentRequest, 400));
 		index++;
-		if (line[index] == ' ')
-				return (_invalidRequestProcedure(currentRequest, 400));
-		lastWordIndex = index;
-		while (line[index] != ' ')
-		{
-			index++;
-			if (index >= len)
-				return (_invalidRequestProcedure(currentRequest, 400));
-		}
-		std::string target(line, lastWordIndex, index - lastWordIndex);
-		index++;
-		if (line[index] == ' ')
-				return (_invalidRequestProcedure(currentRequest, 400));
-		lastWordIndex = index;
-		while (index < len)
-		{
-			protocol_length++;
-			if (line[index] == ' ' || protocol_length > 10)
-				return (_invalidRequestProcedure(currentRequest, 400));
-			index++;
-		}
-		std::string protocol(line, lastWordIndex, protocol_length);
-		if (method != "GET" && method != "POST" && method != "DELETE")
-			return (_invalidRequestProcedure(currentRequest, 501));
-		if (target.length() > MAX_URI_SIZE)
-			return (_invalidRequestProcedure(currentRequest, 414));
-		if (_parseProtocol(currentRequest, protocol) == -1)
-			return (-1);
-		else
-		{
-			currentRequest.addRequestLine(method, target);
-			std::cout << "method: " << method << std::endl;
-			std::cout << "target: " << target << std::endl;
-			return (1);
-		}
 	}
+	std::string protocol(line, lastWordIndex, protocol_length);
+	if (method != "GET" && method != "POST" && method != "DELETE")
+		return (_invalidRequestProcedure(currentRequest, 501));
+	if (target.length() > MAX_URI_SIZE)
+		return (_invalidRequestProcedure(currentRequest, 414));
+	if (_parseProtocol(currentRequest, protocol) == -1)
+		return (-1);
+	else
+	{
+		currentRequest.addRequestLine(method, target);
+		std::cout << "method: " << method << std::endl;
+		std::cout << "target: " << target << std::endl;
+		return (1);
+	}
+}
+
+int		ConnectionClass::_parseHeaderLine(const char *line, int len, HttpRequest& currentRequest)
+{
+	int	index = 0;
+	int	deb_value;
+	int	end_value;
+
+	std::pair<std::string, std::string>	header;
+	
+	while (line[index] != ':')
+	{
+		if (line[index] == ' ')
+			return (_invalidRequestProcedure(currentRequest, 400));
+		index++;
+		if (index == len)
+			return (_invalidRequestProcedure(currentRequest, 400));
+	}
+	header.first.append(line, index);
+	index++;
+	if (index == len)
+		return (_invalidRequestProcedure(currentRequest, 400));
+	while (line[index] == ' ') // je vire les espaces au début
+	{
+		index++;
+		if (index == len)
+			return (_invalidRequestProcedure(currentRequest, 400));
+	}
+	deb_value = index;
+	index = len;
+	while (line[index] == ' ') //je vire les espaces à la fin
+	{
+		index--;
+	}
+	end_value = index;
+	header.second.append(&(line[deb_value]), end_value - deb_value);
+	currentRequest.addHeader(header);
+	return (1);
+	
+
+
 }
 
 int		ConnectionClass::_parse_line(const char *line, int len, int& line_count, HttpRequest &currentRequest)
@@ -294,6 +336,8 @@ int		ConnectionClass::_parse_line(const char *line, int len, int& line_count, Ht
 	std::cout << "the line passed to the parser is: " << test_string << std::endl;
 	if (line_count == 0)
 		return (_parse_first_line(line, len, currentRequest));
+	else
+		return (_parseHeaderLine(line, len, currentRequest));
 	return (1);
 }
 
@@ -369,7 +413,8 @@ int		ConnectionClass::_read_line(readingBuffer& buffer, int& length_parsed, int&
 			long_line_length = long_request_string.length();
 //			std::cout << "line optained through long line procedure: " << long_request_string << std::endl;
 //			std::cout << "line length: " << long_line_length << std::endl;
-			_parse_line(long_request_string.c_str(), long_line_length, line_count, currentRequest);
+			if (_parse_line(long_request_string.c_str(), long_line_length, line_count, currentRequest) == -1)
+				return (HTTP_ERROR);
 //			buffer.deb = 0;
 //			buffer.end = 0;
 			deb_read = 0;
@@ -384,12 +429,11 @@ int		ConnectionClass::_read_line(readingBuffer& buffer, int& length_parsed, int&
 		buffer.deb = crlf_index + 2;
 		return (2);
 	}
-	_parse_line(&(buffer.buf[buffer.deb]), crlf_index - buffer.deb, line_count, currentRequest);
+	if (_parse_line(&(buffer.buf[buffer.deb]), crlf_index - buffer.deb, line_count, currentRequest) == -1)
+		return (HTTP_ERROR);
 //	_printBufferInfo(buffer, "after main loop and line found");
 	buffer.deb = crlf_index + 2;
 	return (1);
-
-
 }
 
 int		ConnectionClass::_check_header_compliancy(HttpRequest& CurrentRequest)
@@ -430,7 +474,7 @@ int		ConnectionClass::_get_next_request(readingBuffer &buffer, HttpRequest& curr
 	while ((ret_read_line = _read_line(buffer, length_parsed, line_count, currentRequest)) == 1)
 	{
 		line_count++;
-		std::cout << "_read_line returned 1, we're supposed to have read a line" << std::endl;
+//		std::cout << "_read_line returned 1, we're supposed to have read a line" << std::endl;
 		if (line_count > MAX_HEAD_LINES)
 		{
 			std::cout << "Too many header lines, need to send a bad request. for now, _get_next_request returns -1" 
@@ -443,13 +487,19 @@ int		ConnectionClass::_get_next_request(readingBuffer &buffer, HttpRequest& curr
 		std::cout << "_read_line returned -1" << std::endl;
 		return (-1);
 	}
-	if (ret_read_line == 0)
+	else if (ret_read_line == 0)
 	{
 		std::cout << "the whole connection has been processed" << std::endl;
 		return (0);
 	}
+	else if (ret_read_line == HTTP_ERROR)
+	{
+		std::cout << "error found during parsing, get_next_request returns HTTP_ERROR" << std::endl;
+		return (HTTP_ERROR);
+	}
 	if (ret_read_line == 2)
 	{
+		currentRequest.printHeaders();
 		if (_check_header_compliancy(currentRequest) == -1)
 		{
 			std::cout << "headers are not compliant, need to setup a bad request procedure. for now, function returns -1" << std::endl;
@@ -501,6 +551,22 @@ int			ConnectionClass::receiveRequest(std::vector<HttpRequest>& requestPipeline)
 	buffer.end = read_ret;
 	buffer.buf[read_ret] = '\0';
 	read_ret = _read_buffer(buffer, requestPipeline);
+	if (read_ret == HTTP_ERROR)
+	{
+		std::cout << "an invalid request has been detected" << std::endl;
+		return (HTTP_ERROR);
+	}
+	else if (read_ret == TCP_ERROR)
+	{
+		std::cout << "a TCP error has occured" << std::endl;
+		return (TCP_ERROR);
+	}
+	else if (read_ret == 0)
+	{
+		std::cout << "the connection has been closed" << std::endl;
+		return (0);
+	}
+
 	return (1);
 }
 

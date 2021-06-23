@@ -28,7 +28,21 @@ HttpMessage&	HttpMessage::operator=(HttpMessage const& to_copy)
 
 }
 
-void		HttpMessage::addHeader(std::pair<std::string, std::string> header)
+void		HttpMessage::addHeader(std::pair<std::string, std::string>& header)
 {
 	_headers.insert(header);
+}
+
+void		HttpMessage::printHeaders()
+{
+	std::map<std::string, std::string>::iterator itdeb = _headers.begin();
+	std::map<std::string, std::string>::iterator itend = _headers.end();
+
+	std::cout << "print all headers: " << std::endl;
+	while (itdeb != itend)
+	{
+		std::cout << (*itdeb).first << " : " << (*itdeb).second << std::endl;
+		itdeb++;
+	}
+	return;
 }

@@ -49,6 +49,9 @@
 #define	MAX_URI_SIZE 1000 // POUR SECURITY
 #define CO_ISOPEN 1
 #define CO_ISCLOSED 2
+#define TCP_ERROR -1
+#define HTTP_ERROR -2
+#define CONNECTION_CLOSED 0
 
 /*
 Ce buffer/structure sert à lire et concaténer les données reçues dans le 
@@ -113,6 +116,7 @@ private:
 	int		_read_first_line(readingBuffer& buffer, int& length_parsed, HttpRequest& currentRequest);
 	int		_parse_line(const char *line, int len, int& line_count, HttpRequest& currentRequest);
 	int		_parse_first_line(const char *line, int len, HttpRequest& currentRequest);
+	int		_parseHeaderLine(const char *line, int len, HttpRequest& currentRequest);
 	int		_check_header_compliancy(HttpRequest& CurrentRequest);
 	int		_parseProtocol(HttpRequest& currentRequest, std::string& protocol);
 	int		_read_request_content(HttpRequest& CurrentRequest, int&	length_parsed);
