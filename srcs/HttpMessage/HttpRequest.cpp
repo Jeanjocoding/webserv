@@ -63,6 +63,33 @@ int				HttpRequest::parseFromString(std::string str_request)
 	return (0);	
 }
 
+void				HttpRequest::addRequestLine(std::string& method, std::string& target)
+{
+	_requestLine.method = method;	
+	_requestLine.target = target;
+}
+
+void				HttpRequest::setValidity(bool validity)
+{
+	_isValid = validity;
+}
+
+void				HttpRequest::setErrorCode(int errorCode)
+{
+	_errorCode = errorCode;
+}
+
+int const&				HttpRequest::getErrorCode() const
+{
+	return (_errorCode);
+}
+
+void				HttpRequest::setProtocolVersion(int bigVersion, int smallVersion)
+{
+	_requestLine.protocol.first = bigVersion;
+	_requestLine.protocol.second = smallVersion;
+}
+
 std::string const&		HttpRequest::toString() const
 {
 	return (_stringMessage);

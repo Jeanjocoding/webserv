@@ -10,12 +10,14 @@ public:
 	HttpMessage(void);
 	HttpMessage(HttpMessage const& to_copy);
 	HttpMessage(std::string str_message);
-	~HttpMessage(void);
+	virtual ~HttpMessage(void);
 
 	HttpMessage&	operator=(HttpMessage const& to_copy);
 
 	virtual int					parseFromString(std::string) = 0;
 	virtual std::string const&	toString(void) const = 0;
+	void				addHeader(std::pair<std::string, std::string> header);
+
 
 protected:
 	std::map<std::string, std::string>	_headers;

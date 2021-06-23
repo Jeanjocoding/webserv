@@ -27,3 +27,8 @@ HttpMessage&	HttpMessage::operator=(HttpMessage const& to_copy)
 	return (*this);
 
 }
+
+void		HttpMessage::addHeader(std::pair<std::string, std::string> header)
+{
+	_headers.insert(header);
+}

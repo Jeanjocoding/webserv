@@ -41,7 +41,7 @@ int				ConnectionClass::_findInBuf(std::string to_find, char *buf, int findlen, 
 //	std::cout << "string parsed in findinbuf: " << debug_string << " -- end of string " << std::endl;
 	while (i < index_end)
 	{
-		std::cout << "buf[" << i << "] : " << buf[i] << std::endl;
+//		std::cout << "buf[" << i << "] : " << buf[i] << std::endl;
 		while (buf[i] == to_find[j])
 		{
 			if (j == (findlen - 1))
@@ -109,9 +109,9 @@ int		ConnectionClass::_read_buffer(readingBuffer& buffer, std::vector<HttpReques
 	int	getnr_ret = 0;
 
 	std::cout << std::endl;
-	std::cout << "arriving in _read_buffer" << std::endl;
+//	std::cout << "arriving in _read_buffer" << std::endl;
 
-	_printBufferInfo(buffer, "in _read_buffer");
+//	_printBufferInfo(buffer, "in _read_buffer");
 	std::cout << std::endl;
 	HttpRequest	currentRequest;
 	//* procédure insatisfaisante, il faut réussir a faire en sorte que ça s'arrete une fois la dernière reuqête lue: */
@@ -141,7 +141,7 @@ int		ConnectionClass::_read_long_line(std::string& str, readingBuffer& buffer, i
 	int read_ret;
 	size_t	pos;
 
-	std::cout << "we're inside _read_long_line" << std::endl;
+//	std::cout << "we're inside _read_long_line" << std::endl;
 	while ((read_ret = recv(_socketNbr, buf, SINGLE_READ_SIZE, 0)) > 0)
 	{
 		buf[read_ret] = '\0';
@@ -171,15 +171,133 @@ int		ConnectionClass::_read_long_line(std::string& str, readingBuffer& buffer, i
 	return (1);
 }
 
-int		ConnectionClass::_parse_line(const char *line, int len)
+int		ConnectionClass::_invalidRequestProcedure(HttpRequest& currentRequest, int errorCode)
+{
+	std::cout << "invalid request procedure is called" << std::endl;
+	currentRequest.setValidity(0);
+	currentRequest.setErrorCode(errorCode);
+	return (-1);
+}
+
+/*bool		ConnectionClass::_hasRightFrequency(const char *line, int len, std::string target, int targetFrequency)
+{
+	int		count;
+
+	while (pos)
+
+}*/
+
+int		ConnectionClass::_parseProtocol(HttpRequest& currentRequest, std::string& protocol)
+{
+	int	bigVersion = 0;
+	int	smallVersion = 0;
+	int 	index = 5;
+	int	length = protocol.length();
+
+	std::cout << "protocol string recieved: " << protocol << std::endl;
+	if (protocol.length() < 6)
+		return (_invalidRequestProcedure(currentRequest, 400));
+	if (protocol.find("HTTP/") != 0)
+		return (_invalidRequestProcedure(currentRequest, 400));
+	while (protocol[index] != '.')
+	{
+		if (!isnumber(protocol[index]))
+			return (_invalidRequestProcedure(currentRequest, 400));
+		bigVersion = bigVersion * 10 + protocol[index] - '0';
+		index++;
+		if (index == length)
+			return (_invalidRequestProcedure(currentRequest, 400));
+	}
+	index++;
+	if (index == length)
+		return (_invalidRequestProcedure(currentRequest, 400));
+	while (index < length)
+	{
+		if (!isnumber(protocol[index]))
+			return (_invalidRequestProcedure(currentRequest, 400));
+		smallVersion = smallVersion * 10 + protocol[index] - '0';
+		index++;
+		if (index == length)
+			return (_invalidRequestProcedure(currentRequest, 400));
+	}
+	std::cout << "protocol version post atoi: " <<  bigVersion << ":" << smallVersion << std::endl;
+	currentRequest.setProtocolVersion(bigVersion, smallVersion);
+	if (bigVersion < 1 || (bigVersion == 1 && smallVersion == 0))
+		_isPersistent = 0;
+	else
+		_isPersistent = 1;
+	return (1);
+}
+
+int		ConnectionClass::_parse_first_line(const char *line, int len, HttpRequest& currentRequest)
+{
+//	std::string	to_parse(line, len);
+	int		index;
+	int		lastWordIndex;
+	int		protocol_length = 0;
+
+	while (index < len)
+	{
+		while (line[index] != ' ')
+		{
+			if (!std::isupper(line[index]))
+				return (_invalidRequestProcedure(currentRequest, 400));
+			index++;
+			if (index >= len)
+				return (_invalidRequestProcedure(currentRequest, 400));
+
+		}
+		std::string method(line, index);
+		index++;
+		if (line[index] == ' ')
+				return (_invalidRequestProcedure(currentRequest, 400));
+		lastWordIndex = index;
+		while (line[index] != ' ')
+		{
+			index++;
+			if (index >= len)
+				return (_invalidRequestProcedure(currentRequest, 400));
+		}
+		std::string target(line, lastWordIndex, index - lastWordIndex);
+		index++;
+		if (line[index] == ' ')
+				return (_invalidRequestProcedure(currentRequest, 400));
+		lastWordIndex = index;
+		while (index < len)
+		{
+			protocol_length++;
+			if (line[index] == ' ' || protocol_length > 10)
+				return (_invalidRequestProcedure(currentRequest, 400));
+			index++;
+		}
+		std::string protocol(line, lastWordIndex, protocol_length);
+		if (method != "GET" && method != "POST" && method != "DELETE")
+			return (_invalidRequestProcedure(currentRequest, 501));
+		if (target.length() > MAX_URI_SIZE)
+			return (_invalidRequestProcedure(currentRequest, 414));
+		if (_parseProtocol(currentRequest, protocol) == -1)
+			return (-1);
+		else
+		{
+			currentRequest.addRequestLine(method, target);
+			std::cout << "method: " << method << std::endl;
+			std::cout << "target: " << target << std::endl;
+			return (1);
+		}
+	}
+}
+
+int		ConnectionClass::_parse_line(const char *line, int len, int& line_count, HttpRequest &currentRequest)
 {
 	std::string	test_string(line, len);
 
 	std::cout << "the line passed to the parser is: " << test_string << std::endl;
+	if (line_count == 0)
+		return (_parse_first_line(line, len, currentRequest));
 	return (1);
 }
 
-int		ConnectionClass::_read_line(readingBuffer& buffer, int& length_parsed)
+int		ConnectionClass::_read_line(readingBuffer& buffer, int& length_parsed, int& line_count, HttpRequest& currentRequest)
 {
 	int		crlf_index;
 	int		read_ret;
@@ -193,17 +311,17 @@ int		ConnectionClass::_read_line(readingBuffer& buffer, int& length_parsed)
 	}
 	while ((crlf_index = _findInBuf("\r\n", buffer.buf, 2, buffer.end, deb_read)) == -1)
 	{
-		std::cout << std::endl;
-		std::cout << "crlf was not found in buffer" << std::endl;
-		_printBufferInfo(buffer, "in _read_line, before ifs");
+//		std::cout << std::endl;
+//		std::cout << "crlf was not found in buffer" << std::endl;
+//		_printBufferInfo(buffer, "in _read_line, before ifs");
 		if ((buffer.end + SINGLE_READ_SIZE) <  READING_BUF_SIZE) // je vérifie que j'ai de la place dans mon buffer
 		{
-			std::cout << "there is room for another read" << std::endl;
-			_printBufferInfo(buffer, "in _read_line,1st condition");
+//			std::cout << "there is room for another read" << std::endl;
+//			_printBufferInfo(buffer, "in _read_line,1st condition");
 
 			/* code duplication with next condition */
 			read_ret = recv(_socketNbr, &(buffer.buf[buffer.end]), SINGLE_READ_SIZE, 0);
-			std::cout << "read_ret: " << read_ret << std::endl;
+//			std::cout << "read_ret: " << read_ret << std::endl;
 			if (read_ret == -1)
 				return (-1);
 			if (read_ret == 0)
@@ -215,13 +333,13 @@ int		ConnectionClass::_read_line(readingBuffer& buffer, int& length_parsed)
 		}
 		else if (buffer.deb > (READING_BUF_SIZE / 2)) // je regarde si ça vaut le coup de faire le memmove
 		{
-			std::cout << "there is no room for another read, but we can memmove" << std::endl;
-			_printBufferInfo(buffer, "before memmove");
-			std::memmove(buffer.buf, &(buffer.buf[buffer.deb - 1]), buffer.end - (buffer.deb - 1)); // le -1 sert a gérer crlf coupé en 2 encore une fois
+//			std::cout << "there is no room for another read, but we can memmove" << std::endl;
+//			_printBufferInfo(buffer, "before memmove");
+			std::memmove(buffer.buf, &(buffer.buf[buffer.deb]), buffer.end - buffer.deb); // le -1 sert a gérer crlf coupé en 2 encore une fois
 			buffer.end -= buffer.deb;
 			buffer.deb = 0;
-			deb_read = buffer.deb;
-			_printBufferInfo(buffer, "after memmove");
+			deb_read = buffer.end - 1;
+//			_printBufferInfo(buffer, "after memmove");
 
 			/*code duplication with previous condition */
 			read_ret = recv(_socketNbr, &(buffer.buf[buffer.end]), SINGLE_READ_SIZE, 0);
@@ -236,8 +354,8 @@ int		ConnectionClass::_read_line(readingBuffer& buffer, int& length_parsed)
 		}
 		else
 		{
-			std::cout << "we need to launch long line procedure: " << std::endl;
-			_printBufferInfo(buffer, "before long_line procedure");
+//			std::cout << "we need to launch long line procedure: " << std::endl;
+//			_printBufferInfo(buffer, "before long_line procedure");
 
 			std::string	long_request_string;
 			int		long_line_length;
@@ -249,25 +367,25 @@ int		ConnectionClass::_read_line(readingBuffer& buffer, int& length_parsed)
 			if (read_ret == 0)
 				return (0);
 			long_line_length = long_request_string.length();
-			std::cout << "line optained through long line procedure: " << long_request_string << std::endl;
-			std::cout << "line length: " << long_line_length << std::endl;
-			_parse_line(long_request_string.c_str(), long_line_length);
+//			std::cout << "line optained through long line procedure: " << long_request_string << std::endl;
+//			std::cout << "line length: " << long_line_length << std::endl;
+			_parse_line(long_request_string.c_str(), long_line_length, line_count, currentRequest);
 //			buffer.deb = 0;
 //			buffer.end = 0;
 			deb_read = 0;
-			_printBufferInfo(buffer, "after long line procedure");
+//			_printBufferInfo(buffer, "after long line procedure");
 			return (1);
 		}
 	}
-	std::cout << "out of main loop, we found a line" << std::endl;
+//	std::cout << "out of main loop, we found a line" << std::endl;
 	if (buffer.buf[buffer.deb] == '\r' && buffer.buf[buffer.deb + 1] == '\n')
 	{
 		std::cout << " _read_line returned 2 because it considers it read the whole header part" << std::endl;
 		buffer.deb = crlf_index + 2;
 		return (2);
 	}
-	_parse_line(&(buffer.buf[buffer.deb]), crlf_index - buffer.deb);
-	_printBufferInfo(buffer, "after main loop and line found");
+	_parse_line(&(buffer.buf[buffer.deb]), crlf_index - buffer.deb, line_count, currentRequest);
+//	_printBufferInfo(buffer, "after main loop and line found");
 	buffer.deb = crlf_index + 2;
 	return (1);
 
@@ -294,7 +412,7 @@ int		ConnectionClass::_get_next_request(readingBuffer &buffer, HttpRequest& curr
 {
 	int	ret_read_line;
 	int	ret_read_content;	
-//	int	line_count = 0; // a utiliser
+	int	line_count = 0;
 	//faire une protection contre segfaulkt/buffer overflow ici
 	currentRequest.toString(); //juste pour virer warnings
 	if (buffer.buf[buffer.deb] == '\r' && buffer.buf[buffer.deb + 1] == '\n')
@@ -309,8 +427,17 @@ int		ConnectionClass::_get_next_request(readingBuffer &buffer, HttpRequest& curr
 		std::cout << "need to handle an invalid request in _get_next_request" << std::endl;
 		return (-1); // non, il faudrait autre chose
 	}
-	while ((ret_read_line = _read_line(buffer, length_parsed)) == 1)
-		std::cout << "_read_line returned 1, we're supposed to have read a line" << std::endl;;
+	while ((ret_read_line = _read_line(buffer, length_parsed, line_count, currentRequest)) == 1)
+	{
+		line_count++;
+		std::cout << "_read_line returned 1, we're supposed to have read a line" << std::endl;
+		if (line_count > MAX_HEAD_LINES)
+		{
+			std::cout << "Too many header lines, need to send a bad request. for now, _get_next_request returns -1" 
+				<< std::endl;
+			return (-1);
+		}
+	}
 	if (ret_read_line == -1)
 	{
 		std::cout << "_read_line returned -1" << std::endl;
