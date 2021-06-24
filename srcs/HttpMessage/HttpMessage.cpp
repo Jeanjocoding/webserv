@@ -35,8 +35,8 @@ void		HttpMessage::addHeader(std::pair<std::string, std::string>& header)
 
 void		HttpMessage::printHeaders()
 {
-	std::map<std::string, std::string>::iterator itdeb = _headers.begin();
-	std::map<std::string, std::string>::iterator itend = _headers.end();
+	std::multimap<std::string, std::string>::iterator itdeb = _headers.begin();
+	std::multimap<std::string, std::string>::iterator itend = _headers.end();
 
 	std::cout << "print all headers: " << std::endl;
 	while (itdeb != itend)

@@ -21,7 +21,7 @@ public:
 
 
 protected:
-	std::map<std::string, std::string>	_headers;
+	std::multimap<std::string, std::string>				_headers;
 	std::string							_body;
 	std::string							_protocol;
 	std::string							_stringMessage;

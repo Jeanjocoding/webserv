@@ -52,6 +52,9 @@
 #define TCP_ERROR -1
 #define HTTP_ERROR -2
 #define CONNECTION_CLOSED 0
+#define NO_READ_MODE_DISABLED 0
+#define NO_READ_MODE_ACTIVATED 1
+#define	SAVE_REQUEST 3
 
 /*
 Ce buffer/structure sert à lire et concaténer les données reçues dans le 
@@ -102,16 +105,20 @@ public:
 private:
 	typedef struct readingBuffer readingBuffer;
 
+	HttpRequest	*_incompleteRequest;
+	std::string	*_restBuffer;
+
 //	readingBuffer			_buffer;
 
 	/* connection status, we'll see if we really need it */
 	int				_status;
 	bool				_isPersistent;
+	bool				_hasRest;
 
 	int		_read_long_line(std::string& str, readingBuffer& buffer, int& length_parsed);
 	int		_read_buffer(readingBuffer& buffer, std::vector<HttpRequest>& requestPipeline);
-	int		_read_line(readingBuffer& buffer, int& length_parsed, int& line_count, HttpRequest& currentRequest);
-	int		_get_next_request(readingBuffer &buffer, HttpRequest& currentRequest, int& length_parsed);
+	int		_read_line(readingBuffer& buffer, int& length_parsed, int& line_count, HttpRequest& currentRequest, bool no_read_mode);
+	int		_get_next_request(readingBuffer &buffer, HttpRequest& currentRequest, int& length_parsed, bool no_read_mode);
 	void		_initializeBuffer(readingBuffer& buffer);
 	int		_read_first_line(readingBuffer& buffer, int& length_parsed, HttpRequest& currentRequest);
 	int		_parse_line(const char *line, int len, int& line_count, HttpRequest& currentRequest);
@@ -123,6 +130,7 @@ private:
 	void				_printBufferInfo(readingBuffer& buffer, std::string msg);
 	int		_invalidRequestProcedure(HttpRequest& currentRequest, int errorCode);
 	int				_findInBuf(std::string to_find,char *buf, int findlen, int buflen, int begsearch);
+	void		_save_request_and_buffer(HttpRequest& currentRequest, readingBuffer& readingBuffer);
 };
 
 #endif

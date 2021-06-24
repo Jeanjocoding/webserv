@@ -11,6 +11,9 @@ HttpRequest::HttpRequest(HttpRequest const& to_copy) : HttpMessage(to_copy)
 	_methodLine = to_copy._methodLine;
 	_method = to_copy._method;
 	_methodArgument = to_copy._methodArgument;
+	_requestLine = to_copy._requestLine;
+	_errorCode = to_copy._errorCode;
+
 }
 
 HttpRequest::HttpRequest(std::string str_message) : HttpMessage(str_message)
@@ -30,6 +33,8 @@ HttpRequest&	HttpRequest::operator=(HttpRequest const& to_copy)
 	_methodLine = to_copy._methodLine;
 	_method = to_copy._method;
 	_methodArgument = to_copy._methodArgument;
+	_requestLine = to_copy._requestLine;
+	_errorCode = to_copy._errorCode;
 	return (*this);
 }
 
