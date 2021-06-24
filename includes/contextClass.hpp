@@ -6,7 +6,7 @@
 /*   By: asablayr <marvin@42.fr>                    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2021/06/12 14:11:07 by asablayr          #+#    #+#             */
-/*   Updated: 2021/06/21 19:06:13 by asablayr         ###   ########.fr       */
+/*   Updated: 2021/06/23 12:58:10 by asablayr         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -33,6 +33,7 @@ class contextClass
 			void	getAcceptedDirectivesInContext(void);
 
 			std::string								_name;
+			std::string								_param;
 			std::string								_block_content;
 			std::vector<std::string>				_directive_set;
 			std::vector<std::string>				_block_set;
@@ -43,11 +44,15 @@ class contextClass
 	private:
 			contextClass();
 
-			void							setBlocks(void);
-			void							setDirectives(void);
-			void							setAcceptedDirectives(void);
-			std::pair<bool, std::string>	getBlock(std::string const& block_name, std::string const& buff) const;
-			std::pair<bool, std::string>	getSingleDirective(std::string const& directive_name, std::string const& buff) const;
+			void								setBlocks(void);
+			void								setDirectives(void);
+			void								setAcceptedDirectives(void);
+			std::pair<bool, std::string>		getBlock(std::string const& block_name, std::string const& buff) const;
+			std::pair<std::string, std::string>	getParamedBlock(std::string const& block_name, std::string const& buff) const;
+			std::pair<bool, std::string>		getSingleDirective(std::string const& directive_name, std::string const& buff) const;
+			bool								check_before(std::string const& buff, std::size_t i) const;
+			bool								check_after(std::string const& buff, std::size_t& i) const;
+
 };
 
 #endif

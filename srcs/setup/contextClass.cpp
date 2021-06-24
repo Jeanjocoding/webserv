@@ -6,7 +6,7 @@
 /*   By: asablayr <marvin@42.fr>                    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2021/06/12 15:24:19 by asablayr          #+#    #+#             */
-/*   Updated: 2021/06/22 15:47:25 by asablayr         ###   ########.fr       */
+/*   Updated: 2021/06/24 12:22:21 by asablayr         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -43,18 +43,26 @@ contextClass::contextClass(std::string name, std::string buff): _name(name)
 
 contextClass::contextClass(contextClass const& copy)
 {
+	_name = copy._name;
+	_param = copy._param;
+	_block_content = copy._block_content;
 	_directive_set = copy._directive_set;
 	_block_set = copy._block_set;
-	_block_content = copy._block_content;
+	_directives = copy._directives;
 	_blocks = copy._blocks;
+	_accepted_directive_set = copy._accepted_directive_set;
 }
 
 contextClass& contextClass::operator = (contextClass const& copy)
 {
+	_name = copy._name;
+	_param = copy._param;
+	_block_content = copy._block_content;
 	_directive_set = copy._directive_set;
 	_block_set = copy._block_set;
-	_block_content = copy._block_content;
+	_directives = copy._directives;
 	_blocks = copy._blocks;
+	_accepted_directive_set = copy._accepted_directive_set;
 	return *this;
 }
 
@@ -138,7 +146,7 @@ void contextClass::setDirectives(void)
 }
 
 
-static bool check_before(std::string const& buff, std::size_t i)
+bool contextClass::check_before(std::string const& buff, std::size_t i) const
 {
 	if (i == 0)
 		return true;
@@ -150,7 +158,7 @@ static bool check_before(std::string const& buff, std::size_t i)
     return true;
 }
 
-static bool check_after(std::string const& buff, std::size_t& i)
+bool contextClass::check_after(std::string const& buff, std::size_t& i) const
 {
 	size_t	tmp = i;
 	while (buff[tmp] && buff[tmp] == ' ')
@@ -200,6 +208,59 @@ std::pair<bool, std::string>	contextClass::getBlock(std::string const& block_nam
 	return res;
 }
 
+std::pair<std::string, std::string>	contextClass::getParamedBlock(std::string const& block_name, std::string const& buff) const
+{
+	std::string							block;
+	std::string							tmp;
+	auto								it = buff.begin();
+	auto								param_it = buff.begin();
+	auto								ite = buff.begin();
+	auto								param_ite = buff.begin();
+	std::size_t							i;
+	int									brackets;
+	std::pair<std::string, std::string>	res;
+
+	res.first = std::string();
+	res.second = buff;
+	i = buff.find(block_name);
+	while (i != std::string::npos)
+	{
+		it = buff.begin() + i;
+		i += block_name.size();
+		if (check_before(buff, i - block_name.size()))
+		{
+			while (i < buff.size() && buff[i] == ' ')
+				i++;
+			param_it += i;
+			i = buff.find(' ', i);
+			if (check_after(buff, i))
+			{
+				param_ite += i;
+				tmp = std::string(param_it, param_ite);
+				break;
+			}
+		}
+		i = buff.find(block_name, i);
+		continue;
+	}
+	if (i == std::string::npos)//no block found
+		return res;
+	brackets = 1;
+	while (buff[++i] && brackets)
+	{
+		if (buff[i] == '{')
+			brackets++;
+		else if (buff[i] == '}')
+			brackets--;
+	}
+	if (brackets)
+		return res;
+	ite += i;
+	res.first = tmp;
+	res.second = std::string(it, ite);
+	return res;
+}
+
 std::pair<bool, std::string>	contextClass::getSingleDirective(std::string const& directive_name, std::string const& buff) const
 {
 	std::pair<bool, std::string>	res;
@@ -235,10 +296,22 @@ void	contextClass::getBlocksInContext(void)
 {
 	for (auto it = _block_set.begin(); it != _block_set.end(); it++)
 	{
-		for (auto check = getBlock(*it, _block_content); check.first; check = getBlock(*it, _block_content))
+		if (*it == "location")
 		{
-			_blocks.push_back(new contextClass(*it, check.second));
-			_block_content.erase(_block_content.find(check.second), check.second.size());
+			for (auto check = getParamedBlock(*it, _block_content); !check.first.empty(); check = getParamedBlock(*it, _block_content))
+			{
+				_blocks.push_back(new contextClass(*it, check.second));
+				_blocks[_blocks.size() - 1]->_param = check.first;
+				_block_content.erase(_block_content.find(check.second), check.second.size());
+			}
+		}
+		else
+		{
+			for (auto check = getBlock(*it, _block_content); check.first; check = getBlock(*it, _block_content))
+			{
+				_blocks.push_back(new contextClass(*it, check.second));
+				_block_content.erase(_block_content.find(check.second), check.second.size());
+			}
 		}
 	}
 }

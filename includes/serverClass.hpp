@@ -6,7 +6,7 @@
 /*   By: asablayr <marvin@42.fr>                    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2021/06/07 10:16:05 by asablayr          #+#    #+#             */
-/*   Updated: 2021/06/22 14:43:50 by asablayr         ###   ########.fr       */
+/*   Updated: 2021/06/23 15:37:16 by asablayr         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -57,7 +57,7 @@ class serverClass
 			std::map<unsigned short, std::string>	_default_error_pages;
 			std::string								_client_body_size_max;
 			std::string								_keepalive_timeout;
-			std::vector<contextClass>				_location;
+			std::map<std::string, contextClass*>	_location;
 
 			int										_server_socket;
 			struct addrinfo							*_addr;

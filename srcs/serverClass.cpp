@@ -6,7 +6,7 @@
 /*   By: asablayr <marvin@42.fr>                    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2021/06/07 18:49:16 by asablayr          #+#    #+#             */
-/*   Updated: 2021/06/22 15:58:15 by asablayr         ###   ########.fr       */
+/*   Updated: 2021/06/22 16:25:43 by asablayr         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -105,8 +105,6 @@ std::string*	serverClass::operator [] (std::string setting_name)
 		return &_client_body_size_max;
 	else if (setting_name == "keepalive_timeout")
 		return &_keepalive_timeout;
-//	else if (setting_name == "location")
-//		return _location;
 	else
 		return NULL;
 }
@@ -131,10 +129,9 @@ void serverClass::startServer()
 	{
 		_port = _host = _listen;
 		_port.erase(0, _port.find(":") + 1);
-		_host.erase(_host.find(_port) - 1, _port.size());
+		_host.erase(_host.find(_port) - 1, _port.size() + 1);
 	}
-
-	retval = getaddrinfo(NULL, _port.c_str(), &hint, &_addr);
+	retval = getaddrinfo(_host.c_str(), _port.c_str(), &hint, &_addr);
 	if (retval)
 	{
 		std::cerr << "getaddrinfo: " << gai_strerror(retval) << std::endl;

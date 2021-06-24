@@ -6,7 +6,7 @@
 /*   By: asablayr <marvin@42.fr>                    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2021/06/07 19:42:54 by asablayr          #+#    #+#             */
-/*   Updated: 2021/06/22 15:54:18 by asablayr         ###   ########.fr       */
+/*   Updated: 2021/06/24 12:26:11 by asablayr         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -28,6 +28,12 @@ static void	input_context(contextClass const& context, serverClass& base_server,
 			serverClass* new_server = new serverClass(base_server);
 			input_context(**it, *new_server, vector_server);
 			vector_server.push_back(new_server);
+		}
+		else if ((*it)->_name == "location")
+		{
+			base_server._location[(*it)->_param] = new contextClass(**it);
+			std::cout << "new location created : " << (*it)->_param << std::endl;
+			std::cout << "in base : " << base_server._location[(*it)->_param]->_block_content << std::endl;
 		}
 		else
 			input_context(**it, base_server, vector_server);
