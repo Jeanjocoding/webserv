@@ -6,11 +6,12 @@
 /*   By: asablayr <marvin@42.fr>                    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2021/06/06 15:27:02 by asablayr          #+#    #+#             */
-/*   Updated: 2021/06/08 16:46:31 by asablayr         ###   ########.fr       */
+/*   Updated: 2021/06/25 17:31:10 by asablayr         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include <iostream>
+#include <vector>
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <netdb.h>
@@ -22,7 +23,7 @@
 
 int main(int ac, char** av)
 {
-	std::map<std::string, serverClass*>	server_map;
+	std::vector<serverClass*>			server_map;
 	std::map<int, ConnectionClass>		connection_map;
 	fd_set								rfds, rfds_copy;
 
@@ -32,8 +33,14 @@ int main(int ac, char** av)
 		server_map = setup_server(DEFAULT_CONF_FILE);
 
 	FD_ZERO(&rfds);//memset fd_set
-	for (std::map<std::string, serverClass*>::iterator it = server_map.begin(); it != server_map.end(); it++)
-		FD_SET(it->second->_server_socket, &rfds);//add server socket to fd_set
+	for (std::vector<serverClass*>::iterator it = server_map.begin(); it != server_map.end(); it++)
+	{
+		(*it)->startServer();
+		std::cout << "server started on : " << (*it)->_listen << std::endl;
+		if (!(*it)->_location.empty())
+			std::cout << "has location : " << (*it)->_location.begin()->first;
+		FD_SET((*it)->_server_socket, &rfds);//add server socket to fd_set
+	}
 	while (true)
 	{
 		rfds_copy = rfds;
@@ -47,16 +54,16 @@ int main(int ac, char** av)
 			if (FD_ISSET(i, &rfds_copy))
 			{
 				bool check = false;
-				for (std::map<std::string, serverClass*>::iterator it = server_map.begin(); it != server_map.end(); it++)
+				for (std::vector<serverClass*>::iterator it = server_map.begin(); it != server_map.end(); it++)
 				{
-					if (i == it->second->_server_socket)//new connection on server n°j
+					if (i == (*it)->_server_socket)//new connection on server n°j
 					{
-						int client_socket = accept(i, it->second->_addr->ai_addr, &(it->second->_addr->ai_addrlen));
+						int client_socket = accept(i, (*it)->_addr->ai_addr, &((*it)->_addr->ai_addrlen));
 						if (client_socket < 0)
 							perror("accept");
 						else
 						{
-							connection_map[client_socket] = ConnectionClass(client_socket, it->second);
+							connection_map[client_socket] = ConnectionClass(client_socket, *it);
 							FD_SET(client_socket, &rfds);
 							check = true;
 						}
@@ -65,7 +72,6 @@ int main(int ac, char** av)
 				}
 				if (check)
 					continue;
-				std::cout << "handling connection on fd " << i << std::endl;
 				handle_connection(connection_map[i]);
 				connection_map.erase(i);//maybe not for keep alive
 				close(i);//maybe not

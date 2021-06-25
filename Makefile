@@ -6,7 +6,7 @@
 #    By: asablayr <marvin@42.fr>                    +#+  +:+       +#+         #
 #                                                 +#+#+#+#+#+   +#+            #
 #    Created: 2020/11/26 10:50:04 by asablayr          #+#    #+#              #
-#    Updated: 2021/06/09 16:36:58 by asablayr         ###   ########.fr        #
+#    Updated: 2021/06/09 17:55:29 by asablayr         ###   ########.fr        #
 #                                                                              #
 # **************************************************************************** #
 
@@ -17,7 +17,7 @@ OBJS_PATH = objs/
 HDRS_PATH = includes/
 DEFS_PATH = defines/
 
-
+SETUP_PATH = setup/
 CONNECTION_PATH = connection/
 HTTPMSG_PATH = HttpMessage/
 
@@ -29,10 +29,9 @@ HDRS =	webserv.hpp \
 
 SRCS =	main.cpp \
 		handler.cpp \
-		serverClass.cpp \
-		setup_server.cpp 
+		serverClass.cpp
 
-include $(addprefix $(SRCS_PATH), $(CONNECTION_PATH))module.mk $(addprefix $(SRCS_PATH), $(HTTPMSG_PATH))module.mk
+include main_module.mk
 
 TMP = $(SRCS:.cpp=.o)
 OBJS = $(addprefix $(OBJS_PATH), $(TMP))
