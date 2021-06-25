@@ -159,6 +159,7 @@ int		ConnectionClass::_read_buffer(readingBuffer& buffer, std::vector<HttpReques
 		return (0);
 //	buffer.deb = 0;	
 	buffer.end += read_ret;
+	length_parsed += read_ret;
 	buffer.buf[buffer.end] = '\0';
 
 	//* procédure insatisfaisante, il faut réussir a faire en sorte que ça s'arrete une fois la dernière reuqête lue: */
