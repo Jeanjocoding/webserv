@@ -128,6 +128,7 @@ int		ConnectionClass::_read_buffer(readingBuffer& buffer, std::vector<HttpReques
 	int	length_parsed = 0;
 	int	getnr_ret = 0;
 	int	req_count = 0;
+	int read_ret;
 
 	std::cout << std::endl;
 //	std::cout << "arriving in _read_buffer" << std::endl;
@@ -135,10 +136,36 @@ int		ConnectionClass::_read_buffer(readingBuffer& buffer, std::vector<HttpReques
 //	_printBufferInfo(buffer, "in _read_buffer");
 	std::cout << std::endl;
 	HttpRequest	currentRequest;
+
+	if (_hasRest)
+	{
+		std::cout << "there is rest!" << std::endl;
+		std::memmove(buffer.buf, _restBuffer->c_str(), _restBuffer->length());
+		buffer.end = _restBuffer->length();
+		delete _restBuffer;
+		currentRequest = *_incompleteRequest;
+		delete _incompleteRequest;
+		_hasRest = 0;
+	}
+
+	read_ret = recv(_socketNbr, &(buffer.buf[buffer.end]), SINGLE_READ_SIZE, 0);
+//	std::cout << "buffer received by read: " << std::endl;
+	if (read_ret == -1)
+	{	
+		perror("read"); // a faire partout pour le debugging?
+		return (-1);
+	}
+	if (read_ret == 0)
+		return (0);
+//	buffer.deb = 0;	
+	buffer.end += read_ret;
+	buffer.buf[buffer.end] = '\0';
+
 	//* procédure insatisfaisante, il faut réussir a faire en sorte que ça s'arrete une fois la dernière reuqête lue: */
 	while ((length_parsed < READING_BUF_SIZE && length_parsed < buffer.end) || req_count == 0) // je chope toutes les requêtes qui sont dans le buffer
 	{
 		std::cout << "length_parsed: " << length_parsed << std::endl;
+		std::cout << "reading_buf_size: " << READING_BUF_SIZE << ", buffer.end: " << buffer.end << "req_count: " << req_count << std::endl;
 		getnr_ret = _get_next_request(buffer, currentRequest, length_parsed, NO_READ_MODE_DISABLED);
 		if (getnr_ret == -1)
 			return (-1);
@@ -509,7 +536,7 @@ int		ConnectionClass::_get_next_request(readingBuffer &buffer, HttpRequest& curr
 	int	line_count = 0;
 	//faire une protection contre segfaulkt/buffer overflow ici
 
-	std::cout << "inside get_next_request" << std::endl;
+	std::cout << "inside get_next_request. no_read mode = "<< no_read_mode << std::endl;
 	if (buffer.buf[buffer.deb] == '\r' && buffer.buf[buffer.deb + 1] == '\n')
 	{
 		buffer.deb += 2;
@@ -596,17 +623,18 @@ int			ConnectionClass::receiveRequest(std::vector<HttpRequest>& requestPipeline)
 	int		read_ret;
 
 	_initializeBuffer(buffer);
-	if (_hasRest)
+	std::cout << "connection class with socket " << _socketNbr << "is in recieve request" << std::endl;
+/*	if (_hasRest)
 	{
 		std::cout << "there is rest!" << std::endl;
 		std::memmove(buffer.buf, _restBuffer->c_str(), _restBuffer->length());
 		buffer.end = _restBuffer->length();
 		delete _restBuffer;
-		requestPipeline[0] = (*_incompleteRequest);
+		requestPipeline.push_back(*_incompleteRequest);
 		delete _incompleteRequest;
 		_hasRest = 0;
-	}
-	read_ret = recv(_socketNbr, buffer.buf, SINGLE_READ_SIZE, 0);
+	}*/
+/*	read_ret = recv(_socketNbr, buffer.buf, SINGLE_READ_SIZE, 0);
 	std::cout << "buffer received by read: " << std::endl;
 	if (read_ret == -1)
 	{	
@@ -617,7 +645,7 @@ int			ConnectionClass::receiveRequest(std::vector<HttpRequest>& requestPipeline)
 		return (0);
 	buffer.deb = 0;	
 	buffer.end = read_ret;
-	buffer.buf[read_ret] = '\0';
+	buffer.buf[read_ret] = '\0';*/
 	read_ret = _read_buffer(buffer, requestPipeline);
 	if (read_ret == HTTP_ERROR)
 	{

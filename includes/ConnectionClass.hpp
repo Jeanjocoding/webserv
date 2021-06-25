@@ -42,8 +42,8 @@
 #include "serverClass.hpp"
 #include <vector>
 
-#define	READING_BUF_SIZE 32 //ces tailles sont très petites
-#define	SINGLE_READ_SIZE 8	// pour voir plus facilement les bugs
+#define	READING_BUF_SIZE 512 //ces tailles sont très petites
+#define	SINGLE_READ_SIZE 128	// pour voir plus facilement les bugs
 #define	MAX_LINE_LENGTH 12000	// POUR SECURITY
 #define	MAX_HEAD_LINES 100	// POUR SECURITY
 #define	MAX_URI_SIZE 1000 // POUR SECURITY

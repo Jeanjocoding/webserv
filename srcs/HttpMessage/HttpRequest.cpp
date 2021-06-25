@@ -1,6 +1,6 @@
 #include "HttpRequest.hpp"
 
-HttpRequest::HttpRequest(void)
+HttpRequest::HttpRequest(void): HttpMessage()
 {
 	return;	
 }
@@ -26,9 +26,12 @@ HttpRequest::~HttpRequest(void)
 	
 }
 
+
+
 HttpRequest&	HttpRequest::operator=(HttpRequest const& to_copy)
 {
 	HttpMessage::operator=(to_copy)	;
+//	HttpMessage::_headers = to_copy._headers;
 	_isValid = to_copy._isValid;
 	_methodLine = to_copy._methodLine;
 	_method = to_copy._method;
@@ -40,7 +43,15 @@ HttpRequest&	HttpRequest::operator=(HttpRequest const& to_copy)
 
 void		HttpRequest::clear(void)
 {
-	std::cout << "clear has not been implemented yet" << std::endl;
+	HttpMessage::clear();
+	_isValid = 0;
+	_methodLine.clear();
+	_methodArgument.clear();
+	_errorCode = 0;
+	_requestLine.method.clear();
+	_requestLine.target.clear();
+	_requestLine.protocol.first = 0;
+	_requestLine.protocol.second = 0;
 }
 /* probablement optimisable sans trop de difficulté en cas de besoin */
 int				HttpRequest::parseFromString(std::string str_request)
