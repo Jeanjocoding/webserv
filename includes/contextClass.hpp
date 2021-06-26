@@ -6,7 +6,7 @@
 /*   By: asablayr <marvin@42.fr>                    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2021/06/12 14:11:07 by asablayr          #+#    #+#             */
-/*   Updated: 2021/06/23 12:58:10 by asablayr         ###   ########.fr       */
+/*   Updated: 2021/06/26 11:44:15 by asablayr         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -35,7 +35,7 @@ class contextClass
 			std::string								_name;
 			std::string								_param;
 			std::string								_block_content;
-			std::vector<std::string>				_directive_set;
+			std::vector<directiveClass>				_directive_set;
 			std::vector<std::string>				_block_set;
 			std::map<std::string, std::string>		_directives;
 			std::map<std::string, directiveClass>	_accepted_directive_set;

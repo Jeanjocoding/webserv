@@ -6,7 +6,7 @@
 /*   By: asablayr <marvin@42.fr>                    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2021/06/12 15:24:19 by asablayr          #+#    #+#             */
-/*   Updated: 2021/06/25 17:34:48 by asablayr         ###   ########.fr       */
+/*   Updated: 2021/06/26 12:00:20 by asablayr         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -108,9 +108,9 @@ void contextClass::setDirectives(void)
     if (_name == "http")
 	{
        _directive_set = {
-			"access_log",
-			"error_log",
-			"index"
+			_accepted_directive_set["access_log"],
+			_accepted_directive_set["error_log"],
+			_accepted_directive_set["index"]
 		};
 	}
 	else if (_name == "events")
@@ -120,27 +120,27 @@ void contextClass::setDirectives(void)
     else if (_name == "server")
 	{
        _directive_set = {
-			"listen",
-			"server_name",
-			"access_log",
-			"error_log",
-			"root"
+			_accepted_directive_set["listen"],
+			_accepted_directive_set["server_name"],
+			_accepted_directive_set["access_log"],
+			_accepted_directive_set["error_log"],
+			_accepted_directive_set["root"]
 		};
 	}
     else if (_name == "location")
 	{
        _directive_set = {
-			"fastcgi_pass",
-			"access_log",
-			"error_log",
-			"root"
+			_accepted_directive_set["fastcgi_pass"],
+			_accepted_directive_set["access_log"],
+			_accepted_directive_set["error_log"],
+			_accepted_directive_set["root"]
 		};
 	}
     else
 	{
 		_directive_set = {
-			"access_log",
-			"error_log"
+			_accepted_directive_set["access_log"],
+			_accepted_directive_set["error_log"]
 		};
 	}
 }
@@ -320,25 +320,31 @@ void	contextClass::getDirectivesInContext(void)
 {
 	for (auto it = _directive_set.begin(); it != _directive_set.end(); it++)
 	{
-		std::pair<bool, std::string>check = getSingleDirective(*it, _block_content);//get directive and erase it from buffer
+		std::pair<bool, std::string>check = getSingleDirective(it->_name, _block_content);//get directive and erase it from buffer
 		if (check.first)
 		{
 			_block_content.erase(_block_content.find(check.second), check.second.size() + 1);
-			check.second.erase(check.second.find(*it), (*it).size());
+			check.second.erase(check.second.find(it->_name), (it->_name).size());
 			while (check.second[0] == ' ')
 				check.second.erase(0, 1);
 			while (check.second.size() && check.second[check.second.size() - 1] == ' ')
 				check.second.erase(check.second.size() - 1, 1);
 			if (check.second.empty())
 			{
-				std::cerr << "empty directive " << *it << std::endl;
+				std::cerr << "empty directive " << it->_name << std::endl;
 				exit(EXIT_FAILURE);
 			}
-			_directives[*it] = check.second;
+			if (it->parse(check.second))
+				_directives[it->_name] = check.second;
+			else
+			{
+				std::cerr << "wrong " << it->_name << " directive argument : " << check.second << std::endl;
+				exit(EXIT_FAILURE);
+			}
 		}
-		if (getSingleDirective(*it, _block_content).first)//check for same directive
+		if (getSingleDirective(it->_name, _block_content).first)//check for same directive
 		{
-			std::cerr << "error configuration file : directive " << *it << " found twice in same context" << std::endl;//switch to define
+			std::cerr << "error configuration file : directive " << it->_name << " found twice in same context" << std::endl;//switch to define
 			exit(EXIT_FAILURE);
 		}
 	}
