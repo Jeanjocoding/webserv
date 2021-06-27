@@ -142,9 +142,14 @@ int		ConnectionClass::_read_buffer(readingBuffer& buffer, std::vector<HttpReques
 		std::cout << "there is rest!" << std::endl;
 		std::memmove(buffer.buf, _restBuffer->c_str(), _restBuffer->length());
 		buffer.end = _restBuffer->length();
+		length_parsed += _restBuffer->length();
 		delete _restBuffer;
-		currentRequest = *_incompleteRequest;
-		delete _incompleteRequest;
+		if (_hasRest == REQUEST_AND_BUFF_REST)
+		{
+			currentRequest = *_incompleteRequest;
+			delete _incompleteRequest;
+		}
+		_printBufferInfo(buffer, " rest buffer");
 		_hasRest = 0;
 	}
 
@@ -163,10 +168,10 @@ int		ConnectionClass::_read_buffer(readingBuffer& buffer, std::vector<HttpReques
 	buffer.buf[buffer.end] = '\0';
 
 	//* procédure insatisfaisante, il faut réussir a faire en sorte que ça s'arrete une fois la dernière reuqête lue: */
-	while ((length_parsed < READING_BUF_SIZE && length_parsed < buffer.end) || req_count == 0) // je chope toutes les requêtes qui sont dans le buffer
+	while ((length_parsed < SINGLE_READ_SIZE && length_parsed < buffer.end) || req_count == 0) // je chope toutes les requêtes qui sont dans le buffer
 	{
 		std::cout << "length_parsed: " << length_parsed << std::endl;
-		std::cout << "reading_buf_size: " << READING_BUF_SIZE << ", buffer.end: " << buffer.end << "req_count: " << req_count << std::endl;
+		std::cout << "reading_buf_size: " << SINGLE_READ_SIZE << ", buffer.end: " << buffer.end << ", req_count: " << req_count << std::endl;
 		getnr_ret = _get_next_request(buffer, currentRequest, length_parsed, NO_READ_MODE_DISABLED);
 		if (getnr_ret == -1)
 			return (-1);
@@ -175,6 +180,7 @@ int		ConnectionClass::_read_buffer(readingBuffer& buffer, std::vector<HttpReques
 		if (getnr_ret == HTTP_ERROR)
 			return (HTTP_ERROR);
 		requestPipeline.push_back(currentRequest);
+		std::cout << "pipeline length: " << requestPipeline.size() << std::endl;
 		req_count++;
 		currentRequest.clear();
 	}
@@ -193,6 +199,12 @@ int		ConnectionClass::_read_buffer(readingBuffer& buffer, std::vector<HttpReques
 		return (HTTP_ERROR);
 	else if (getnr_ret == SAVE_REQUEST)
 		return (1);
+	requestPipeline.push_back(currentRequest);
+	if (buffer.deb < buffer.end)
+	{
+		std::cout << "there will be a buffer rest " << std::endl;
+		_save_only_buffer(buffer);
+	}
 	return (1);
 }
 
@@ -345,8 +357,10 @@ int		ConnectionClass::_parse_first_line(const char *line, int len, HttpRequest& 
 	else
 	{
 		currentRequest.addRequestLine(method, target);
-		std::cout << "method: " << method << std::endl;
-		std::cout << "target: " << target << std::endl;
+//		std::cout << "method: " << method << std::endl;
+//		std::cout << "target: " << target << std::endl;
+		std::string startLine(line, len);
+		currentRequest.setStartLine(startLine);
 		return (1);
 	}
 }
@@ -392,12 +406,12 @@ int		ConnectionClass::_parseHeaderLine(const char *line, int len, HttpRequest& c
 
 }
 
-int		ConnectionClass::_parse_line(const char *line, int len, int& line_count, HttpRequest &currentRequest)
+int		ConnectionClass::_parse_line(const char *line, int len, HttpRequest &currentRequest)
 {
 	std::string	test_string(line, len);
 
 	std::cout << "the line passed to the parser is: " << test_string << std::endl;
-	if (line_count == 0)
+	if (currentRequest.getLineCount() == 0)
 		return (_parse_first_line(line, len, currentRequest));
 	else
 		return (_parseHeaderLine(line, len, currentRequest));
@@ -406,7 +420,7 @@ int		ConnectionClass::_parse_line(const char *line, int len, int& line_count, Ht
 
 //int		ConnectionClass::_read_line_no_read()
 
-int		ConnectionClass::_read_line(readingBuffer& buffer, int& length_parsed, int& line_count, HttpRequest& currentRequest, bool no_read_mode)
+int		ConnectionClass::_read_line(readingBuffer& buffer, int& length_parsed, HttpRequest& currentRequest, bool no_read_mode)
 {
 	int		crlf_index;
 	int		read_ret;
@@ -484,7 +498,7 @@ int		ConnectionClass::_read_line(readingBuffer& buffer, int& length_parsed, int&
 			long_line_length = long_request_string.length();
 //			std::cout << "line optained through long line procedure: " << long_request_string << std::endl;
 //			std::cout << "line length: " << long_line_length << std::endl;
-			if (_parse_line(long_request_string.c_str(), long_line_length, line_count, currentRequest) == -1)
+			if (_parse_line(long_request_string.c_str(), long_line_length, currentRequest) == -1)
 				return (HTTP_ERROR);
 //			buffer.deb = 0;
 //			buffer.end = 0;
@@ -500,7 +514,7 @@ int		ConnectionClass::_read_line(readingBuffer& buffer, int& length_parsed, int&
 		buffer.deb = crlf_index + 2;
 		return (2);
 	}
-	if (_parse_line(&(buffer.buf[buffer.deb]), crlf_index - buffer.deb, line_count, currentRequest) == -1)
+	if (_parse_line(&(buffer.buf[buffer.deb]), crlf_index - buffer.deb, currentRequest) == -1)
 		return (HTTP_ERROR);
 //	_printBufferInfo(buffer, "after main loop and line found");
 	buffer.deb = crlf_index + 2;
@@ -523,18 +537,24 @@ int		ConnectionClass::_read_request_content(HttpRequest& CurrentRequest, int& le
 
 }
 
+void		ConnectionClass::_save_only_buffer(readingBuffer& buffer)
+{
+	_restBuffer = new std::string(&(buffer.buf[buffer.deb]), buffer.end - buffer.deb);
+	_hasRest = BUFF_REST;
+}
+
 void		ConnectionClass::_save_request_and_buffer(HttpRequest& currentRequest, readingBuffer& buffer)
 {
 	_incompleteRequest = new HttpRequest(currentRequest);
 	_restBuffer = new std::string(&(buffer.buf[buffer.deb]), buffer.end - buffer.deb);
-	_hasRest = 1;
+	_hasRest = REQUEST_AND_BUFF_REST;
 }
 
 int		ConnectionClass::_get_next_request(readingBuffer &buffer, HttpRequest& currentRequest, int& length_parsed, bool no_read_mode)
 {
 	int	ret_read_line;
 	int	ret_read_content;	
-	int	line_count = 0;
+//	int	line_count = 0;
 	//faire une protection contre segfaulkt/buffer overflow ici
 
 	std::cout << "inside get_next_request. no_read mode = "<< no_read_mode << std::endl;
@@ -550,11 +570,11 @@ int		ConnectionClass::_get_next_request(readingBuffer &buffer, HttpRequest& curr
 		std::cout << "need to handle an invalid request in _get_next_request" << std::endl;
 		return (-1); // non, il faudrait autre chose
 	}
-	while ((ret_read_line = _read_line(buffer, length_parsed, line_count, currentRequest, no_read_mode)) == 1)
+	while ((ret_read_line = _read_line(buffer, length_parsed, currentRequest, no_read_mode)) == 1)
 	{
-		line_count++;
+		currentRequest.incrementLineCount();
 //		std::cout << "_read_line returned 1, we're supposed to have read a line" << std::endl;
-		if (line_count > MAX_HEAD_LINES)
+		if (currentRequest.getLineCount() > MAX_HEAD_LINES)
 		{
 			std::cout << "Too many header lines, need to send a bad request. for now, _get_next_request returns -1" 
 				<< std::endl;

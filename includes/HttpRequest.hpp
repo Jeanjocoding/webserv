@@ -18,12 +18,12 @@ public:
 
 	HttpRequest(void);
 	HttpRequest(HttpRequest const& to_copy);
-	HttpRequest(std::string str_message);
+//	HttpRequest(std::string str_message);
 	virtual ~HttpRequest(void);
 
 	HttpRequest&	operator=(HttpRequest const& to_copy);
-	virtual int					parseFromString(std::string str_request);
-	virtual std::string const&	toString(void) const;
+//	virtual int					parseFromString(std::string str_request);
+//	virtual std::string const&	startLinetoString(void) const;
 	void				clear();
 	void				addRequestLine(std::string& method, std::string& target);
 	void				setValidity(bool validity);
@@ -31,15 +31,20 @@ public:
 	int const&				getErrorCode() const;
 	bool				isValid() const;
 	void				setProtocolVersion(int bigVersion, int smallVersion);
+	int				getLineCount() const;
+	void				incrementLineCount();
+	void				setStartLine(std::string const& line);
+	std::string const&		getStartLine(void) const;
 
 
 private:
 	bool			_isValid;
-	std::string		_methodLine;
+	std::string		_startLine;
 	int				_method;
 	std::string		_methodArgument;
 	int			_errorCode;
 	requestLineInfos	_requestLine;
+	int			_lineCount;
 
 	int				_parseMethodLine(void);
 	int				_parseHeaderBlock(std::string str_headers);

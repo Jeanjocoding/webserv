@@ -2,24 +2,27 @@
 
 HttpRequest::HttpRequest(void): HttpMessage()
 {
+	_lineCount = 0;
+	_isValid = 0;
 	return;	
 }
 
 HttpRequest::HttpRequest(HttpRequest const& to_copy) : HttpMessage(to_copy)
 {
 	_isValid = to_copy._isValid;
-	_methodLine = to_copy._methodLine;
+	_startLine = to_copy._startLine;
 	_method = to_copy._method;
 	_methodArgument = to_copy._methodArgument;
 	_requestLine = to_copy._requestLine;
 	_errorCode = to_copy._errorCode;
+	_lineCount = to_copy._lineCount;
 
 }
 
-HttpRequest::HttpRequest(std::string str_message) : HttpMessage(str_message)
+/*HttpRequest::HttpRequest(std::string str_message) : HttpMessage(str_message)
 {
 	parseFromString(_stringMessage);
-}
+}*/
 
 HttpRequest::~HttpRequest(void)
 {
@@ -33,11 +36,12 @@ HttpRequest&	HttpRequest::operator=(HttpRequest const& to_copy)
 	HttpMessage::operator=(to_copy)	;
 //	HttpMessage::_headers = to_copy._headers;
 	_isValid = to_copy._isValid;
-	_methodLine = to_copy._methodLine;
+	_startLine = to_copy._startLine;
 	_method = to_copy._method;
 	_methodArgument = to_copy._methodArgument;
 	_requestLine = to_copy._requestLine;
 	_errorCode = to_copy._errorCode;
+	_lineCount = to_copy._lineCount;
 	return (*this);
 }
 
@@ -45,16 +49,17 @@ void		HttpRequest::clear(void)
 {
 	HttpMessage::clear();
 	_isValid = 0;
-	_methodLine.clear();
+	_startLine.clear();
 	_methodArgument.clear();
 	_errorCode = 0;
 	_requestLine.method.clear();
 	_requestLine.target.clear();
 	_requestLine.protocol.first = 0;
 	_requestLine.protocol.second = 0;
+	_lineCount = 0;
 }
 /* probablement optimisable sans trop de difficulté en cas de besoin */
-int				HttpRequest::parseFromString(std::string str_request)
+/*int				HttpRequest::parseFromString(std::string str_request)
 {
 	size_t pos_body = str_request.find("\r\n\r\n");
 	if (pos_body == str_request.npos)
@@ -77,7 +82,7 @@ int				HttpRequest::parseFromString(std::string str_request)
 
 	std::cout << "header string: " << std::endl << header_string << std::endl << std::endl;
 	return (0);	
-}
+}*/
 
 void				HttpRequest::addRequestLine(std::string& method, std::string& target)
 {
@@ -100,14 +105,29 @@ int const&				HttpRequest::getErrorCode() const
 	return (_errorCode);
 }
 
+int				HttpRequest::getLineCount() const
+{
+	return (_lineCount);
+}
+
+void				HttpRequest::incrementLineCount(void)
+{
+	_lineCount++;
+}
+
+
 void				HttpRequest::setProtocolVersion(int bigVersion, int smallVersion)
 {
 	_requestLine.protocol.first = bigVersion;
 	_requestLine.protocol.second = smallVersion;
 }
 
-std::string const&		HttpRequest::toString() const
+void		HttpRequest::setStartLine(std::string const& line)
 {
-	return (_stringMessage);
+	_startLine = line;
 }
 
+std::string const& HttpRequest::getStartLine(void) const
+{
+	return (_startLine);
+}

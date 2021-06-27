@@ -55,6 +55,9 @@
 #define NO_READ_MODE_DISABLED 0
 #define NO_READ_MODE_ACTIVATED 1
 #define	SAVE_REQUEST 3
+#define BUFF_REST 1
+#define REQUEST_AND_BUFF_REST 2
+
 
 /*
 Ce buffer/structure sert à lire et concaténer les données reçues dans le 
@@ -113,15 +116,15 @@ private:
 	/* connection status, we'll see if we really need it */
 	int				_status;
 	bool				_isPersistent;
-	bool				_hasRest;
+	int				_hasRest;
 
 	int		_read_long_line(std::string& str, readingBuffer& buffer, int& length_parsed);
 	int		_read_buffer(readingBuffer& buffer, std::vector<HttpRequest>& requestPipeline);
-	int		_read_line(readingBuffer& buffer, int& length_parsed, int& line_count, HttpRequest& currentRequest, bool no_read_mode);
+	int		_read_line(readingBuffer& buffer, int& length_parsed, HttpRequest& currentRequest, bool no_read_mode);
 	int		_get_next_request(readingBuffer &buffer, HttpRequest& currentRequest, int& length_parsed, bool no_read_mode);
 	void		_initializeBuffer(readingBuffer& buffer);
 	int		_read_first_line(readingBuffer& buffer, int& length_parsed, HttpRequest& currentRequest);
-	int		_parse_line(const char *line, int len, int& line_count, HttpRequest& currentRequest);
+	int		_parse_line(const char *line, int len, HttpRequest& currentRequest);
 	int		_parse_first_line(const char *line, int len, HttpRequest& currentRequest);
 	int		_parseHeaderLine(const char *line, int len, HttpRequest& currentRequest);
 	int		_check_header_compliancy(HttpRequest& CurrentRequest);
@@ -131,6 +134,7 @@ private:
 	int		_invalidRequestProcedure(HttpRequest& currentRequest, int errorCode);
 	int				_findInBuf(std::string to_find,char *buf, int findlen, int buflen, int begsearch);
 	void		_save_request_and_buffer(HttpRequest& currentRequest, readingBuffer& readingBuffer);
+	void		_save_only_buffer(readingBuffer& readingBuffer);
 };
 
 #endif
