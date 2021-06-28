@@ -373,14 +373,16 @@ int		ConnectionClass::_caseInsensitiveComparison(std::string s1, std::string s2)
 	int	len = s1.length();
 	while (++i < len)
 	{
+		std::cout << "s1[" << i << "]: " << s1[i] << " - s2[" << i << "]: " << s2[i] << std::endl;
 		if (s1[i] >= 65 && s1[i] <= 90)
 		{
-			if (s1[i] == s2[i] + 32)
+			if (s1[i] == s2[i] - 32)
 				continue;
 		}
-		else if (s1[i] >= 90 && s1[i] <= 122)
+		else if (s1[i] >= 97 && s1[i] <= 122)
 		{
-			if (s1[i] == s2[i] - 32)
+//			std::cout << ""
+			if (s1[i] == s2[i] + 32)
 				continue;
 		}
 		if (s1[i] != s2[i])
@@ -417,10 +419,10 @@ int		ConnectionClass::_parseHeaderLine(const char *line, int len, HttpRequest& c
 	}
 	deb_value = index;
 	index = len - 1;
-	std::cout << "line[" << index << "]: " << line[index] << std::endl;
+//	std::cout << "line[" << index << "]: " << line[index] << std::endl;
 	while (line[index] == ' ') //je vire les espaces à la fin
 	{
-		std::cout << "line[" << index << "]: " << line[index] << std::endl;
+//		std::cout << "line[" << index << "]: " << line[index] << std::endl;
 		index--;
 	}
 	end_value = index + 1;
@@ -432,11 +434,11 @@ int		ConnectionClass::_parseHeaderLine(const char *line, int len, HttpRequest& c
 
 	if (_caseInsensitiveComparison(header.first, "Content-Length"))
 	{
-		std::cout << "header.first: " << header.first << std::endl;
-		std::cout << "header.second: -" << header.second << "-" << std::endl;
+//		std::cout << "header.first: " << header.first << std::endl;
+//		std::cout << "header.second: -" << header.second << "-" << std::endl;
 		if (header.second.find_first_not_of("0123456789") != header.second.npos)
 			return (_invalidRequestProcedure(currentRequest, 400));
-		std::cout << " PASSED FIRT CHECK" << std::endl;
+//		std::cout << " PASSED FIRT CHECK" << std::endl;
 		long nbred = strtol(header.second.c_str(), NULL, 10);
 		if (currentRequest.getContentLength())
 		{
@@ -445,7 +447,7 @@ int		ConnectionClass::_parseHeaderLine(const char *line, int len, HttpRequest& c
 		}
 		else
 			currentRequest.setContentLength(nbred);
-		std::cout << "ascii content length: " << header.second << " - long content-length: " << currentRequest.getContentLength() << std::endl;
+//		std::cout << "ascii content length: " << header.second << " - long content-length: " << currentRequest.getContentLength() << std::endl;
 	}
 	currentRequest.addHeader(header);
 
