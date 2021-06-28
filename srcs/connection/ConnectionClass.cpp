@@ -139,7 +139,7 @@ int		ConnectionClass::_read_buffer(readingBuffer& buffer, std::vector<HttpReques
 
 	if (_hasRest)
 	{
-		std::cout << "there is rest!" << std::endl;
+//		std::cout << "there is rest!" << std::endl;
 		std::memmove(buffer.buf, _restBuffer->c_str(), _restBuffer->length());
 		buffer.end = _restBuffer->length();
 		length_parsed += _restBuffer->length();
@@ -149,7 +149,7 @@ int		ConnectionClass::_read_buffer(readingBuffer& buffer, std::vector<HttpReques
 			currentRequest = *_incompleteRequest;
 			delete _incompleteRequest;
 		}
-		_printBufferInfo(buffer, " rest buffer");
+//		_printBufferInfo(buffer, " rest buffer");
 		_hasRest = 0;
 	}
 
@@ -170,8 +170,8 @@ int		ConnectionClass::_read_buffer(readingBuffer& buffer, std::vector<HttpReques
 	//* procédure insatisfaisante, il faut réussir a faire en sorte que ça s'arrete une fois la dernière reuqête lue: */
 	while ((length_parsed < SINGLE_READ_SIZE && length_parsed < buffer.end) || req_count == 0) // je chope toutes les requêtes qui sont dans le buffer
 	{
-		std::cout << "length_parsed: " << length_parsed << std::endl;
-		std::cout << "reading_buf_size: " << SINGLE_READ_SIZE << ", buffer.end: " << buffer.end << ", req_count: " << req_count << std::endl;
+//		std::cout << "length_parsed: " << length_parsed << std::endl;
+//		std::cout << "reading_buf_size: " << SINGLE_READ_SIZE << ", buffer.end: " << buffer.end << ", req_count: " << req_count << std::endl;
 		getnr_ret = _get_next_request(buffer, currentRequest, length_parsed, NO_READ_MODE_DISABLED);
 		if (getnr_ret == -1)
 			return (-1);
@@ -180,11 +180,11 @@ int		ConnectionClass::_read_buffer(readingBuffer& buffer, std::vector<HttpReques
 		if (getnr_ret == HTTP_ERROR)
 			return (HTTP_ERROR);
 		requestPipeline.push_back(currentRequest);
-		std::cout << "pipeline length: " << requestPipeline.size() << std::endl;
+//		std::cout << "pipeline length: " << requestPipeline.size() << std::endl;
 		req_count++;
 		currentRequest.clear();
 	}
-	_printBufferInfo(buffer, "before no read gnr");
+//	_printBufferInfo(buffer, "before no read gnr");
 	if (buffer.deb >= buffer.end)
 	{
 		std::cout << "there seems to be nothing left to parse after the last request. it probably means there was no pipelining at all" << std::endl;
@@ -271,14 +271,14 @@ int		ConnectionClass::_parseProtocol(HttpRequest& currentRequest, std::string& p
 	int 	index = 5;
 	int	length = protocol.length();
 
-	std::cout << "protocol string recieved: " << protocol << std::endl;
+//	std::cout << "protocol string recieved: " << protocol << std::endl;
 	if (protocol.length() < 6)
 		return (_invalidRequestProcedure(currentRequest, 400));
 	if (protocol.find("HTTP/") != 0)
 		return (_invalidRequestProcedure(currentRequest, 400));
 	while (protocol[index] != '.')
 	{
-		std::cout << "protocol[" << index <<"] : " << protocol[index] << std::endl;
+//		std::cout << "protocol[" << index <<"] : " << protocol[index] << std::endl;
 		if (!isnumber(protocol[index]))
 			return (_invalidRequestProcedure(currentRequest, 400));
 		bigVersion = bigVersion * 10 + protocol[index] - '0';
@@ -291,7 +291,7 @@ int		ConnectionClass::_parseProtocol(HttpRequest& currentRequest, std::string& p
 		return (_invalidRequestProcedure(currentRequest, 400));
 	while (index < length)
 	{
-		std::cout << "protocol[" << index <<"] : " << protocol[index] << std::endl;
+//		std::cout << "protocol[" << index <<"] : " << protocol[index] << std::endl;
 		if (!isnumber(protocol[index]))
 			return (_invalidRequestProcedure(currentRequest, 400));
 		smallVersion = smallVersion * 10 + protocol[index] - '0';
@@ -299,7 +299,7 @@ int		ConnectionClass::_parseProtocol(HttpRequest& currentRequest, std::string& p
 //		if (index == length)
 //			return (_invalidRequestProcedure(currentRequest, 400));
 	}
-	std::cout << "protocol version post atoi: " <<  bigVersion << ":" << smallVersion << std::endl;
+//	std::cout << "protocol version post atoi: " <<  bigVersion << ":" << smallVersion << std::endl;
 	currentRequest.setProtocolVersion(bigVersion, smallVersion);
 	if (bigVersion < 1 || (bigVersion == 1 && smallVersion == 0))
 		_isPersistent = 0;
@@ -365,6 +365,30 @@ int		ConnectionClass::_parse_first_line(const char *line, int len, HttpRequest& 
 	}
 }
 
+int		ConnectionClass::_caseInsensitiveComparison(std::string s1, std::string s2) const
+{
+	if (s1.length() != s2.length())
+		return (0);
+	int	i = -1;
+	int	len = s1.length();
+	while (++i < len)
+	{
+		if (s1[i] >= 65 && s1[i] <= 90)
+		{
+			if (s1[i] == s2[i] + 32)
+				continue;
+		}
+		else if (s1[i] >= 90 && s1[i] <= 122)
+		{
+			if (s1[i] == s2[i] - 32)
+				continue;
+		}
+		if (s1[i] != s2[i])
+			return (0);
+	}
+	return (1);
+}
+
 int		ConnectionClass::_parseHeaderLine(const char *line, int len, HttpRequest& currentRequest)
 {
 	int	index = 0;
@@ -392,14 +416,39 @@ int		ConnectionClass::_parseHeaderLine(const char *line, int len, HttpRequest& c
 			return (_invalidRequestProcedure(currentRequest, 400));
 	}
 	deb_value = index;
-	index = len;
+	index = len - 1;
+	std::cout << "line[" << index << "]: " << line[index] << std::endl;
 	while (line[index] == ' ') //je vire les espaces à la fin
 	{
+		std::cout << "line[" << index << "]: " << line[index] << std::endl;
 		index--;
 	}
-	end_value = index;
+	end_value = index + 1;
 	header.second.append(&(line[deb_value]), end_value - deb_value);
+
+	std::cout << std::endl;
+//	std::cout << "I REACHED CONTENT LENGTH PART" << std::endl;
+	std::cout << std::endl;
+
+	if (_caseInsensitiveComparison(header.first, "Content-Length"))
+	{
+		std::cout << "header.first: " << header.first << std::endl;
+		std::cout << "header.second: -" << header.second << "-" << std::endl;
+		if (header.second.find_first_not_of("0123456789") != header.second.npos)
+			return (_invalidRequestProcedure(currentRequest, 400));
+		std::cout << " PASSED FIRT CHECK" << std::endl;
+		long nbred = strtol(header.second.c_str(), NULL, 10);
+		if (currentRequest.getContentLength())
+		{
+			if (currentRequest.getContentLength() != nbred)
+				return (_invalidRequestProcedure(currentRequest, 400));
+		}
+		else
+			currentRequest.setContentLength(nbred);
+		std::cout << "ascii content length: " << header.second << " - long content-length: " << currentRequest.getContentLength() << std::endl;
+	}
 	currentRequest.addHeader(header);
+
 	return (1);
 	
 
@@ -528,9 +577,11 @@ int		ConnectionClass::_check_header_compliancy(HttpRequest& CurrentRequest)
 	return (1);
 }
 
-int		ConnectionClass::_read_request_content(HttpRequest& CurrentRequest, int& length_parsed)
+int		ConnectionClass::_read_request_content(HttpRequest& CurrentRequest, readingBuffer buffer ,int& length_parsed)
 {
 	(void)CurrentRequest; //a supprimer
+
+	buffer.deb = buffer.deb + 1 - 1; // a virer
 	std::cout << "_read_request_content has not been implemented yet. it always returns 1" << std::endl;
 	length_parsed += 1; // a supprimer
 	return (1);
@@ -604,7 +655,7 @@ int		ConnectionClass::_get_next_request(readingBuffer &buffer, HttpRequest& curr
 			std::cout << "headers are not compliant, need to setup a bad request procedure. for now, function returns -1" << std::endl;
 			return (-1);
 		}
-		ret_read_content = _read_request_content(currentRequest, length_parsed);
+		ret_read_content = _read_request_content(currentRequest, buffer, length_parsed);
 		if (ret_read_content == -1 || ret_read_content == 0)
 		{
 			std::cout << "ret_read_content returned -1 OR 0, meaning an error occured. For now, get_next_request forwards this ret_value" << std::endl;

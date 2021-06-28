@@ -4,11 +4,13 @@ HttpRequest::HttpRequest(void): HttpMessage()
 {
 	_lineCount = 0;
 	_isValid = 0;
+	_contentLength = 0;
 	return;	
 }
 
 HttpRequest::HttpRequest(HttpRequest const& to_copy) : HttpMessage(to_copy)
 {
+	_contentLength = to_copy._contentLength;
 	_isValid = to_copy._isValid;
 	_startLine = to_copy._startLine;
 	_method = to_copy._method;
@@ -42,6 +44,7 @@ HttpRequest&	HttpRequest::operator=(HttpRequest const& to_copy)
 	_requestLine = to_copy._requestLine;
 	_errorCode = to_copy._errorCode;
 	_lineCount = to_copy._lineCount;
+	_contentLength = to_copy._contentLength;
 	return (*this);
 }
 
@@ -57,6 +60,7 @@ void		HttpRequest::clear(void)
 	_requestLine.protocol.first = 0;
 	_requestLine.protocol.second = 0;
 	_lineCount = 0;
+	_contentLength = 0;
 }
 /* probablement optimisable sans trop de difficulté en cas de besoin */
 /*int				HttpRequest::parseFromString(std::string str_request)
@@ -130,4 +134,14 @@ void		HttpRequest::setStartLine(std::string const& line)
 std::string const& HttpRequest::getStartLine(void) const
 {
 	return (_startLine);
+}
+
+void		HttpRequest::setContentLength(long content_length)
+{
+	_contentLength = content_length;
+}
+
+long		HttpRequest::getContentLength(void) const
+{
+	return (_contentLength);
 }

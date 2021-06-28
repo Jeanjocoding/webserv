@@ -35,6 +35,8 @@ public:
 	void				incrementLineCount();
 	void				setStartLine(std::string const& line);
 	std::string const&		getStartLine(void) const;
+	long				getContentLength(void) const;
+	void				setContentLength(long length);
 
 
 private:
@@ -45,6 +47,7 @@ private:
 	int			_errorCode;
 	requestLineInfos	_requestLine;
 	int			_lineCount;
+	long			_contentLength;
 
 	int				_parseMethodLine(void);
 	int				_parseHeaderBlock(std::string str_headers);

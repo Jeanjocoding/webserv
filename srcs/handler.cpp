@@ -29,6 +29,7 @@ void	print_pipeline(std::vector<HttpRequest>& requestPipeline)
 		std::cout << "start line: "  << requestPipeline[i].getStartLine() << std::endl;
 		std::cout << "headers for request number: " << i << std::endl;
 		requestPipeline[i].printHeaders();
+		std::cout << "content length int: " << requestPipeline[i].getContentLength() << std::endl;
 		std::cout << std::endl;
 		i++;
 	}
