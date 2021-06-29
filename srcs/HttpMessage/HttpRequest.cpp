@@ -59,6 +59,7 @@ void		HttpRequest::clear(void)
 	_errorCode = 0;
 	_requestLine.method.clear();
 	_requestLine.target.clear();
+	_content.clear();
 	_requestLine.protocol.first = 0;
 	_requestLine.protocol.second = 0;
 	_lineCount = 0;
