@@ -17,7 +17,7 @@ OBJS_PATH = objs/
 HDRS_PATH = includes/
 DEFS_PATH = defines/
 
-
+SETUP_PATH = setup/
 CONNECTION_PATH = connection/
 HTTPMSG_PATH = HttpMessage/
 
@@ -29,10 +29,9 @@ HDRS =	webserv.hpp \
 
 SRCS =	main.cpp \
 		handler.cpp \
-		serverClass.cpp \
-		setup_server.cpp 
+		serverClass.cpp
 
-include $(addprefix $(SRCS_PATH), $(CONNECTION_PATH))module.mk $(addprefix $(SRCS_PATH), $(HTTPMSG_PATH))module.mk
+include main_module.mk
 
 TMP = $(SRCS:.cpp=.o)
 OBJS = $(addprefix $(OBJS_PATH), $(TMP))
