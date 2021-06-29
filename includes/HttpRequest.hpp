@@ -3,18 +3,17 @@
 
 #include "HttpMessage.hpp"
 
-struct s_requestLineInfos
+typedef struct s_requestLineInfos
 {
 	std::string		method;
 	std::string		target;
 	std::pair<int, int>	protocol;
-};
+}		requestLineInfos;
 
 
 class HttpRequest: public HttpMessage {
 
 public:
-	typedef struct s_requestLineInfos requestLineInfos;
 
 	HttpRequest(void);
 	HttpRequest(HttpRequest const& to_copy);
@@ -39,6 +38,7 @@ public:
 	void				setContentLength(long length);
 	void				setContent(std::string const& req_content);
 	std::string const&		getContent() const;
+	requestLineInfos const&		getRequestLineInfos(void) const;
 
 private:
 	bool			_isValid;

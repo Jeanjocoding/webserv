@@ -22,15 +22,19 @@ void	print_pipeline(std::vector<HttpRequest>& requestPipeline)
 	size_t i = 0;
 
 	std::cout << std::endl;
-	std::cout <<  " ----------------- FULL PIPELINE HEADERS -------------- " << std::endl;
+	std::cout <<  " ----------------- FULL REQUEST PIPELINE -------------- " << std::endl;
 	std::cout << std::endl;
 	while (i < requestPipeline.size())
 	{	
-		std::cout << "start line: "  << requestPipeline[i].getStartLine() << std::endl;
-		std::cout << "headers for request number: " << i << std::endl;
+		std::cout << "                 REQUEST NBR:  " << i << std::endl;
+		std::cout << std::endl;
+		std::cout << "START LINE: "  << requestPipeline[i].getStartLine() << std::endl;
+		std::cout << "URI: " << requestPipeline[i].getRequestLineInfos().target << std::endl;
+		std::cout << std::endl;
+		std::cout << "HEADERS: " << std::endl;
 		requestPipeline[i].printHeaders();
-		std::cout << "content length int: " << requestPipeline[i].getContentLength() << std::endl;
-		std::cout << "body: " << requestPipeline[i].getContent() << std::endl;
+		std::cout << std::endl;
+		std::cout << "BODY: " << requestPipeline[i].getContent() << std::endl;
 		std::cout << std::endl;
 		i++;
 	}

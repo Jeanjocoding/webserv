@@ -158,3 +158,8 @@ std::string const&	HttpRequest::getContent() const
 {
 	return (_content);
 }
+
+requestLineInfos const&		HttpRequest::getRequestLineInfos(void) const
+{
+	return (_requestLine);
+}

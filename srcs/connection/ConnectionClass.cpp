@@ -130,11 +130,11 @@ int		ConnectionClass::_read_buffer(readingBuffer& buffer, std::vector<HttpReques
 	int	req_count = 0;
 	int read_ret;
 
-	std::cout << std::endl;
+//	std::cout << std::endl;
 //	std::cout << "arriving in _read_buffer" << std::endl;
 
 //	_printBufferInfo(buffer, "in _read_buffer");
-	std::cout << std::endl;
+//	std::cout << std::endl;
 	HttpRequest	currentRequest;
 
 	if (_hasRest)
@@ -170,8 +170,8 @@ int		ConnectionClass::_read_buffer(readingBuffer& buffer, std::vector<HttpReques
 	//* procédure insatisfaisante, il faut réussir a faire en sorte que ça s'arrete une fois la dernière reuqête lue: */
 	while ((length_parsed < SINGLE_READ_SIZE && length_parsed < buffer.end) || req_count == 0) // je chope toutes les requêtes qui sont dans le buffer
 	{
-		std::cout << "length_parsed: " << length_parsed << std::endl;
-		std::cout << "reading_buf_size: " << SINGLE_READ_SIZE << ", buffer.end: " << buffer.end << ", req_count: " << req_count << std::endl;
+//		std::cout << "length_parsed: " << length_parsed << std::endl;
+//		std::cout << "reading_buf_size: " << SINGLE_READ_SIZE << ", buffer.end: " << buffer.end << ", req_count: " << req_count << std::endl;
 		getnr_ret = _get_next_request(buffer, currentRequest, length_parsed, NO_READ_MODE_DISABLED);
 		if (getnr_ret == -1)
 			return (-1);
@@ -187,7 +187,7 @@ int		ConnectionClass::_read_buffer(readingBuffer& buffer, std::vector<HttpReques
 //	_printBufferInfo(buffer, "before no read gnr");
 	if (buffer.deb >= buffer.end)
 	{
-		std::cout << "there seems to be nothing left to parse after the last request. it probably means there was no pipelining at all" << std::endl;
+//		std::cout << "there seems to be nothing left to parse after the last request. it probably means there was no pipelining at all" << std::endl;
 		return (1);
 	}
 	getnr_ret = _get_next_request(buffer, currentRequest, length_parsed, NO_READ_MODE_ACTIVATED);
@@ -202,7 +202,7 @@ int		ConnectionClass::_read_buffer(readingBuffer& buffer, std::vector<HttpReques
 	requestPipeline.push_back(currentRequest);
 	if (buffer.deb < buffer.end)
 	{
-		std::cout << "there will be a buffer rest " << std::endl;
+//		std::cout << "there will be a buffer rest " << std::endl;
 		_save_only_buffer(buffer);
 	}
 	return (1);
@@ -236,7 +236,7 @@ int		ConnectionClass::_read_long_line(std::string& str, readingBuffer& buffer, i
 		}
 		if (str.length() > MAX_LINE_LENGTH)
 		{
-			std::cout << "bad request a gerer dans la fonction std_readline" << std::endl;
+//			std::cout << "bad request a gerer dans la fonction std_readline" << std::endl;
 			return (-1);
 		}
 	}
@@ -373,7 +373,7 @@ int		ConnectionClass::_caseInsensitiveComparison(std::string s1, std::string s2)
 	int	len = s1.length();
 	while (++i < len)
 	{
-		std::cout << "s1[" << i << "]: " << s1[i] << " - s2[" << i << "]: " << s2[i] << std::endl;
+//		std::cout << "s1[" << i << "]: " << s1[i] << " - s2[" << i << "]: " << s2[i] << std::endl;
 		if (s1[i] >= 65 && s1[i] <= 90)
 		{
 			if (s1[i] == s2[i] - 32)
@@ -428,9 +428,9 @@ int		ConnectionClass::_parseHeaderLine(const char *line, int len, HttpRequest& c
 	end_value = index + 1;
 	header.second.append(&(line[deb_value]), end_value - deb_value);
 
-	std::cout << std::endl;
+//	std::cout << std::endl;
 //	std::cout << "I REACHED CONTENT LENGTH PART" << std::endl;
-	std::cout << std::endl;
+//	std::cout << std::endl;
 
 	if (_caseInsensitiveComparison(header.first, "Content-Length"))
 	{
@@ -461,7 +461,7 @@ int		ConnectionClass::_parse_line(const char *line, int len, HttpRequest &curren
 {
 	std::string	test_string(line, len);
 
-	std::cout << "the line passed to the parser is: " << test_string << std::endl;
+//	std::cout << "the line passed to the parser is: " << test_string << std::endl;
 	if (currentRequest.getLineCount() == 0)
 		return (_parse_first_line(line, len, currentRequest));
 	else
@@ -480,7 +480,7 @@ int		ConnectionClass::_read_line(readingBuffer& buffer, int& length_parsed, Http
 //	buffer.line_deb = buffer.deb;
 	if (buffer.buf[buffer.deb] == '\r' && buffer.buf[buffer.deb + 1] == '\n')
 	{
-		std::cout << " _read_line returned 2 because it considers it read the whole header part" << std::endl;
+//		std::cout << " _read_line returned 2 because it considers it read the whole header part" << std::endl;
 		buffer.deb += 2;
 		return (2);
 	}
@@ -491,7 +491,7 @@ int		ConnectionClass::_read_line(readingBuffer& buffer, int& length_parsed, Http
 //		_printBufferInfo(buffer, "in _read_line, before ifs");
 		if (no_read_mode == NO_READ_MODE_ACTIVATED)
 		{
-			std::cout << "_Read_line returns save_request" << std::endl;
+//			std::cout << "_Read_line returns save_request" << std::endl;
 			return (SAVE_REQUEST); // j'interrompt le processus de lecture pour empêcher un client pipeliner de monopoliser le serveur.
 		}
 		if ((buffer.end + SINGLE_READ_SIZE) <  READING_BUF_SIZE) // je vérifie que j'ai de la place dans mon buffer
@@ -561,7 +561,7 @@ int		ConnectionClass::_read_line(readingBuffer& buffer, int& length_parsed, Http
 //	std::cout << "out of main loop, we found a line" << std::endl;
 	if (buffer.buf[buffer.deb] == '\r' && buffer.buf[buffer.deb + 1] == '\n')
 	{
-		std::cout << " _read_line returned 2 because it considers it read the whole header part" << std::endl;
+//		std::cout << " _read_line returned 2 because it considers it read the whole header part" << std::endl;
 		buffer.deb = crlf_index + 2;
 		return (2);
 	}
@@ -575,7 +575,7 @@ int		ConnectionClass::_read_line(readingBuffer& buffer, int& length_parsed, Http
 int		ConnectionClass::_check_header_compliancy(HttpRequest& CurrentRequest)
 {
 	(void)CurrentRequest; //a supprimer
-	std::cout << "_check_header_compliancy has not been implemented yet. it always returns 1" << std::endl;
+//	std::cout << "_check_header_compliancy has not been implemented yet. it always returns 1" << std::endl;
 	return (1);
 }
 
@@ -624,8 +624,8 @@ int		ConnectionClass::_read_request_content(HttpRequest& CurrentRequest, reading
 //	buffer.deb = buffer.deb + 1 - 1; // a virer
 //	std::cout << "_read_request_content has not been implemented yet. it always returns 1" << std::endl;
 
-	std::cout << "reading request content " << std::endl;
-	_printBufferInfo(buffer, "in reader");
+//	std::cout << "reading request content " << std::endl;
+//	_printBufferInfo(buffer, "in reader");
 	/** PAS OUBLIER DE GERER BUF.DEB ET BUF.END **/
 	if (buffer.end > buffer.deb)
 	{
@@ -635,9 +635,9 @@ int		ConnectionClass::_read_request_content(HttpRequest& CurrentRequest, reading
 			request_content.append(&(buffer.buf[buffer.deb]), CurrentRequest.getContentLength());
 			CurrentRequest.setContent(request_content);
 			buffer.deb += CurrentRequest.getContentLength();
-			std::cout << "request_content: " << request_content << std::endl;
-			std::cout << ": " << request_content << std::endl;
-			_printBufferInfo(buffer, "after read_content");
+//			std::cout << "request_content: " << request_content << std::endl;
+//			std::cout << ": " << request_content << std::endl;
+//			_printBufferInfo(buffer, "after read_content");
 			return (request_content.length());
 		}
 		else
@@ -692,7 +692,7 @@ int		ConnectionClass::_get_next_request(readingBuffer &buffer, HttpRequest& curr
 //	int	line_count = 0;
 	//faire une protection contre segfaulkt/buffer overflow ici
 
-	std::cout << "inside get_next_request. no_read mode = "<< no_read_mode << std::endl;
+//	std::cout << "inside get_next_request. no_read mode = "<< no_read_mode << std::endl;
 	if (buffer.buf[buffer.deb] == '\r' && buffer.buf[buffer.deb + 1] == '\n')
 	{
 		buffer.deb += 2;
@@ -702,7 +702,7 @@ int		ConnectionClass::_get_next_request(readingBuffer &buffer, HttpRequest& curr
 	// ici aussi:
 	if (buffer.buf[buffer.deb] == '\r' && buffer.buf[buffer.deb + 1] == '\n')
 	{
-		std::cout << "need to handle an invalid request in _get_next_request" << std::endl;
+//		std::cout << "need to handle an invalid request in _get_next_request" << std::endl;
 		return (-1); // non, il faudrait autre chose
 	}
 	while ((ret_read_line = _read_line(buffer, length_parsed, currentRequest, no_read_mode)) == 1)
@@ -733,7 +733,7 @@ int		ConnectionClass::_get_next_request(readingBuffer &buffer, HttpRequest& curr
 	}
 	if (ret_read_line == 2)
 	{
-		currentRequest.printHeaders();
+//		currentRequest.printHeaders();
 		if (_check_header_compliancy(currentRequest) == -1)
 		{
 			std::cout << "headers are not compliant, need to setup a bad request procedure. for now, function returns -1" << std::endl;
@@ -753,7 +753,7 @@ int		ConnectionClass::_get_next_request(readingBuffer &buffer, HttpRequest& curr
 	if (ret_read_line == SAVE_REQUEST)
 	{
 		_save_request_and_buffer(currentRequest, buffer);
-		std::cout << "rest buffer: " << *_restBuffer << std::endl;
+//		std::cout << "rest buffer: " << *_restBuffer << std::endl;
 		return (SAVE_REQUEST);
 	}
 	std::cout << "unexpected return in _get_next_request" << std::endl;
@@ -780,7 +780,7 @@ int			ConnectionClass::receiveRequest(std::vector<HttpRequest>& requestPipeline)
 	int		read_ret;
 
 	_initializeBuffer(buffer);
-	std::cout << "connection class with socket " << _socketNbr << "is in recieve request" << std::endl;
+//	std::cout << "connection class with socket " << _socketNbr << "is in recieve request" << std::endl;
 /*	if (_hasRest)
 	{
 		std::cout << "there is rest!" << std::endl;

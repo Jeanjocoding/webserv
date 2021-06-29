@@ -55,7 +55,7 @@ void		HttpMessage::printHeaders()
 	std::multimap<std::string, std::string>::iterator itdeb = _headers.begin();
 	std::multimap<std::string, std::string>::iterator itend = _headers.end();
 
-	std::cout << "print all headers: " << std::endl;
+//	std::cout << "print all headers: " << std::endl;
 	while (itdeb != itend)
 	{
 		std::cout << (*itdeb).first << " : " << (*itdeb).second << std::endl;
