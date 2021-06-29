@@ -4,7 +4,7 @@
 
 ConnectionClass::ConnectionClass(void)
 {
-	std::cout << "connection created " << std::endl;
+//	std::cout << "connection created " << std::endl;
 	_hasRest = 0;
 	return;
 }

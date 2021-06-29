@@ -47,7 +47,7 @@ void	handle_connection(ConnectionClass& connection)
 	int retVal;
 	std::vector<HttpRequest>	RequestPipeline;
 
-	std::cout << "connection server on port : " << connection._server->_port << std::endl;
+//	std::cout << "connection server on port : " << connection._server->_port << std::endl;
 	retVal = connection.receiveRequest(RequestPipeline);
 	if (retVal == -1)
 		return;
@@ -58,7 +58,7 @@ void	handle_connection(ConnectionClass& connection)
 			perror("close");
 		return;
 	}
-	print_pipeline(RequestPipeline);
+//	print_pipeline(RequestPipeline);
 //	HttpRequest request(request_infos.second);
 //	std::cout << "message received by server: " << request_infos.second << std::endl;
 	send_ret = connection.sendResponse("HTTP/1.1 200 OK\r\n\r\n<html><body><h1>Welcome to Webser</h1></body></html>\r\n");
