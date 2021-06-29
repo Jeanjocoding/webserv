@@ -579,6 +579,8 @@ int		ConnectionClass::_check_header_compliancy(HttpRequest& CurrentRequest)
 	return (1);
 }
 
+
+
 int		ConnectionClass::_guaranteedRead(int fd, int to_read, std::string& str_buffer)
 {
 	int 	read_ret;
@@ -613,6 +615,76 @@ int		ConnectionClass::_guaranteedRead(int fd, int to_read, std::string& str_buff
 	free(buffer);
 	buffer = NULL;
 	return (bytes_read);
+}
+
+int		ConnectionClass::_read_chunked_line(readingBuffer& buffer, int& length_parsed, HttpRequest& currentRequest, int read_size, std::string& line)
+{
+	int		crlf_index;
+	int		read_ret;
+	int 		deb_read;
+
+	deb_read = buffer.deb;
+	while ((crlf_index = _findInBuf("\r\n", buffer.buf, 2, buffer.end, deb_read)) == -1)
+	{
+		if ((buffer.end + read_size) <  READING_BUF_SIZE) // je vérifie que j'ai de la place dans mon buffer
+		{
+			read_ret = recv(_socketNbr, &(buffer.buf[buffer.end]), read_size, 0);
+			if (read_ret == -1)
+				return (-1);
+			if (read_ret == 0)
+				return (0);
+			if (deb_read)
+				deb_read = buffer.end - 1; // j'enleve 1 au cas ou crlf est coupé en 2 ; a protéger segfault			
+			buffer.end += read_ret;
+			length_parsed += read_ret;
+		}
+		else if (buffer.deb > (READING_BUF_SIZE / 2)) // je regarde si ça vaut le coup de faire le memmove
+		{
+			std::memmove(buffer.buf, &(buffer.buf[buffer.deb]), buffer.end - buffer.deb); // le -1 sert a gérer crlf coupé en 2 encore une fois
+			buffer.end -= buffer.deb;
+			buffer.deb = 0;
+			deb_read = buffer.end - 1;
+			read_ret = recv(_socketNbr, &(buffer.buf[buffer.end]), read_size, 0);
+			if (read_ret == -1)
+				return (-1);
+			if (read_ret == 0)
+				return (0);
+			if (deb_read)
+				deb_read = buffer.end - 1; // j'enleve 1 au cas ou crlf est coupé en 2 ; a protéger segfault			
+			buffer.end += read_ret;
+			length_parsed += read_ret;
+		}
+		else
+		{
+			int		long_line_length;
+
+			line.append(buffer.buf, buffer.deb, buffer.end - buffer.deb);
+			read_ret = _read_long_line(line, buffer, length_parsed);
+			if (read_ret == -1)
+				return (-1);
+			if (read_ret == 0)
+				return (0);
+			long_line_length = line.length();
+			deb_read = 0;
+			return (1);
+		}
+	}
+/*	if (buffer.buf[buffer.deb] == '\r' && buffer.buf[buffer.deb + 1] == '\n')
+	{
+		buffer.deb = crlf_index + 2;
+		return (2);
+	}*/
+	line.clear();
+	line.append(&(buffer.buf[buffer.deb]), crlf_index - buffer.deb);
+	std::cout << "line found by chunk is: " << line << std::endl;
+//	_printBufferInfo(buffer, "after main loop and line found");
+	buffer.deb = crlf_index + 2;
+	return (1);
+}
+
+int		ConnectionClass::_getChunkedData(HttpRequest& currentRequest, int fd, readingBuffer& buffer, int& length_parsed)
+{
+
 }
 
 int		ConnectionClass::_read_request_content(HttpRequest& CurrentRequest, readingBuffer& buffer ,int& length_parsed)

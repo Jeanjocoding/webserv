@@ -137,6 +137,8 @@ private:
 	void		_save_only_buffer(readingBuffer& readingBuffer);
 	int		_caseInsensitiveComparison(std::string s1, std::string s2) const;
 	int		_guaranteedRead(int fd, int to_read, std::string& str_buffer);
+	int		_getChunkedData(HttpRequest& currentRequest, int fd, readingBuffer& buffer, int& length_parsed);
+	int		_read_chunked_line(readingBuffer& buffer, int& length_parsed, HttpRequest& currentRequest, int read_size, std::string& line);
 };
 
 #endif
