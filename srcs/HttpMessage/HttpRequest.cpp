@@ -18,6 +18,7 @@ HttpRequest::HttpRequest(HttpRequest const& to_copy) : HttpMessage(to_copy)
 	_requestLine = to_copy._requestLine;
 	_errorCode = to_copy._errorCode;
 	_lineCount = to_copy._lineCount;
+	_content = to_copy._content;
 
 }
 
@@ -45,6 +46,7 @@ HttpRequest&	HttpRequest::operator=(HttpRequest const& to_copy)
 	_errorCode = to_copy._errorCode;
 	_lineCount = to_copy._lineCount;
 	_contentLength = to_copy._contentLength;
+	_content = to_copy._content;
 	return (*this);
 }
 
@@ -144,4 +146,14 @@ void		HttpRequest::setContentLength(long content_length)
 long		HttpRequest::getContentLength(void) const
 {
 	return (_contentLength);
+}
+
+void		HttpRequest::setContent(std::string const& req_content)
+{
+	_content = req_content;
+}
+
+std::string const&	HttpRequest::getContent() const
+{
+	return (_content);
 }

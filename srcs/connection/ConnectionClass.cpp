@@ -170,8 +170,8 @@ int		ConnectionClass::_read_buffer(readingBuffer& buffer, std::vector<HttpReques
 	//* procédure insatisfaisante, il faut réussir a faire en sorte que ça s'arrete une fois la dernière reuqête lue: */
 	while ((length_parsed < SINGLE_READ_SIZE && length_parsed < buffer.end) || req_count == 0) // je chope toutes les requêtes qui sont dans le buffer
 	{
-//		std::cout << "length_parsed: " << length_parsed << std::endl;
-//		std::cout << "reading_buf_size: " << SINGLE_READ_SIZE << ", buffer.end: " << buffer.end << ", req_count: " << req_count << std::endl;
+		std::cout << "length_parsed: " << length_parsed << std::endl;
+		std::cout << "reading_buf_size: " << SINGLE_READ_SIZE << ", buffer.end: " << buffer.end << ", req_count: " << req_count << std::endl;
 		getnr_ret = _get_next_request(buffer, currentRequest, length_parsed, NO_READ_MODE_DISABLED);
 		if (getnr_ret == -1)
 			return (-1);
@@ -579,13 +579,95 @@ int		ConnectionClass::_check_header_compliancy(HttpRequest& CurrentRequest)
 	return (1);
 }
 
-int		ConnectionClass::_read_request_content(HttpRequest& CurrentRequest, readingBuffer buffer ,int& length_parsed)
+int		ConnectionClass::_guaranteedRead(int fd, int to_read, std::string& str_buffer)
 {
-	(void)CurrentRequest; //a supprimer
+	int 	read_ret;
+	int	bytes_read = 0;
+	int	bytes_left = to_read;
+	char	*buffer;
 
-	buffer.deb = buffer.deb + 1 - 1; // a virer
-	std::cout << "_read_request_content has not been implemented yet. it always returns 1" << std::endl;
-	length_parsed += 1; // a supprimer
+//	str_buffer.reserve(to_read);
+	if (!(buffer = (char*)malloc(sizeof(char) * to_read + 1)))
+		exit(EXIT_FAILURE);
+	while (bytes_left)
+	{
+		/** POTENTIAL BLOCK HERE IF CONTENT-LENGTH HIGHER THAN CONTENT AND BLCOKING FDS **/
+		read_ret = recv(fd, &(buffer[bytes_read]), bytes_left, 0);
+		if (read_ret == -1)
+		{
+			free(buffer);
+			buffer = NULL;
+			return (-1);
+		}
+		else if (read_ret == 0)
+		{
+			free(buffer);
+			buffer = NULL;
+			return (0);
+		}
+		bytes_left -= read_ret;
+		bytes_read += read_ret;
+	}
+	buffer[bytes_read] = '\0';
+	str_buffer.append(buffer);
+	free(buffer);
+	buffer = NULL;
+	return (bytes_read);
+}
+
+int		ConnectionClass::_read_request_content(HttpRequest& CurrentRequest, readingBuffer& buffer ,int& length_parsed)
+{
+
+	std::string	request_content;
+	int		to_read;
+	int 		read_ret;
+//	buffer.deb = buffer.deb + 1 - 1; // a virer
+//	std::cout << "_read_request_content has not been implemented yet. it always returns 1" << std::endl;
+
+	std::cout << "reading request content " << std::endl;
+	_printBufferInfo(buffer, "in reader");
+	/** PAS OUBLIER DE GERER BUF.DEB ET BUF.END **/
+	if (buffer.end > buffer.deb)
+	{
+		int diff = buffer.end - buffer.deb;
+		if (diff >= CurrentRequest.getContentLength())
+		{
+			request_content.append(&(buffer.buf[buffer.deb]), CurrentRequest.getContentLength());
+			CurrentRequest.setContent(request_content);
+			buffer.deb += CurrentRequest.getContentLength();
+			std::cout << "request_content: " << request_content << std::endl;
+			std::cout << ": " << request_content << std::endl;
+			_printBufferInfo(buffer, "after read_content");
+			return (request_content.length());
+		}
+		else
+		{
+			request_content.append(&(buffer.buf[buffer.deb]), diff);
+			buffer.deb += diff;
+			to_read = CurrentRequest.getContentLength() - diff;
+			read_ret = _guaranteedRead(_socketNbr, to_read, request_content);
+			length_parsed += read_ret;
+			if (read_ret == 0 || read_ret == 1)
+				return (read_ret);
+			else
+			{
+				CurrentRequest.setContent(request_content);
+				return (request_content.length());
+			}
+		}
+	}
+	else 
+	{
+		read_ret = _guaranteedRead(_socketNbr, CurrentRequest.getContentLength(), request_content);
+		length_parsed += read_ret;
+		if (read_ret == 0 || read_ret == 1)
+			return (read_ret);
+		else
+		{
+			CurrentRequest.setContent(request_content);
+			return (request_content.length());
+		}
+	}
 	return (1);
 
 }
@@ -657,14 +739,15 @@ int		ConnectionClass::_get_next_request(readingBuffer &buffer, HttpRequest& curr
 			std::cout << "headers are not compliant, need to setup a bad request procedure. for now, function returns -1" << std::endl;
 			return (-1);
 		}
-		ret_read_content = _read_request_content(currentRequest, buffer, length_parsed);
-		if (ret_read_content == -1 || ret_read_content == 0)
+		if (currentRequest.getContentLength())
 		{
-			std::cout << "ret_read_content returned -1 OR 0, meaning an error occured. For now, get_next_request forwards this ret_value" << std::endl;
-			return (ret_read_content);
+			ret_read_content = _read_request_content(currentRequest, buffer, length_parsed);
+			if (ret_read_content == -1 || ret_read_content == 0)
+			{
+				std::cout << "ret_read_content returned -1 OR 0, meaning an error occured. For now, get_next_request forwards this ret_value" << std::endl;
+				return (ret_read_content);
+			}
 		}
-
-
 		return (1);
 	}
 	if (ret_read_line == SAVE_REQUEST)

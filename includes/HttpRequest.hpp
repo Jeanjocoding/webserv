@@ -37,7 +37,8 @@ public:
 	std::string const&		getStartLine(void) const;
 	long				getContentLength(void) const;
 	void				setContentLength(long length);
-
+	void				setContent(std::string const& req_content);
+	std::string const&		getContent() const;
 
 private:
 	bool			_isValid;
@@ -48,6 +49,7 @@ private:
 	requestLineInfos	_requestLine;
 	int			_lineCount;
 	long			_contentLength;
+	std::string		_content;
 
 	int				_parseMethodLine(void);
 	int				_parseHeaderBlock(std::string str_headers);
