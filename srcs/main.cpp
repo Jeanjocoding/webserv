@@ -6,7 +6,7 @@
 /*   By: asablayr <marvin@42.fr>                    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2021/06/06 15:27:02 by asablayr          #+#    #+#             */
-/*   Updated: 2021/06/25 17:31:10 by asablayr         ###   ########.fr       */
+/*   Updated: 2021/07/01 15:46:44 by asablayr         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -37,8 +37,6 @@ int main(int ac, char** av)
 	{
 		(*it)->startServer();
 		std::cout << "server started on : " << (*it)->_listen << std::endl;
-		if (!(*it)->_location.empty())
-			std::cout << "has location : " << (*it)->_location.begin()->first;
 		FD_SET((*it)->_server_socket, &rfds);//add server socket to fd_set
 	}
 	while (true)

@@ -6,7 +6,7 @@
 /*   By: asablayr <marvin@42.fr>                    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2021/06/07 18:49:16 by asablayr          #+#    #+#             */
-/*   Updated: 2021/06/22 16:25:43 by asablayr         ###   ########.fr       */
+/*   Updated: 2021/06/28 16:52:20 by asablayr         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -135,7 +135,6 @@ void serverClass::startServer()
 	if (retval)
 	{
 		std::cerr << "getaddrinfo: " << gai_strerror(retval) << std::endl;
-		std::cout << "port : " << _port << std::endl;
 		exit(EXIT_FAILURE);
 	}
 	_server_socket = socket(_addr->ai_family, _addr->ai_socktype, _addr->ai_protocol);

@@ -6,7 +6,7 @@
 /*   By: asablayr <marvin@42.fr>                    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2021/06/07 19:42:54 by asablayr          #+#    #+#             */
-/*   Updated: 2021/06/25 17:34:12 by asablayr         ###   ########.fr       */
+/*   Updated: 2021/06/29 14:42:51 by asablayr         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -50,10 +50,7 @@ std::vector<serverClass*>	setup_server(std::string conf_file)
 		contextClass main_context("main", buff);
 		input_context(main_context, *base_serv, server_map);
 		if (server_map.empty())
-		{
-			std::cout << "no server in conf file\n";
 			server_map.push_back(base_serv);
-		}
 	}
 	else
 	{

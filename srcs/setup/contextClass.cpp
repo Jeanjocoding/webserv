@@ -6,7 +6,7 @@
 /*   By: asablayr <marvin@42.fr>                    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2021/06/12 15:24:19 by asablayr          #+#    #+#             */
-/*   Updated: 2021/06/25 17:34:48 by asablayr         ###   ########.fr       */
+/*   Updated: 2021/07/01 15:45:04 by asablayr         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -23,7 +23,10 @@ contextClass::contextClass(std::string name, std::string buff): _name(name)
 	setDirectives();
 	setBlocks();
 	
-	_block_content = getBlock(_name, buff).second;
+	if (_name != "location")
+		_block_content = getBlock(_name, buff).second;
+	else
+		_block_content = getParamedBlock(_name, buff).second;
 	if (_name != "main")
 	{
 		_block_content.erase(0, _block_content.find('{') + 1);
@@ -36,7 +39,7 @@ contextClass::contextClass(std::string name, std::string buff): _name(name)
 		_block_content.erase(0, 1);
 	if (!_block_content.empty())
 	{
-		std::cerr << "gibberish spotted in context " << _name << std::endl;
+		std::cerr << "gibberish spotted in context " << _name << " : " << _block_content << std::endl;
 		exit(EXIT_FAILURE);
 	}
 }
@@ -108,9 +111,9 @@ void contextClass::setDirectives(void)
     if (_name == "http")
 	{
        _directive_set = {
-			"access_log",
-			"error_log",
-			"index"
+			_accepted_directive_set["access_log"],
+			_accepted_directive_set["error_log"],
+			_accepted_directive_set["index"]
 		};
 	}
 	else if (_name == "events")
@@ -120,27 +123,29 @@ void contextClass::setDirectives(void)
     else if (_name == "server")
 	{
        _directive_set = {
-			"listen",
-			"server_name",
-			"access_log",
-			"error_log",
-			"root"
+			_accepted_directive_set["listen"],
+			_accepted_directive_set["server_name"],
+			_accepted_directive_set["access_log"],
+			_accepted_directive_set["error_log"],
+			_accepted_directive_set["root"],
+			_accepted_directive_set["return"]
 		};
 	}
     else if (_name == "location")
 	{
        _directive_set = {
-			"fastcgi_pass",
-			"access_log",
-			"error_log",
-			"root"
+			_accepted_directive_set["fastcgi_pass"],
+			_accepted_directive_set["access_log"],
+			_accepted_directive_set["error_log"],
+			_accepted_directive_set["root"],
+			_accepted_directive_set["return"]
 		};
 	}
     else
 	{
 		_directive_set = {
-			"access_log",
-			"error_log"
+			_accepted_directive_set["access_log"],
+			_accepted_directive_set["error_log"]
 		};
 	}
 }
@@ -239,6 +244,24 @@ std::pair<std::string, std::string>	contextClass::getParamedBlock(std::string co
 				tmp = std::string(param_it, param_ite);
 				break;
 			}
+			else
+			{
+				param_ite += i;
+				tmp = std::string(param_it, param_ite);
+				if (tmp == "~*" || tmp == "~" || tmp == "^~" || tmp == "=" || tmp == "~")
+				{
+					while (buff[i] && buff[i] == ' ')
+						i++;
+					i = buff.find(' ', i);
+					if (check_after(buff, i))
+					{
+						param_ite = buff.begin() + i;
+						tmp = std::string(param_it, param_ite);
+						break;
+					}
+				}
+			}
+				
 		}
 		i = buff.find(block_name, i);
 		continue;
@@ -320,25 +343,31 @@ void	contextClass::getDirectivesInContext(void)
 {
 	for (auto it = _directive_set.begin(); it != _directive_set.end(); it++)
 	{
-		std::pair<bool, std::string>check = getSingleDirective(*it, _block_content);//get directive and erase it from buffer
+		std::pair<bool, std::string>check = getSingleDirective(it->_name, _block_content);//get directive and erase it from buffer
 		if (check.first)
 		{
 			_block_content.erase(_block_content.find(check.second), check.second.size() + 1);
-			check.second.erase(check.second.find(*it), (*it).size());
+			check.second.erase(check.second.find(it->_name), (it->_name).size());
 			while (check.second[0] == ' ')
 				check.second.erase(0, 1);
 			while (check.second.size() && check.second[check.second.size() - 1] == ' ')
 				check.second.erase(check.second.size() - 1, 1);
 			if (check.second.empty())
 			{
-				std::cerr << "empty directive " << *it << std::endl;
+				std::cerr << "empty directive " << it->_name << std::endl;
 				exit(EXIT_FAILURE);
 			}
-			_directives[*it] = check.second;
+			if (it->parse(check.second))
+				_directives[it->_name] = check.second;
+			else
+			{
+				std::cerr << "wrong " << it->_name << " directive argument : " << check.second << " in context " << _name << std::endl;
+				exit(EXIT_FAILURE);
+			}
 		}
-		if (getSingleDirective(*it, _block_content).first)//check for same directive
+		if (getSingleDirective(it->_name, _block_content).first)//check for same directive
 		{
-			std::cerr << "error configuration file : directive " << *it << " found twice in same context" << std::endl;//switch to define
+			std::cerr << "error configuration file : directive " << it->_name << " found twice in same context" << std::endl;//switch to define
 			exit(EXIT_FAILURE);
 		}
 	}
@@ -360,7 +389,7 @@ void	contextClass::getAcceptedDirectivesInContext(void)
 		if (directive != _accepted_directive_set.end() && (directive->second.isInContext(_name)))
 		{
 			std::pair<bool, std::string> check;
-			if (directive->second._syntax == BLOCK)
+			if (directive->second._syntax == SYNTAX_BLOCK)
 				check = getBlock(temp, _block_content);
 			else
 				check = getSingleDirective(temp, _block_content);
@@ -385,6 +414,7 @@ void	contextClass::getAcceptedDirectivesInContext(void)
 void contextClass::setAcceptedDirectives(void)
 {
 	_accepted_directive_set["absolute_redirect"]._name = "absolute_redirect";
+	_accepted_directive_set["access_log"]._name = "access_log";
 	_accepted_directive_set["aio"]._name = "aio";
 	_accepted_directive_set["aio_write"]._name = "aio_write";
 	_accepted_directive_set["alias"]._name = "alias";
@@ -403,12 +433,15 @@ void contextClass::setAcceptedDirectives(void)
 	_accepted_directive_set["directio"]._name = "directio";
 	_accepted_directive_set["directio_alignment"]._name = "directio_alignment";
 	_accepted_directive_set["disable_symlinks"]._name = "disable_symlinks";
+	_accepted_directive_set["error_log"]._name = "error_log";
 	_accepted_directive_set["error_page"]._name = "error_page";
 	_accepted_directive_set["etag"]._name = "etag";
+	_accepted_directive_set["fastcgi_pass"]._name = "fastcgi_pass";
 	_accepted_directive_set["gzip"]._name = "gzip";
 	_accepted_directive_set["http"]._name = "http";
 	_accepted_directive_set["if_modified_since"]._name = "if_modified_since";
 	_accepted_directive_set["ignore_invalid_headers"]._name = "ignore_invalid_headers";
+	_accepted_directive_set["index"]._name = "index";
 	_accepted_directive_set["include"]._name = "include";
 	_accepted_directive_set["internal"]._name = "internal";
 	_accepted_directive_set["keepalive_disable"]._name = "keepalive_disable";
@@ -444,6 +477,7 @@ void contextClass::setAcceptedDirectives(void)
 	_accepted_directive_set["reset_timedout_connection"]._name = "reset_timedout_connection";
 	_accepted_directive_set["resolver"]._name = "resolver";
 	_accepted_directive_set["resolver_timeout"]._name = "resolver_timeout";
+	_accepted_directive_set["return"]._name = "return";
 	_accepted_directive_set["root"]._name = "root";
 	_accepted_directive_set["satisfy"]._name = "satisfy";
 	_accepted_directive_set["send_lowat"]._name = "send_lowat";
@@ -467,12 +501,14 @@ void contextClass::setAcceptedDirectives(void)
 	_accepted_directive_set["types_hash_max_size"]._name = "types_hash_max_size";
 	_accepted_directive_set["underscores_in_headers"]._name = "underscores_in_headers";
 	_accepted_directive_set["user"]._name = "user";
+	_accepted_directive_set["upload_store"]._name = "upload_store";
 	_accepted_directive_set["variables_hash_bucket_size"]._name = "variables_hash_bucket_size";
 	_accepted_directive_set["variables_hash_max_size"]._name = "variables_hash_max_size";
 	_accepted_directive_set["worker_connections"]._name = "worker_connections";
 	_accepted_directive_set["worker_processes"]._name = "worker_processes";
 
 	_accepted_directive_set["absolute_redirect"]._contexts = {"http", "server", "location"};
+	_accepted_directive_set["access_log"]._contexts = {"http", "server", "location"};
 	_accepted_directive_set["aio"]._contexts = {"http", "server", "location"};
 	_accepted_directive_set["aio_write"]._contexts = {"http", "server", "location"};
 	_accepted_directive_set["alias"]._contexts = {"location"};
@@ -491,12 +527,15 @@ void contextClass::setAcceptedDirectives(void)
 	_accepted_directive_set["directio"]._contexts = {"http", "server", "location"};
 	_accepted_directive_set["directio_alignment"]._contexts = {"http", "server", "location"};
 	_accepted_directive_set["disable_symlinks"]._contexts = {"http", "server", "location"};
+	_accepted_directive_set["error_log"]._contexts = {"main", "http", "mail", "stream", "server", "location"};
 	_accepted_directive_set["error_page"]._contexts = {"http", "server", "location"};
 	_accepted_directive_set["etag"]._contexts = {"http", "server", "location"};
+	_accepted_directive_set["fastcgi_pass"]._contexts = {"location"};
 	_accepted_directive_set["gzip"]._contexts = {"http", "server", "location"};
 	_accepted_directive_set["http"]._contexts = {"main"};
 	_accepted_directive_set["if_modified_since"]._contexts = {"http", "server", "location"};
 	_accepted_directive_set["ignore_invalid_headers"]._contexts = {"http", "server", "location"};
+	_accepted_directive_set["index"]._contexts = {"http", "server", "location"};
 	_accepted_directive_set["include"]._contexts = {"main", "http", "server", "location"};
 	_accepted_directive_set["internal"]._contexts = {"location"};
 	_accepted_directive_set["keepalive_disable"]._contexts = {"http", "server", "location"};
@@ -532,6 +571,7 @@ void contextClass::setAcceptedDirectives(void)
 	_accepted_directive_set["reset_timedout_connection"]._contexts = {"http", "server", "location"};
 	_accepted_directive_set["resolver"]._contexts = {"http", "server", "location"};
 	_accepted_directive_set["resolver_timeout"]._contexts = {"http", "server", "location"};
+	_accepted_directive_set["return"]._contexts = {"server", "location"};
 	_accepted_directive_set["root"]._contexts = {"http", "server", "location"};
 	_accepted_directive_set["satisfy"]._contexts = {"http", "server", "location"};
 	_accepted_directive_set["send_lowat"]._contexts = {"http", "server", "location"};
@@ -555,96 +595,103 @@ void contextClass::setAcceptedDirectives(void)
 	_accepted_directive_set["types_hash_max_size"]._contexts = {"http", "server", "location"};
 	_accepted_directive_set["underscores_in_headers"]._contexts = {"http", "server"};
 	_accepted_directive_set["user"]._contexts = {"main"};
+	_accepted_directive_set["upload_store"]._contexts = {"server", "location"};
 	_accepted_directive_set["variables_hash_bucket_size"]._contexts = {"http"};
 	_accepted_directive_set["variables_hash_max_size"]._contexts = {"http"};
 	_accepted_directive_set["worker_connections"]._contexts = {"events"};
 	_accepted_directive_set["worker_processes"]._contexts = {"main"};
 
-	_accepted_directive_set["absolute_redirect"]._syntax = ON_OFF;
-	_accepted_directive_set["aio"]._syntax = ON_OFF;
-	_accepted_directive_set["aio_write"]._syntax = ON_OFF;
-	_accepted_directive_set["alias"]._syntax = STRING;
-	_accepted_directive_set["auth_delay"]._syntax = INT;
-	_accepted_directive_set["chunked_transfer_encoding"]._syntax = ON_OFF;
-	_accepted_directive_set["client_body_buffer_size"]._syntax = INT;
-	_accepted_directive_set["client_body_in_file_only"]._syntax = ON_OFF;
-	_accepted_directive_set["client_body_in_single_buffer"]._syntax = ON_OFF;
-	_accepted_directive_set["client_body_temp_path"]._syntax = STRING;
-	_accepted_directive_set["client_body_timeout"]._syntax = INT;
-	_accepted_directive_set["client_header_buffer_size"]._syntax = INT;
-	_accepted_directive_set["client_header_timeout"]._syntax = INT;
-	_accepted_directive_set["client_max_body_size"]._syntax = INT;
-	_accepted_directive_set["connection_pool_size"]._syntax = INT;
-	_accepted_directive_set["default_type"]._syntax = STRING;
-	_accepted_directive_set["directio"]._syntax = INT;
-	_accepted_directive_set["directio_alignment"]._syntax = INT;
-	_accepted_directive_set["disable_symlinks"]._syntax = ON_OFF;
-	_accepted_directive_set["error_page"]._syntax = STRING;
-	_accepted_directive_set["etag"]._syntax = ON_OFF;
-	_accepted_directive_set["gzip"]._syntax = ON_OFF;
-	_accepted_directive_set["http"]._syntax = BLOCK;
-	_accepted_directive_set["if_modified_since"]._syntax = STRING;
-	_accepted_directive_set["ignore_invalid_headers"]._syntax = ON_OFF;
-	_accepted_directive_set["include"]._syntax = STRING;
+	_accepted_directive_set["absolute_redirect"]._syntax = SYNTAX_ON_OFF;
+	_accepted_directive_set["access_log"]._syntax = SYNTAX_FILE;
+	_accepted_directive_set["aio"]._syntax = SYNTAX_ON_OFF;
+	_accepted_directive_set["aio_write"]._syntax = SYNTAX_ON_OFF;
+	_accepted_directive_set["alias"]._syntax = SYNTAX_PATH;
+	_accepted_directive_set["auth_delay"]._syntax = SYNTAX_TIME;
+	_accepted_directive_set["chunked_transfer_encoding"]._syntax = SYNTAX_ON_OFF;
+	_accepted_directive_set["client_body_buffer_size"]._syntax = SYNTAX_SIZE;
+	_accepted_directive_set["client_body_in_file_only"]._syntax = SYNTAX_ON_OFF;
+	_accepted_directive_set["client_body_in_single_buffer"]._syntax = SYNTAX_ON_OFF;
+	_accepted_directive_set["client_body_temp_path"]._syntax = SYNTAX_PATH;
+	_accepted_directive_set["client_body_timeout"]._syntax = SYNTAX_TIME;
+	_accepted_directive_set["client_header_buffer_size"]._syntax = SYNTAX_SIZE;
+	_accepted_directive_set["client_header_timeout"]._syntax = SYNTAX_TIME;
+	_accepted_directive_set["client_max_body_size"]._syntax = SYNTAX_SIZE;
+	_accepted_directive_set["connection_pool_size"]._syntax = SYNTAX_SIZE;
+	_accepted_directive_set["default_type"]._syntax = SYNTAX_STRING;
+	_accepted_directive_set["directio"]._syntax = SYNTAX_SIZE;
+	_accepted_directive_set["directio_alignment"]._syntax = SYNTAX_SIZE;
+	_accepted_directive_set["disable_symlinks"]._syntax = SYNTAX_ON_OFF;
+	_accepted_directive_set["error_log"]._syntax = SYNTAX_FILE;
+	_accepted_directive_set["error_page"]._syntax = SYNTAX_CODE_URI;
+	_accepted_directive_set["etag"]._syntax = SYNTAX_ON_OFF;
+	_accepted_directive_set["fastcgi_pass"]._syntax = SYNTAX_ADDRESS;
+	_accepted_directive_set["gzip"]._syntax = SYNTAX_ON_OFF;
+	_accepted_directive_set["http"]._syntax = SYNTAX_BLOCK;
+	_accepted_directive_set["if_modified_since"]._syntax = SYNTAX_STRING;//to define
+	_accepted_directive_set["ignore_invalid_headers"]._syntax = SYNTAX_ON_OFF;
+	_accepted_directive_set["index"]._syntax = SYNTAX_FILE;
+	_accepted_directive_set["include"]._syntax = SYNTAX_STRING;
 	_accepted_directive_set["internal"]._syntax = 0;
-	_accepted_directive_set["keepalive_disable"]._syntax = STRING;
-	_accepted_directive_set["keepalive_requests"]._syntax = INT;
-	_accepted_directive_set["keepalive_time"]._syntax = INT;
-	_accepted_directive_set["keepalive_timeout"]._syntax = INT;
-	_accepted_directive_set["large_client_header_buffers"]._syntax = INT;
-	_accepted_directive_set["limit_except"]._syntax = BLOCK;
-	_accepted_directive_set["limit_rate"]._syntax = INT;
-	_accepted_directive_set["limit_rate_after"]._syntax = INT;
-	_accepted_directive_set["lingering_close"]._syntax = ON_OFF;
-	_accepted_directive_set["lingering_time"]._syntax = INT;
-	_accepted_directive_set["lingering_timeout"]._syntax = INT;
-	_accepted_directive_set["listen"]._syntax = STRING;
-	_accepted_directive_set["location"]._syntax = BLOCK;
-	_accepted_directive_set["log_not_found"]._syntax = ON_OFF;
-	_accepted_directive_set["log_subrequest"]._syntax = ON_OFF;
-	_accepted_directive_set["max_ranges"]._syntax = INT;
-	_accepted_directive_set["merge_slashes"]._syntax = ON_OFF;
-	_accepted_directive_set["msie_padding"]._syntax = ON_OFF;
-	_accepted_directive_set["msie_refresh"]._syntax = ON_OFF;
-	_accepted_directive_set["open_file_cache"]._syntax = ON_OFF;
-	_accepted_directive_set["open_file_cache_errors"]._syntax = ON_OFF;
-	_accepted_directive_set["open_file_cache_min_uses"]._syntax = INT;
-	_accepted_directive_set["open_file_cache_valid"]._syntax = INT;
-	_accepted_directive_set["output_buffers"]._syntax = INT;
-	_accepted_directive_set["pid"]._syntax = STRING;
-	_accepted_directive_set["port_in_redirect"]._syntax = ON_OFF;
-	_accepted_directive_set["postpone_output"]._syntax = INT;
-	_accepted_directive_set["read_ahead"]._syntax = INT;
-	_accepted_directive_set["recursive_error_pages"]._syntax = ON_OFF;
-	_accepted_directive_set["request_pool_size"]._syntax = INT;
-	_accepted_directive_set["reset_timedout_connection"]._syntax = ON_OFF;
-	_accepted_directive_set["resolver"]._syntax = STRING;
-	_accepted_directive_set["resolver_timeout"]._syntax = INT;
-	_accepted_directive_set["root"]._syntax = STRING;
-	_accepted_directive_set["satisfy"]._syntax = ON_OFF;
-	_accepted_directive_set["send_lowat"]._syntax = INT;
-	_accepted_directive_set["send_timeout"]._syntax = INT;
-	_accepted_directive_set["sendfile"]._syntax = ON_OFF;
-	_accepted_directive_set["sendfile_max_chunk"]._syntax = INT;
-	_accepted_directive_set["server"]._syntax = BLOCK;
-	_accepted_directive_set["server_name"]._syntax = STRING;
-	_accepted_directive_set["server_name_in_redirect"]._syntax = ON_OFF;
-	_accepted_directive_set["server_names_hash_bucket_size"]._syntax = INT;
-	_accepted_directive_set["server_names_hash_max_size"]._syntax = INT;
-	_accepted_directive_set["server_tokens"]._syntax = ON_OFF;
-	_accepted_directive_set["ssl_prefer_server_ciphers"]._syntax = ON_OFF;
-	_accepted_directive_set["ssl_protocols"]._syntax = STRING;
-	_accepted_directive_set["subrequest_output_buffer_size"]._syntax = INT;
-	_accepted_directive_set["tcp_nodelay"]._syntax = ON_OFF;
-	_accepted_directive_set["tcp_nopush"]._syntax = ON_OFF;
-	_accepted_directive_set["try_files"]._syntax = STRING;
-	_accepted_directive_set["types"]._syntax = BLOCK;
-	_accepted_directive_set["types_hash_bucket_size"]._syntax = INT;
-	_accepted_directive_set["types_hash_max_size"]._syntax = INT;
-	_accepted_directive_set["underscores_in_headers"]._syntax = ON_OFF;
-	_accepted_directive_set["user"]._syntax = STRING;
-	_accepted_directive_set["variables_hash_bucket_size"]._syntax = INT;
-	_accepted_directive_set["variables_hash_max_size"]._syntax = INT;
-	_accepted_directive_set["worker_connections"]._syntax = INT;
-	_accepted_directive_set["worker_processes"]._syntax = INT;
+	_accepted_directive_set["keepalive_disable"]._syntax = SYNTAX_STRING;//to define
+	_accepted_directive_set["keepalive_requests"]._syntax = SYNTAX_NUMBER;
+	_accepted_directive_set["keepalive_time"]._syntax = SYNTAX_TIME;
+	_accepted_directive_set["keepalive_timeout"]._syntax = SYNTAX_TIME;
+	_accepted_directive_set["large_client_header_buffers"]._syntax = SYNTAX_NUMBER_SIZE;
+	_accepted_directive_set["limit_except"]._syntax = SYNTAX_BLOCK;
+	_accepted_directive_set["limit_rate"]._syntax = SYNTAX_RATE;
+	_accepted_directive_set["limit_rate_after"]._syntax = SYNTAX_SIZE;
+	_accepted_directive_set["lingering_close"]._syntax = SYNTAX_ON_OFF;
+	_accepted_directive_set["lingering_time"]._syntax = SYNTAX_TIME;
+	_accepted_directive_set["lingering_timeout"]._syntax = SYNTAX_TIME;
+	_accepted_directive_set["listen"]._syntax = SYNTAX_ADDRESS;
+	_accepted_directive_set["location"]._syntax = SYNTAX_BLOCK;
+	_accepted_directive_set["log_not_found"]._syntax = SYNTAX_ON_OFF;
+	_accepted_directive_set["log_subrequest"]._syntax = SYNTAX_ON_OFF;
+	_accepted_directive_set["max_ranges"]._syntax = SYNTAX_NUMBER;
+	_accepted_directive_set["merge_slashes"]._syntax = SYNTAX_ON_OFF;
+	_accepted_directive_set["msie_padding"]._syntax = SYNTAX_ON_OFF;
+	_accepted_directive_set["msie_refresh"]._syntax = SYNTAX_ON_OFF;
+	_accepted_directive_set["open_file_cache"]._syntax = SYNTAX_ON_OFF;
+	_accepted_directive_set["open_file_cache_errors"]._syntax = SYNTAX_ON_OFF;
+	_accepted_directive_set["open_file_cache_min_uses"]._syntax = SYNTAX_NUMBER;
+	_accepted_directive_set["open_file_cache_valid"]._syntax = SYNTAX_TIME;
+	_accepted_directive_set["output_buffers"]._syntax = SYNTAX_NUMBER_SIZE;
+	_accepted_directive_set["pid"]._syntax = SYNTAX_STRING;
+	_accepted_directive_set["port_in_redirect"]._syntax = SYNTAX_ON_OFF;
+	_accepted_directive_set["postpone_output"]._syntax = SYNTAX_SIZE;
+	_accepted_directive_set["read_ahead"]._syntax = SYNTAX_SIZE;
+	_accepted_directive_set["recursive_error_pages"]._syntax = SYNTAX_ON_OFF;
+	_accepted_directive_set["request_pool_size"]._syntax = SYNTAX_SIZE;
+	_accepted_directive_set["reset_timedout_connection"]._syntax = SYNTAX_ON_OFF;
+	_accepted_directive_set["resolver"]._syntax = SYNTAX_ADDRESS;
+	_accepted_directive_set["resolver_timeout"]._syntax = SYNTAX_TIME;
+	_accepted_directive_set["return"]._syntax = SYNTAX_CODE_URI;
+	_accepted_directive_set["root"]._syntax = SYNTAX_PATH;
+	_accepted_directive_set["satisfy"]._syntax = SYNTAX_ALL_ANY;
+	_accepted_directive_set["send_lowat"]._syntax = SYNTAX_SIZE;
+	_accepted_directive_set["send_timeout"]._syntax = SYNTAX_TIME;
+	_accepted_directive_set["sendfile"]._syntax = SYNTAX_ON_OFF;
+	_accepted_directive_set["sendfile_max_chunk"]._syntax = SYNTAX_SIZE;
+	_accepted_directive_set["server"]._syntax = SYNTAX_BLOCK;
+	_accepted_directive_set["server_name"]._syntax = SYNTAX_NAME;
+	_accepted_directive_set["server_name_in_redirect"]._syntax = SYNTAX_ON_OFF;
+	_accepted_directive_set["server_names_hash_bucket_size"]._syntax = SYNTAX_SIZE;
+	_accepted_directive_set["server_names_hash_max_size"]._syntax = SYNTAX_SIZE;
+	_accepted_directive_set["server_tokens"]._syntax = SYNTAX_ON_OFF;
+	_accepted_directive_set["ssl_prefer_server_ciphers"]._syntax = SYNTAX_ON_OFF;
+	_accepted_directive_set["ssl_protocols"]._syntax = SYNTAX_STRING;
+	_accepted_directive_set["subrequest_output_buffer_size"]._syntax = SYNTAX_SIZE;
+	_accepted_directive_set["tcp_nodelay"]._syntax = SYNTAX_ON_OFF;
+	_accepted_directive_set["tcp_nopush"]._syntax = SYNTAX_ON_OFF;
+	_accepted_directive_set["try_files"]._syntax = SYNTAX_STRING;//to define
+	_accepted_directive_set["types"]._syntax = SYNTAX_BLOCK;
+	_accepted_directive_set["types_hash_bucket_size"]._syntax = SYNTAX_SIZE;
+	_accepted_directive_set["types_hash_max_size"]._syntax = SYNTAX_SIZE;
+	_accepted_directive_set["underscores_in_headers"]._syntax = SYNTAX_ON_OFF;
+	_accepted_directive_set["user"]._syntax = SYNTAX_STRING;//to define
+	_accepted_directive_set["upload_store"]._syntax = SYNTAX_PATH;
+	_accepted_directive_set["variables_hash_bucket_size"]._syntax = SYNTAX_SIZE;
+	_accepted_directive_set["variables_hash_max_size"]._syntax = SYNTAX_SIZE;
+	_accepted_directive_set["worker_connections"]._syntax = SYNTAX_NUMBER;
+	_accepted_directive_set["worker_processes"]._syntax = SYNTAX_NUMBER;
 }
