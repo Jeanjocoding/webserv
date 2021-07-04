@@ -6,7 +6,7 @@
 /*   By: asablayr <marvin@42.fr>                    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2021/06/06 15:27:02 by asablayr          #+#    #+#             */
-/*   Updated: 2021/07/01 15:46:44 by asablayr         ###   ########.fr       */
+/*   Updated: 2021/07/04 17:45:39 by asablayr         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -71,10 +71,10 @@ int main(int ac, char** av)
 				if (check)
 					continue;
 				handle_connection(connection_map[i]);
-//				connection_map.erase(i);//maybe not for keep alive
-//				close(i);//maybe not
+				connection_map.erase(i);//maybe not for keep alive
+				close(i);//maybe not
 				
-//				FD_CLR(i, &rfds);
+				FD_CLR(i, &rfds);
 			}
 		}
 	}

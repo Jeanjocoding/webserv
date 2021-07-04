@@ -1,3 +1,15 @@
+/* ************************************************************************** */
+/*                                                                            */
+/*                                                        :::      ::::::::   */
+/*   ConnectionClass.cpp                                :+:      :+:    :+:   */
+/*                                                    +:+ +:+         +:+     */
+/*   By: asablayr <marvin@42.fr>                    +#+  +:+       +#+        */
+/*                                                +#+#+#+#+#+   +#+           */
+/*   Created: 2021/07/04 17:42:52 by asablayr          #+#    #+#             */
+/*   Updated: 2021/07/04 17:43:29 by asablayr         ###   ########.fr       */
+/*                                                                            */
+/* ************************************************************************** */
+
 #include <cstring>
 #include "ConnectionClass.hpp"
 
@@ -279,7 +291,7 @@ int		ConnectionClass::_parseProtocol(HttpRequest& currentRequest, std::string& p
 	while (protocol[index] != '.')
 	{
 //		std::cout << "protocol[" << index <<"] : " << protocol[index] << std::endl;
-		if (!isnumber(protocol[index]))
+		if (!isdigit(protocol[index]))
 			return (_invalidRequestProcedure(currentRequest, 400));
 		bigVersion = bigVersion * 10 + protocol[index] - '0';
 		index++;
@@ -292,7 +304,7 @@ int		ConnectionClass::_parseProtocol(HttpRequest& currentRequest, std::string& p
 	while (index < length)
 	{
 //		std::cout << "protocol[" << index <<"] : " << protocol[index] << std::endl;
-		if (!isnumber(protocol[index]))
+		if (!isdigit(protocol[index]))
 			return (_invalidRequestProcedure(currentRequest, 400));
 		smallVersion = smallVersion * 10 + protocol[index] - '0';
 		index++;
