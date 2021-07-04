@@ -19,6 +19,10 @@ HttpRequest::HttpRequest(HttpRequest const& to_copy) : HttpMessage(to_copy)
 	_errorCode = to_copy._errorCode;
 	_lineCount = to_copy._lineCount;
 	_content = to_copy._content;
+	_hasBody = to_copy._hasBody;
+	_hasTE = to_copy._hasTE;
+	_transferEncodings = to_copy._transferEncodings;
+	_isChunked = to_copy._isChunked;
 
 }
 
@@ -47,6 +51,10 @@ HttpRequest&	HttpRequest::operator=(HttpRequest const& to_copy)
 	_lineCount = to_copy._lineCount;
 	_contentLength = to_copy._contentLength;
 	_content = to_copy._content;
+	_hasBody = to_copy._hasBody;
+	_hasTE = to_copy._hasTE;
+	_transferEncodings = to_copy._transferEncodings;
+	_isChunked = to_copy._isChunked;
 	return (*this);
 }
 
@@ -162,4 +170,39 @@ std::string const&	HttpRequest::getContent() const
 requestLineInfos const&		HttpRequest::getRequestLineInfos(void) const
 {
 	return (_requestLine);
+}
+
+int			HttpRequest::hasContent(void) const
+{
+	return (_hasBody);
+}
+
+void			HttpRequest::setHasContent(bool hasContent)
+{
+	_hasBody = hasContent;
+}
+
+std::vector<std::string>& HttpRequest::getModifyableTE()
+{
+	return (_transferEncodings);
+}
+
+void			HttpRequest::setIsChunked(bool value)
+{
+	_isChunked = value;
+}
+
+bool			HttpRequest::isChunked(void) const
+{
+	return (_isChunked);
+}
+
+void			HttpRequest::setHasTE(bool value)
+{
+	_hasTE = value;
+}
+
+bool			HttpRequest::HasTE(void) const
+{
+	return (_hasTE);
 }

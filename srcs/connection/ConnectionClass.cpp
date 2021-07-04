@@ -391,6 +391,50 @@ int		ConnectionClass::_caseInsensitiveComparison(std::string s1, std::string s2)
 	return (1);
 }
 
+
+
+int		ConnectionClass::_findAndParseContentHeaders(HttpRequest& currentRequest, std::pair<std::string, std::string> const& header)
+{
+	if (_caseInsensitiveComparison(header.first, "Transfer-Encoding"))
+	{
+		std::cout << "the request has ther TE header" << std::endl;
+		ft_strsplit_and_trim(header.second, currentRequest.getModifyableTE());
+		print_vec(currentRequest.getModifyableTE());
+		currentRequest.setHasTE(1);
+		if (_caseInsensitiveComparison(currentRequest.getModifyableTE().back(), "Chunked"))
+		{
+			currentRequest.setIsChunked(1);
+			currentRequest.setContentLength(0);
+			currentRequest.setHasContent(1);
+			std::cout << "the request is chunked" << std::endl;
+			return (1);
+		}
+		else
+			return (_invalidRequestProcedure(currentRequest, 400));
+	}
+	if (_caseInsensitiveComparison(header.first, "Content-Length"))
+	{
+		if (header.second.find_first_not_of("0123456789") != header.second.npos)
+			return (_invalidRequestProcedure(currentRequest, 400));
+//		std::cout << " PASSED FIRT CHECK" << std::endl;
+		long nbred = strtol(header.second.c_str(), NULL, 10);
+		if (currentRequest.getContentLength())
+		{
+			if (currentRequest.getContentLength() != nbred)
+				return (_invalidRequestProcedure(currentRequest, 400));
+		}
+		else
+		{
+			if (currentRequest.HasTE())
+				return (0);
+			currentRequest.setContentLength(nbred);
+		}
+		currentRequest.setHasContent(1);
+		return (1);
+	}
+	return (0);
+}
+
 int		ConnectionClass::_parseHeaderLine(const char *line, int len, HttpRequest& currentRequest)
 {
 	int	index = 0;
@@ -431,8 +475,10 @@ int		ConnectionClass::_parseHeaderLine(const char *line, int len, HttpRequest& c
 //	std::cout << std::endl;
 //	std::cout << "I REACHED CONTENT LENGTH PART" << std::endl;
 //	std::cout << std::endl;
+	if (_findAndParseContentHeaders(currentRequest, header) == -1)
+		return (-1);
 
-	if (_caseInsensitiveComparison(header.first, "Content-Length"))
+/*	if (_caseInsensitiveComparison(header.first, "Content-Length"))
 	{
 //		std::cout << "header.first: " << header.first << std::endl;
 //		std::cout << "header.second: -" << header.second << "-" << std::endl;
@@ -448,7 +494,7 @@ int		ConnectionClass::_parseHeaderLine(const char *line, int len, HttpRequest& c
 		else
 			currentRequest.setContentLength(nbred);
 //		std::cout << "ascii content length: " << header.second << " - long content-length: " << currentRequest.getContentLength() << std::endl;
-	}
+	}*/
 	currentRequest.addHeader(header);
 
 	return (1);

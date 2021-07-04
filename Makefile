@@ -25,6 +25,7 @@ HDRS =	webserv.hpp \
 		serverClass.hpp \
 		HttpMessage.hpp \
 		HttpRequest.hpp \
+		ConnectionUtils.hpp \
 		ConnectionClass.hpp
 
 SRCS =	main.cpp \

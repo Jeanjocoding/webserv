@@ -2,6 +2,7 @@
 # define HTTPREQUEST_H
 
 #include "HttpMessage.hpp"
+#include <vector>
 
 typedef struct s_requestLineInfos
 {
@@ -39,17 +40,29 @@ public:
 	void				setContent(std::string const& req_content);
 	std::string const&		getContent() const;
 	requestLineInfos const&		getRequestLineInfos(void) const;
+	int				hasContent(void) const;
+	void				setHasContent(bool hasContent);
+	void				setHasTE(bool value);
+	bool				HasTE(void) const;
+	std::vector<std::string>&	getModifyableTE();
+	void				setIsChunked(bool value);
+	bool				isChunked() const;
+
 
 private:
-	bool			_isValid;
-	std::string		_startLine;
+	bool				_isValid;
+	std::string			_startLine;
 	int				_method;
-	std::string		_methodArgument;
-	int			_errorCode;
-	requestLineInfos	_requestLine;
-	int			_lineCount;
-	long			_contentLength;
-	std::string		_content;
+	std::string			_methodArgument;
+	int				_errorCode;
+	requestLineInfos		_requestLine;
+	int				_lineCount;
+	long				_contentLength;
+	std::string			_content;
+	bool				_hasBody;
+	std::vector<std::string>	_transferEncodings;
+	bool				_hasTE;
+	bool				_isChunked;
 
 	int				_parseMethodLine(void);
 	int				_parseHeaderBlock(std::string str_headers);
