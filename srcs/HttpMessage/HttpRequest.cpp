@@ -206,3 +206,8 @@ bool			HttpRequest::HasTE(void) const
 {
 	return (_hasTE);
 }
+
+bool			HttpRequest::isValid(void) const
+{
+	return (_isValid);
+}

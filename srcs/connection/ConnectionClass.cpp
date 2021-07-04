@@ -669,6 +669,8 @@ int		ConnectionClass::_read_chunked_line(readingBuffer& buffer, int& length_pars
 	int		read_ret;
 	int 		deb_read;
 
+	int deleteThisDebuggingShit = currentRequest.isValid();
+	deleteThisDebuggingShit += 1;
 	deb_read = buffer.deb;
 	while ((crlf_index = _findInBuf("\r\n", buffer.buf, 2, buffer.end, deb_read)) == -1)
 	{
@@ -728,10 +730,10 @@ int		ConnectionClass::_read_chunked_line(readingBuffer& buffer, int& length_pars
 	return (1);
 }
 
-int		ConnectionClass::_getChunkedData(HttpRequest& currentRequest, int fd, readingBuffer& buffer, int& length_parsed)
+/* int		ConnectionClass::_getChunkedData(HttpRequest& currentRequest, int fd, readingBuffer& buffer, int& length_parsed)
 {
 
-}
+} */
 
 int		ConnectionClass::_read_request_content(HttpRequest& CurrentRequest, readingBuffer& buffer ,int& length_parsed)
 {
