@@ -102,6 +102,12 @@ void		HttpRequest::clear(void)
 void				HttpRequest::addRequestLine(std::string& method, std::string& target)
 {
 	_requestLine.method = method;	
+	if (method == "GET")
+		_requestLine.int_method = GET_METHOD;
+	if (method == "POST")
+		_requestLine.int_method = POST_METHOD;
+	if (method == "DELETE")
+		_requestLine.int_method = DELETE_METHOD;
 	_requestLine.target = target;
 }
 

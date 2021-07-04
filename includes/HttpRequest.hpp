@@ -4,9 +4,14 @@
 #include "HttpMessage.hpp"
 #include <vector>
 
+#define GET_METHOD 1
+#define POST_METHOD 2
+#define DELETE_METHOD 3
+
 typedef struct s_requestLineInfos
 {
 	std::string		method;
+	int			int_method;
 	std::string		target;
 	std::pair<int, int>	protocol;
 }		requestLineInfos;
