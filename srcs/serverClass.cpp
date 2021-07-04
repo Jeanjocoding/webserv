@@ -6,7 +6,7 @@
 /*   By: asablayr <marvin@42.fr>                    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2021/06/07 18:49:16 by asablayr          #+#    #+#             */
-/*   Updated: 2021/06/22 16:25:43 by asablayr         ###   ########.fr       */
+/*   Updated: 2021/07/04 18:26:04 by asablayr         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -131,6 +131,7 @@ void serverClass::startServer()
 		_port.erase(0, _port.find(":") + 1);
 		_host.erase(_host.find(_port) - 1, _port.size() + 1);
 	}
+	std::cout << "host : " << _host << "port : " << _port << std::endl;
 	retval = getaddrinfo(_host.c_str(), _port.c_str(), &hint, &_addr);
 	if (retval)
 	{
