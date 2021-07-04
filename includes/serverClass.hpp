@@ -6,7 +6,7 @@
 /*   By: asablayr <marvin@42.fr>                    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2021/06/07 10:16:05 by asablayr          #+#    #+#             */
-/*   Updated: 2021/06/23 15:37:16 by asablayr         ###   ########.fr       */
+/*   Updated: 2021/07/04 18:31:18 by asablayr         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -19,8 +19,8 @@
 #include "contextClass.hpp"
 
 #define	DEFAULT_PORT "8001"
-#define	DEFAULT_HOST "*"
-#define	DEFAULT_LISTEN "*:8001"
+#define	DEFAULT_HOST "0.0.0.0"
+#define	DEFAULT_LISTEN "0.0.0.0:8001"
 #define	DEFAULT_SERVER_NAME "webserver"
 #define DEFAULT_ROOT "/"
 #define DEFAULT_INDEX "/"
