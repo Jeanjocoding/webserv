@@ -6,11 +6,13 @@
 /*   By: asablayr <marvin@42.fr>                    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2021/06/12 15:24:19 by asablayr          #+#    #+#             */
-/*   Updated: 2021/07/01 15:45:04 by asablayr         ###   ########.fr       */
+/*   Updated: 2021/07/05 13:26:24 by asablayr         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include <iostream>
+#include <cstdlib>
+#include <sstream>
 #include "contextClass.hpp"
 
 contextClass::contextClass()
@@ -71,7 +73,7 @@ contextClass& contextClass::operator = (contextClass const& copy)
 
 contextClass::~contextClass()
 {
-	for (auto it = _blocks.begin(); it != _blocks.end(); it++)
+	for (std::vector<contextClass*>::iterator it = _blocks.begin(); it != _blocks.end(); it++)
 		delete *it;
 }
 
@@ -79,30 +81,26 @@ void contextClass::setBlocks(void)
 {
     if (_name == "http")
 	{
-       _block_set = {
-			"server",
-		};
+       _block_set.push_back("server");
 	}
 	else if (_name == "events")
 	{
-		_block_set = {};//empty for now
+//		_block_set = {};//empty for now
+		return;
 	}
-    else if (_name == "server")
+	else if (_name == "server")
 	{
-       _block_set = {
-			"location"
-		};
+		_block_set.push_back("location");
 	}
-    else if (_name == "location")
+	else if (_name == "location")
 	{
-       _block_set = {};
+//		_block_set = {};
+		return;
 	}
-    else
+	else
 	{
-		_block_set = {
-			"http",
-			"events"//might delete
-		};
+		_block_set.push_back("http");
+		_block_set.push_back("events");//might delete
 	}
 }
 
@@ -110,43 +108,36 @@ void contextClass::setDirectives(void)
 {
     if (_name == "http")
 	{
-       _directive_set = {
-			_accepted_directive_set["access_log"],
-			_accepted_directive_set["error_log"],
-			_accepted_directive_set["index"]
-		};
+       _directive_set.push_back(_accepted_directive_set["access_log"]);
+       _directive_set.push_back(_accepted_directive_set["error_log"]);
+       _directive_set.push_back(_accepted_directive_set["index"]);
 	}
 	else if (_name == "events")
 	{
-		_directive_set = {};
+//		_directive_set = {};
+		return;
 	}
     else if (_name == "server")
 	{
-       _directive_set = {
-			_accepted_directive_set["listen"],
-			_accepted_directive_set["server_name"],
-			_accepted_directive_set["access_log"],
-			_accepted_directive_set["error_log"],
-			_accepted_directive_set["root"],
-			_accepted_directive_set["return"]
-		};
+       _directive_set.push_back(_accepted_directive_set["listen"]);
+       _directive_set.push_back(_accepted_directive_set["server_name"]);
+       _directive_set.push_back(_accepted_directive_set["access_log"]);
+       _directive_set.push_back(_accepted_directive_set["error_log"]);
+       _directive_set.push_back(_accepted_directive_set["root"]);
+       _directive_set.push_back(_accepted_directive_set["return"]);
 	}
     else if (_name == "location")
 	{
-       _directive_set = {
-			_accepted_directive_set["fastcgi_pass"],
-			_accepted_directive_set["access_log"],
-			_accepted_directive_set["error_log"],
-			_accepted_directive_set["root"],
-			_accepted_directive_set["return"]
-		};
+       _directive_set.push_back(_accepted_directive_set["fastcgi_pass"]);
+       _directive_set.push_back(_accepted_directive_set["access_log"]);
+       _directive_set.push_back(_accepted_directive_set["error_log"]);
+       _directive_set.push_back(_accepted_directive_set["root"]);
+       _directive_set.push_back(_accepted_directive_set["return"]);
 	}
     else
 	{
-		_directive_set = {
-			_accepted_directive_set["access_log"],
-			_accepted_directive_set["error_log"]
-		};
+       _directive_set.push_back(_accepted_directive_set["access_log"]);
+       _directive_set.push_back(_accepted_directive_set["error_log"]);
 	}
 }
 
@@ -177,8 +168,8 @@ bool contextClass::check_after(std::string const& buff, std::size_t& i) const
 std::pair<bool, std::string>	contextClass::getBlock(std::string const& block_name, std::string const& buff) const
 {
 	std::string						block;
-	auto							it = buff.begin();
-	auto							ite = buff.begin();
+	std::string::const_iterator		it = buff.begin();
+	std::string::const_iterator		ite = buff.begin();
 	std::size_t						i;
 	int								brackets;
 	std::pair<bool, std::string>	res;
@@ -217,10 +208,10 @@ std::pair<std::string, std::string>	contextClass::getParamedBlock(std::string co
 {
 	std::string							block;
 	std::string							tmp;
-	auto								it = buff.begin();
-	auto								param_it = buff.begin();
-	auto								ite = buff.begin();
-	auto								param_ite = buff.begin();
+	std::string::const_iterator			it = buff.begin();
+	std::string::const_iterator			param_it = buff.begin();
+	std::string::const_iterator			ite = buff.begin();
+	std::string::const_iterator			param_ite = buff.begin();
 	std::size_t							i;
 	int									brackets;
 	std::pair<std::string, std::string>	res;
@@ -288,8 +279,8 @@ std::pair<bool, std::string>	contextClass::getSingleDirective(std::string const&
 {
 	std::pair<bool, std::string>	res;
 	std::size_t						i;
-	auto							it = buff.begin();
-	auto							ite = buff.begin();
+	std::string::const_iterator		it = buff.begin();
+	std::string::const_iterator		ite = buff.begin();
 
 	res.first = false;
 	res.second = buff;
@@ -317,11 +308,11 @@ std::pair<bool, std::string>	contextClass::getSingleDirective(std::string const&
 
 void	contextClass::getBlocksInContext(void)
 {
-	for (auto it = _block_set.begin(); it != _block_set.end(); it++)
+	for (std::vector<std::string>::iterator it = _block_set.begin(); it != _block_set.end(); it++)
 	{
 		if (*it == "location")
 		{
-			for (auto check = getParamedBlock(*it, _block_content); !check.first.empty(); check = getParamedBlock(*it, _block_content))
+			for (std::pair<std::string, std::string> check = getParamedBlock(*it, _block_content); !check.first.empty(); check = getParamedBlock(*it, _block_content))
 			{
 				_blocks.push_back(new contextClass(*it, check.second));
 				_blocks[_blocks.size() - 1]->_param = check.first;
@@ -330,7 +321,7 @@ void	contextClass::getBlocksInContext(void)
 		}
 		else
 		{
-			for (auto check = getBlock(*it, _block_content); check.first; check = getBlock(*it, _block_content))
+			for (std::pair<bool, std::string> check = getBlock(*it, _block_content); check.first; check = getBlock(*it, _block_content))
 			{
 				_blocks.push_back(new contextClass(*it, check.second));
 				_block_content.erase(_block_content.find(check.second), check.second.size());
@@ -341,7 +332,7 @@ void	contextClass::getBlocksInContext(void)
 
 void	contextClass::getDirectivesInContext(void)
 {
-	for (auto it = _directive_set.begin(); it != _directive_set.end(); it++)
+	for (std::vector<directiveClass>::iterator it = _directive_set.begin(); it != _directive_set.end(); it++)
 	{
 		std::pair<bool, std::string>check = getSingleDirective(it->_name, _block_content);//get directive and erase it from buffer
 		if (check.first)
@@ -379,13 +370,13 @@ void	contextClass::getAcceptedDirectivesInContext(void)
 	{
 		while (_block_content[0] == ' ')
 			_block_content.erase(0, 1);
-		auto it = _block_content.begin();
+		std::string::iterator it = _block_content.begin();
 		while (it != _block_content.end() && *it != ' ' && *it != ';' && *it != '{' && *it != '}')
 			it++;
 		std::string temp(_block_content.begin(), it);
 		if (temp.empty())
 			return ;
-		auto directive = _accepted_directive_set.find(temp);
+		std::map<std::string, directiveClass>::iterator directive = _accepted_directive_set.find(temp);
 		if (directive != _accepted_directive_set.end() && (directive->second.isInContext(_name)))
 		{
 			std::pair<bool, std::string> check;
@@ -409,6 +400,15 @@ void	contextClass::getAcceptedDirectivesInContext(void)
 		while (_block_content[0] == ' ')
 			_block_content.erase(0, 1);
 	}
+}
+
+std::vector<std::string> contextClass::setAcceptedDirectiveContext(std::string const& buff)
+{
+	std::vector<std::string> ret;
+	std::istringstream iss(buff);
+	for (std::string s; iss >> s;)
+		ret.push_back(s);
+	return ret;
 }
 
 void contextClass::setAcceptedDirectives(void)
@@ -507,99 +507,99 @@ void contextClass::setAcceptedDirectives(void)
 	_accepted_directive_set["worker_connections"]._name = "worker_connections";
 	_accepted_directive_set["worker_processes"]._name = "worker_processes";
 
-	_accepted_directive_set["absolute_redirect"]._contexts = {"http", "server", "location"};
-	_accepted_directive_set["access_log"]._contexts = {"http", "server", "location"};
-	_accepted_directive_set["aio"]._contexts = {"http", "server", "location"};
-	_accepted_directive_set["aio_write"]._contexts = {"http", "server", "location"};
-	_accepted_directive_set["alias"]._contexts = {"location"};
-	_accepted_directive_set["auth_delay"]._contexts = {"http", "server", "location"};
-	_accepted_directive_set["chunked_transfer_encoding"]._contexts = {"http", "server", "location"};
-	_accepted_directive_set["client_body_buffer_size"]._contexts = {"http", "server", "location"};
-	_accepted_directive_set["client_body_in_file_only"]._contexts = {"http", "server", "location"};
-	_accepted_directive_set["client_body_in_single_buffer"]._contexts = {"http", "server", "location"};
-	_accepted_directive_set["client_body_temp_path"]._contexts = {"http", "server", "location"};
-	_accepted_directive_set["client_body_timeout"]._contexts = {"http", "server", "location"};
-	_accepted_directive_set["client_header_buffer_size"]._contexts = {"http", "server"};
-	_accepted_directive_set["client_header_timeout"]._contexts = {"http", "server"};
-	_accepted_directive_set["client_max_body_size"]._contexts = {"http", "server", "location"};
-	_accepted_directive_set["connection_pool_size"]._contexts = {"http", "server"};
-	_accepted_directive_set["default_type"]._contexts = {"http", "server", "location"};
-	_accepted_directive_set["directio"]._contexts = {"http", "server", "location"};
-	_accepted_directive_set["directio_alignment"]._contexts = {"http", "server", "location"};
-	_accepted_directive_set["disable_symlinks"]._contexts = {"http", "server", "location"};
-	_accepted_directive_set["error_log"]._contexts = {"main", "http", "mail", "stream", "server", "location"};
-	_accepted_directive_set["error_page"]._contexts = {"http", "server", "location"};
-	_accepted_directive_set["etag"]._contexts = {"http", "server", "location"};
-	_accepted_directive_set["fastcgi_pass"]._contexts = {"location"};
-	_accepted_directive_set["gzip"]._contexts = {"http", "server", "location"};
-	_accepted_directive_set["http"]._contexts = {"main"};
-	_accepted_directive_set["if_modified_since"]._contexts = {"http", "server", "location"};
-	_accepted_directive_set["ignore_invalid_headers"]._contexts = {"http", "server", "location"};
-	_accepted_directive_set["index"]._contexts = {"http", "server", "location"};
-	_accepted_directive_set["include"]._contexts = {"main", "http", "server", "location"};
-	_accepted_directive_set["internal"]._contexts = {"location"};
-	_accepted_directive_set["keepalive_disable"]._contexts = {"http", "server", "location"};
-	_accepted_directive_set["keepalive_requests"]._contexts = {"http", "server", "location"};
-	_accepted_directive_set["keepalive_time"]._contexts = {"http", "server", "location"};
-	_accepted_directive_set["keepalive_timeout"]._contexts = {"http", "server", "location"};
-	_accepted_directive_set["large_client_header_buffers"]._contexts = {"http", "server"};
-	_accepted_directive_set["limit_except"]._contexts = {"location"};
-	_accepted_directive_set["limit_rate"]._contexts = {"http", "server", "location"};
-	_accepted_directive_set["limit_rate_after"]._contexts = {"http", "server", "location"};
-	_accepted_directive_set["lingering_close"]._contexts = {"http", "server", "location"};
-	_accepted_directive_set["lingering_time"]._contexts = {"http", "server", "location"};
-	_accepted_directive_set["lingering_timeout"]._contexts = {"http", "server", "location"};
-	_accepted_directive_set["listen"]._contexts = {"server"};
-	_accepted_directive_set["location"]._contexts = {"server", "location"};
-	_accepted_directive_set["log_not_found"]._contexts = {"http", "server", "location"};
-	_accepted_directive_set["log_subrequest"]._contexts = {"http", "server", "location"};
-	_accepted_directive_set["max_ranges"]._contexts = {"http", "server", "location"};
-	_accepted_directive_set["merge_slashes"]._contexts = {"http", "server"};
-	_accepted_directive_set["msie_padding"]._contexts = {"http", "server", "location"};
-	_accepted_directive_set["msie_refresh"]._contexts = {"http", "server", "location"};
-	_accepted_directive_set["open_file_cache"]._contexts = {"http", "server", "location"};
-	_accepted_directive_set["open_file_cache_errors"]._contexts = {"http", "server", "location"};
-	_accepted_directive_set["open_file_cache_min_uses"]._contexts = {"http", "server", "location"};
-	_accepted_directive_set["open_file_cache_valid"]._contexts = {"http", "server", "location"};
-	_accepted_directive_set["output_buffers"]._contexts = {"http", "server", "location"};
-	_accepted_directive_set["pid"]._contexts = {"main"};
-	_accepted_directive_set["port_in_redirect"]._contexts = {"http", "server", "location"};
-	_accepted_directive_set["postpone_output"]._contexts = {"http", "server", "location"};
-	_accepted_directive_set["read_ahead"]._contexts = {"http", "server", "location"};
-	_accepted_directive_set["recursive_error_pages"]._contexts = {"http", "server", "location"};
-	_accepted_directive_set["request_pool_size"]._contexts = {"http", "server"};
-	_accepted_directive_set["reset_timedout_connection"]._contexts = {"http", "server", "location"};
-	_accepted_directive_set["resolver"]._contexts = {"http", "server", "location"};
-	_accepted_directive_set["resolver_timeout"]._contexts = {"http", "server", "location"};
-	_accepted_directive_set["return"]._contexts = {"server", "location"};
-	_accepted_directive_set["root"]._contexts = {"http", "server", "location"};
-	_accepted_directive_set["satisfy"]._contexts = {"http", "server", "location"};
-	_accepted_directive_set["send_lowat"]._contexts = {"http", "server", "location"};
-	_accepted_directive_set["send_timeout"]._contexts = {"http", "server", "location"};
-	_accepted_directive_set["sendfile"]._contexts = {"http", "server", "location"};
-	_accepted_directive_set["sendfile_max_chunk"]._contexts = {"http", "server", "location"};
-	_accepted_directive_set["server"]._contexts = {"http"};
-	_accepted_directive_set["server_name"]._contexts = {"server"};
-	_accepted_directive_set["server_name_in_redirect"]._contexts = {"http", "server", "location"};
-	_accepted_directive_set["server_names_hash_bucket_size"]._contexts = {"http"};
-	_accepted_directive_set["server_names_hash_max_size"]._contexts = {"http"};
-	_accepted_directive_set["server_tokens"]._contexts = {"http", "server", "location"};
-	_accepted_directive_set["ssl_prefer_server_ciphers"]._contexts = {"http", "server"};
-	_accepted_directive_set["ssl_protocols"]._contexts = {"http", "server"};
-	_accepted_directive_set["subrequest_output_buffer_size"]._contexts = {"http", "server", "location"};
-	_accepted_directive_set["tcp_nodelay"]._contexts = {"http", "server", "location"};
-	_accepted_directive_set["tcp_nopush"]._contexts = {"http", "server", "location"};
-	_accepted_directive_set["try_files"]._contexts = {"http", "location"};
-	_accepted_directive_set["types"]._contexts = {"http", "server", "location"};
-	_accepted_directive_set["types_hash_bucket_size"]._contexts = {"http", "server", "location"};
-	_accepted_directive_set["types_hash_max_size"]._contexts = {"http", "server", "location"};
-	_accepted_directive_set["underscores_in_headers"]._contexts = {"http", "server"};
-	_accepted_directive_set["user"]._contexts = {"main"};
-	_accepted_directive_set["upload_store"]._contexts = {"server", "location"};
-	_accepted_directive_set["variables_hash_bucket_size"]._contexts = {"http"};
-	_accepted_directive_set["variables_hash_max_size"]._contexts = {"http"};
-	_accepted_directive_set["worker_connections"]._contexts = {"events"};
-	_accepted_directive_set["worker_processes"]._contexts = {"main"};
+	_accepted_directive_set["absolute_redirect"]._contexts = setAcceptedDirectiveContext("http server location");
+	_accepted_directive_set["access_log"]._contexts = setAcceptedDirectiveContext("http server location");
+	_accepted_directive_set["aio"]._contexts = setAcceptedDirectiveContext("http server location");
+	_accepted_directive_set["aio_write"]._contexts = setAcceptedDirectiveContext("http server location");
+	_accepted_directive_set["alias"]._contexts = setAcceptedDirectiveContext("location");
+	_accepted_directive_set["auth_delay"]._contexts = setAcceptedDirectiveContext("http server location");
+	_accepted_directive_set["chunked_transfer_encoding"]._contexts = setAcceptedDirectiveContext("http server location");
+	_accepted_directive_set["client_body_buffer_size"]._contexts = setAcceptedDirectiveContext("http server location");
+	_accepted_directive_set["client_body_in_file_only"]._contexts = setAcceptedDirectiveContext("http server location");
+	_accepted_directive_set["client_body_in_single_buffer"]._contexts = setAcceptedDirectiveContext("http server location");
+	_accepted_directive_set["client_body_temp_path"]._contexts = setAcceptedDirectiveContext("http server location");
+	_accepted_directive_set["client_body_timeout"]._contexts = setAcceptedDirectiveContext("http server location");
+	_accepted_directive_set["client_header_buffer_size"]._contexts = setAcceptedDirectiveContext("http server");
+	_accepted_directive_set["client_header_timeout"]._contexts = setAcceptedDirectiveContext("http server");
+	_accepted_directive_set["client_max_body_size"]._contexts = setAcceptedDirectiveContext("http server location");
+	_accepted_directive_set["connection_pool_size"]._contexts = setAcceptedDirectiveContext("http server");
+	_accepted_directive_set["default_type"]._contexts = setAcceptedDirectiveContext("http server location");
+	_accepted_directive_set["directio"]._contexts = setAcceptedDirectiveContext("http server location");
+	_accepted_directive_set["directio_alignment"]._contexts = setAcceptedDirectiveContext("http server location");
+	_accepted_directive_set["disable_symlinks"]._contexts = setAcceptedDirectiveContext("http server location");
+	_accepted_directive_set["error_log"]._contexts = setAcceptedDirectiveContext("main http mail stream server location");
+	_accepted_directive_set["error_page"]._contexts = setAcceptedDirectiveContext("http server location");
+	_accepted_directive_set["etag"]._contexts = setAcceptedDirectiveContext("http server location");
+	_accepted_directive_set["fastcgi_pass"]._contexts = setAcceptedDirectiveContext("location");
+	_accepted_directive_set["gzip"]._contexts = setAcceptedDirectiveContext("http server location");
+	_accepted_directive_set["http"]._contexts = setAcceptedDirectiveContext("main");
+	_accepted_directive_set["if_modified_since"]._contexts = setAcceptedDirectiveContext("http server location");
+	_accepted_directive_set["ignore_invalid_headers"]._contexts = setAcceptedDirectiveContext("http server location");
+	_accepted_directive_set["index"]._contexts = setAcceptedDirectiveContext("http server location");
+	_accepted_directive_set["include"]._contexts = setAcceptedDirectiveContext("main http server location");
+	_accepted_directive_set["internal"]._contexts = setAcceptedDirectiveContext("location");
+	_accepted_directive_set["keepalive_disable"]._contexts = setAcceptedDirectiveContext("http server location");
+	_accepted_directive_set["keepalive_requests"]._contexts = setAcceptedDirectiveContext("http server location");
+	_accepted_directive_set["keepalive_time"]._contexts = setAcceptedDirectiveContext("http server location");
+	_accepted_directive_set["keepalive_timeout"]._contexts = setAcceptedDirectiveContext("http server location");
+	_accepted_directive_set["large_client_header_buffers"]._contexts = setAcceptedDirectiveContext("http server");
+	_accepted_directive_set["limit_except"]._contexts = setAcceptedDirectiveContext("location");
+	_accepted_directive_set["limit_rate"]._contexts = setAcceptedDirectiveContext("http server location");
+	_accepted_directive_set["limit_rate_after"]._contexts = setAcceptedDirectiveContext("http server location");
+	_accepted_directive_set["lingering_close"]._contexts = setAcceptedDirectiveContext("http server location");
+	_accepted_directive_set["lingering_time"]._contexts = setAcceptedDirectiveContext("http server location");
+	_accepted_directive_set["lingering_timeout"]._contexts = setAcceptedDirectiveContext("http server location");
+	_accepted_directive_set["listen"]._contexts = setAcceptedDirectiveContext("server");
+	_accepted_directive_set["location"]._contexts = setAcceptedDirectiveContext("server location");
+	_accepted_directive_set["log_not_found"]._contexts = setAcceptedDirectiveContext("http server location");
+	_accepted_directive_set["log_subrequest"]._contexts = setAcceptedDirectiveContext("http server location");
+	_accepted_directive_set["max_ranges"]._contexts = setAcceptedDirectiveContext("http server location");
+	_accepted_directive_set["merge_slashes"]._contexts = setAcceptedDirectiveContext("http server");
+	_accepted_directive_set["msie_padding"]._contexts = setAcceptedDirectiveContext("http server location");
+	_accepted_directive_set["msie_refresh"]._contexts = setAcceptedDirectiveContext("http server location");
+	_accepted_directive_set["open_file_cache"]._contexts = setAcceptedDirectiveContext("http server location");
+	_accepted_directive_set["open_file_cache_errors"]._contexts = setAcceptedDirectiveContext("http server location");
+	_accepted_directive_set["open_file_cache_min_uses"]._contexts = setAcceptedDirectiveContext("http server location");
+	_accepted_directive_set["open_file_cache_valid"]._contexts = setAcceptedDirectiveContext("http server location");
+	_accepted_directive_set["output_buffers"]._contexts = setAcceptedDirectiveContext("http server location");
+	_accepted_directive_set["pid"]._contexts = setAcceptedDirectiveContext("main");
+	_accepted_directive_set["port_in_redirect"]._contexts = setAcceptedDirectiveContext("http server location");
+	_accepted_directive_set["postpone_output"]._contexts = setAcceptedDirectiveContext("http server location");
+	_accepted_directive_set["read_ahead"]._contexts = setAcceptedDirectiveContext("http server location");
+	_accepted_directive_set["recursive_error_pages"]._contexts = setAcceptedDirectiveContext("http server location");
+	_accepted_directive_set["request_pool_size"]._contexts = setAcceptedDirectiveContext("http server");
+	_accepted_directive_set["reset_timedout_connection"]._contexts = setAcceptedDirectiveContext("http server location");
+	_accepted_directive_set["resolver"]._contexts = setAcceptedDirectiveContext("http server location");
+	_accepted_directive_set["resolver_timeout"]._contexts = setAcceptedDirectiveContext("http server location");
+	_accepted_directive_set["return"]._contexts = setAcceptedDirectiveContext("server location");
+	_accepted_directive_set["root"]._contexts = setAcceptedDirectiveContext("http server location");
+	_accepted_directive_set["satisfy"]._contexts = setAcceptedDirectiveContext("http server location");
+	_accepted_directive_set["send_lowat"]._contexts = setAcceptedDirectiveContext("http server location");
+	_accepted_directive_set["send_timeout"]._contexts = setAcceptedDirectiveContext("http server location");
+	_accepted_directive_set["sendfile"]._contexts = setAcceptedDirectiveContext("http server location");
+	_accepted_directive_set["sendfile_max_chunk"]._contexts = setAcceptedDirectiveContext("http server location");
+	_accepted_directive_set["server"]._contexts = setAcceptedDirectiveContext("http");
+	_accepted_directive_set["server_name"]._contexts = setAcceptedDirectiveContext("server");
+	_accepted_directive_set["server_name_in_redirect"]._contexts = setAcceptedDirectiveContext("http server location");
+	_accepted_directive_set["server_names_hash_bucket_size"]._contexts = setAcceptedDirectiveContext("http");
+	_accepted_directive_set["server_names_hash_max_size"]._contexts = setAcceptedDirectiveContext("http");
+	_accepted_directive_set["server_tokens"]._contexts = setAcceptedDirectiveContext("http server location");
+	_accepted_directive_set["ssl_prefer_server_ciphers"]._contexts = setAcceptedDirectiveContext("http server");
+	_accepted_directive_set["ssl_protocols"]._contexts = setAcceptedDirectiveContext("http server");
+	_accepted_directive_set["subrequest_output_buffer_size"]._contexts = setAcceptedDirectiveContext("http server location");
+	_accepted_directive_set["tcp_nodelay"]._contexts = setAcceptedDirectiveContext("http server location");
+	_accepted_directive_set["tcp_nopush"]._contexts = setAcceptedDirectiveContext("http server location");
+	_accepted_directive_set["try_files"]._contexts = setAcceptedDirectiveContext("http location");
+	_accepted_directive_set["types"]._contexts = setAcceptedDirectiveContext("http server location");
+	_accepted_directive_set["types_hash_bucket_size"]._contexts = setAcceptedDirectiveContext("http server location");
+	_accepted_directive_set["types_hash_max_size"]._contexts = setAcceptedDirectiveContext("http server location");
+	_accepted_directive_set["underscores_in_headers"]._contexts = setAcceptedDirectiveContext("http server");
+	_accepted_directive_set["user"]._contexts = setAcceptedDirectiveContext("main");
+	_accepted_directive_set["upload_store"]._contexts = setAcceptedDirectiveContext("server location");
+	_accepted_directive_set["variables_hash_bucket_size"]._contexts = setAcceptedDirectiveContext("http");
+	_accepted_directive_set["variables_hash_max_size"]._contexts = setAcceptedDirectiveContext("http");
+	_accepted_directive_set["worker_connections"]._contexts = setAcceptedDirectiveContext("events");
+	_accepted_directive_set["worker_processes"]._contexts = setAcceptedDirectiveContext("main");
 
 	_accepted_directive_set["absolute_redirect"]._syntax = SYNTAX_ON_OFF;
 	_accepted_directive_set["access_log"]._syntax = SYNTAX_FILE;

@@ -6,7 +6,7 @@
 /*   By: asablayr <marvin@42.fr>                    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2021/06/07 10:16:05 by asablayr          #+#    #+#             */
-/*   Updated: 2021/06/23 15:37:16 by asablayr         ###   ########.fr       */
+/*   Updated: 2021/07/04 19:48:38 by asablayr         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -16,19 +16,8 @@
 #include <map>
 #include <vector>
 #include "error_page_path.hpp"
+#include "default_server_settings.hpp"
 #include "contextClass.hpp"
-
-#define	DEFAULT_PORT "8001"
-#define	DEFAULT_HOST "*"
-#define	DEFAULT_LISTEN "*:8001"
-#define	DEFAULT_SERVER_NAME "webserver"
-#define DEFAULT_ROOT "/"
-#define DEFAULT_INDEX "/"
-#define DEFAULT_ERROR_LOG "error.log"
-#define DEFAULT_ACCESS_LOG "access.log"
-#define DEFAULT_FASTCGI_PASS "false"
-#define	DEFAULT_BODY_MAX "1000000"
-#define DEFAULT_KEEPALIVE_TIMEOUT "45"
 
 class serverClass
 {

@@ -6,7 +6,7 @@
 /*   By: asablayr <marvin@42.fr>                    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2021/06/21 17:42:15 by asablayr          #+#    #+#             */
-/*   Updated: 2021/07/01 15:45:40 by asablayr         ###   ########.fr       */
+/*   Updated: 2021/07/05 13:37:21 by asablayr         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -36,7 +36,7 @@ directiveClass::~directiveClass()
 
 bool	directiveClass::isInContext(std::string const& context_name) const
 {
-	for (auto i = _contexts.begin(); i != _contexts.end(); i++)
+	for (std::vector<std::string>::const_iterator i = _contexts.begin(); i != _contexts.end(); i++)
 	{
 		if (context_name == *i)
 			return true;
@@ -86,11 +86,11 @@ static bool	stringParse(void)
 
 static bool	fileParse(std::string const& arg)
 {
-	auto			it = arg.begin();
-	auto			ite = arg.begin();
-	int				i = 0;
-	std::string		tmp;
-	std::ofstream	file;
+	std::string::const_iterator	it = arg.begin();
+	std::string::const_iterator	ite = arg.begin();
+	int							i = 0;
+	std::string					tmp;
+	std::ofstream				file;
 
 	while (it != arg.end() && *it == ' ')
 	{
@@ -106,7 +106,7 @@ static bool	fileParse(std::string const& arg)
 	else
 		ite = arg.begin() + arg.find(';', it - arg.begin());
 	tmp = std::string(it ,ite);
-	file.open(tmp);
+	file.open(tmp.c_str());
 	if (!file.is_open())
 		return false;
 	file.close();
@@ -186,11 +186,12 @@ static bool	timeParse(std::string& arg)
 		i++;
 	if (arg[i])
 	{
-		if (arg[i] != 's' && arg[i] != 'y' && arg[i] != 'M' && arg[i] != 'w'
-			&& arg[i] != 'd' && arg[i] != 'h' && arg[i] != 'm' && arg[i] != 's')
-			return false;
-		else // TODO switch to swtich
+		if (arg[i] == 's' || arg[i] == 'y' || arg[i] == 'M' || arg[i] == 'w'
+			|| arg[i] == 'd' || arg[i] == 'h' || arg[i] == 'm'
+			|| (arg[i] == 'm' && arg[i + 1] && arg[i + 1] == 's') || arg[i] == 's')
 			i++;
+		else
+			return false;
 	}
 	while (arg[i] && arg[i] == ' ')
 		i++;

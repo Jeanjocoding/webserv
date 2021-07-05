@@ -6,11 +6,14 @@
 /*   By: asablayr <marvin@42.fr>                    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2021/06/07 18:49:16 by asablayr          #+#    #+#             */
-/*   Updated: 2021/06/28 16:52:20 by asablayr         ###   ########.fr       */
+/*   Updated: 2021/07/04 20:00:32 by asablayr         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include <iostream>
+#include <cstdio>
+#include <cerrno>
+#include <cstdlib>
 #include <map>
 #include <sys/types.h>
 #include <sys/socket.h>

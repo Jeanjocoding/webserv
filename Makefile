@@ -6,7 +6,7 @@
 #    By: asablayr <marvin@42.fr>                    +#+  +:+       +#+         #
 #                                                 +#+#+#+#+#+   +#+            #
 #    Created: 2020/11/26 10:50:04 by asablayr          #+#    #+#              #
-#    Updated: 2021/06/21 09:56:02 by tlucille         ###   ########.fr        #
+#    Updated: 2021/07/04 19:52:34 by asablayr         ###   ########.fr        #
 #                                                                              #
 # **************************************************************************** #
 
@@ -38,7 +38,7 @@ OBJS = $(addprefix $(OBJS_PATH), $(TMP))
 INCS = $(addprefix $(HDRS_PATH), $(HDRS))
 
 CC = clang++
-C_FLAGS = -Wall -Werror -Wextra -g -fsanitize=address
+C_FLAGS = -Wall -Werror -Wextra -std=c++98 -g -fsanitize=address
 
 all : $(NAME)
 
