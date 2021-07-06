@@ -17,6 +17,7 @@
 #include <vector>
 
 #include "webserv.hpp"
+#include "ConnectionUtils.hpp"
 #include "ConnectionClass.hpp"
 
 void	print_pipeline(std::vector<HttpRequest>& requestPipeline)
@@ -35,6 +36,9 @@ void	print_pipeline(std::vector<HttpRequest>& requestPipeline)
 		std::cout << std::endl;
 		std::cout << "HEADERS: " << std::endl;
 		requestPipeline[i].printHeaders();
+		std::cout << std::endl;
+		std::cout << "ENCODINGS: " << std::endl;
+		print_vec(requestPipeline[i].getModifyableTE());
 		std::cout << std::endl;
 		std::cout << "BODY: " << requestPipeline[i].getContent() << std::endl;
 		std::cout << std::endl;

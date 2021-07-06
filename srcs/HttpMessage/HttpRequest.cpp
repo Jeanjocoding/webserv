@@ -72,6 +72,10 @@ void		HttpRequest::clear(void)
 	_requestLine.protocol.second = 0;
 	_lineCount = 0;
 	_contentLength = 0;
+	_hasBody = 0;
+	_hasTE = 0;
+	_transferEncodings.clear();
+	_isChunked = 0;
 }
 /* probablement optimisable sans trop de difficulté en cas de besoin */
 /*int				HttpRequest::parseFromString(std::string str_request)
@@ -121,7 +125,7 @@ void				HttpRequest::setErrorCode(int errorCode)
 	_errorCode = errorCode;
 }
 
-int const&				HttpRequest::getErrorCode() const
+int				HttpRequest::getErrorCode() const
 {
 	return (_errorCode);
 }
@@ -216,4 +220,9 @@ bool			HttpRequest::HasTE(void) const
 bool			HttpRequest::isValid(void) const
 {
 	return (_isValid);
+}
+
+void			HttpRequest::appendToContent(std::string& to_append)
+{
+	_content.append(to_append);
 }

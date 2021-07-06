@@ -33,7 +33,7 @@ public:
 	void				addRequestLine(std::string& method, std::string& target);
 	void				setValidity(bool validity);
 	void				setErrorCode(int responseCode);
-	int const&				getErrorCode() const;
+	int				getErrorCode() const;
 	bool				isValid() const;
 	void				setProtocolVersion(int bigVersion, int smallVersion);
 	int				getLineCount() const;
@@ -52,6 +52,7 @@ public:
 	std::vector<std::string>&	getModifyableTE();
 	void				setIsChunked(bool value);
 	bool				isChunked() const;
+	void				appendToContent(std::string& to_append);
 
 
 private:
