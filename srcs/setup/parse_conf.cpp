@@ -6,7 +6,7 @@
 /*   By: asablayr <marvin@42.fr>                    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2021/06/07 19:42:54 by asablayr          #+#    #+#             */
-/*   Updated: 2021/06/16 13:30:07 by asablayr         ###   ########.fr       */
+/*   Updated: 2021/07/04 21:09:06 by asablayr         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -48,11 +48,12 @@ static bool	check_quotes(std::string buff)
 
 std::string	read_file(std::string filename)
 {
-	std::ifstream	file(filename);
+	std::ifstream	file;
 	std::string		buff;
 	std::string 	line;
 	std::size_t		i;
 
+	file.open(filename.c_str());
 	if (!file.is_open())
 	{
 		std::cerr << "failed to open " << filename << std::endl;

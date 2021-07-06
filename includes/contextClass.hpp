@@ -6,7 +6,7 @@
 /*   By: asablayr <marvin@42.fr>                    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2021/06/12 14:11:07 by asablayr          #+#    #+#             */
-/*   Updated: 2021/06/23 12:58:10 by asablayr         ###   ########.fr       */
+/*   Updated: 2021/07/05 13:14:22 by asablayr         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -35,7 +35,7 @@ class contextClass
 			std::string								_name;
 			std::string								_param;
 			std::string								_block_content;
-			std::vector<std::string>				_directive_set;
+			std::vector<directiveClass>				_directive_set;
 			std::vector<std::string>				_block_set;
 			std::map<std::string, std::string>		_directives;
 			std::map<std::string, directiveClass>	_accepted_directive_set;
@@ -46,6 +46,7 @@ class contextClass
 
 			void								setBlocks(void);
 			void								setDirectives(void);
+			std::vector<std::string>					setAcceptedDirectiveContext(std::string const& buff);
 			void								setAcceptedDirectives(void);
 			std::pair<bool, std::string>		getBlock(std::string const& block_name, std::string const& buff) const;
 			std::pair<std::string, std::string>	getParamedBlock(std::string const& block_name, std::string const& buff) const;

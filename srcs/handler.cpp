@@ -6,12 +6,14 @@
 /*   By: asablayr <marvin@42.fr>                    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2021/06/06 21:54:40 by asablayr          #+#    #+#             */
-/*   Updated: 2021/06/08 12:56:51 by asablayr         ###   ########.fr       */
+/*   Updated: 2021/07/04 19:57:08 by asablayr         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include <utility>
 #include <iostream>
+#include <vector>
+#include <cstdio>
 #include <vector>
 
 #include "webserv.hpp"
@@ -55,7 +57,7 @@ void	handle_connection(ConnectionClass& connection)
 	{
 		std::cout << "connection closed by client" << std::endl;
 		if (connection.closeConnection() == -1)
-			perror("close");
+			std::perror("close");
 		return;
 	}
 	print_pipeline(RequestPipeline);
@@ -63,5 +65,5 @@ void	handle_connection(ConnectionClass& connection)
 //	std::cout << "message received by server: " << request_infos.second << std::endl;
 	send_ret = connection.sendResponse("HTTP/1.1 200 OK\r\n\r\n<html><body><h1>Welcome to Webser</h1></body></html>\r\n");
 	if (send_ret == -1)
-		perror("send");
+		std::perror("send");
 }

@@ -1,4 +1,18 @@
+/* ************************************************************************** */
+/*                                                                            */
+/*                                                        :::      ::::::::   */
+/*   ConnectionClass.cpp                                :+:      :+:    :+:   */
+/*                                                    +:+ +:+         +:+     */
+/*   By: asablayr <marvin@42.fr>                    +#+  +:+       +#+        */
+/*                                                +#+#+#+#+#+   +#+           */
+/*   Created: 2021/07/04 17:42:52 by asablayr          #+#    #+#             */
+/*   Updated: 2021/07/05 15:10:59 by asablayr         ###   ########.fr       */
+/*                                                                            */
+/* ************************************************************************** */
+
 #include <cstring>
+#include <cstdio>
+#include <stdlib.h>
 #include "ConnectionClass.hpp"
 
 
@@ -279,7 +293,7 @@ int		ConnectionClass::_parseProtocol(HttpRequest& currentRequest, std::string& p
 	while (protocol[index] != '.')
 	{
 //		std::cout << "protocol[" << index <<"] : " << protocol[index] << std::endl;
-		if (!isnumber(protocol[index]))
+		if (!isdigit(protocol[index]))
 			return (_invalidRequestProcedure(currentRequest, 400));
 		bigVersion = bigVersion * 10 + protocol[index] - '0';
 		index++;
@@ -292,7 +306,7 @@ int		ConnectionClass::_parseProtocol(HttpRequest& currentRequest, std::string& p
 	while (index < length)
 	{
 //		std::cout << "protocol[" << index <<"] : " << protocol[index] << std::endl;
-		if (!isnumber(protocol[index]))
+		if (!isdigit(protocol[index]))
 			return (_invalidRequestProcedure(currentRequest, 400));
 		smallVersion = smallVersion * 10 + protocol[index] - '0';
 		index++;
@@ -625,9 +639,7 @@ int		ConnectionClass::_check_header_compliancy(HttpRequest& CurrentRequest)
 	return (1);
 }
 
-
-
-int		ConnectionClass::_guaranteedRead(int fd, int to_read, std::string& str_buffer)
+/*int		ConnectionClass::_guaranteedRead(int fd, int to_read, std::string& str_buffer)
 {
 	int 	read_ret;
 	int	bytes_read = 0;
@@ -639,7 +651,7 @@ int		ConnectionClass::_guaranteedRead(int fd, int to_read, std::string& str_buff
 		exit(EXIT_FAILURE);
 	while (bytes_left)
 	{
-		/** POTENTIAL BLOCK HERE IF CONTENT-LENGTH HIGHER THAN CONTENT AND BLCOKING FDS **/
+		// POTENTIAL BLOCK HERE IF CONTENT-LENGTH HIGHER THAN CONTENT AND BLCOKING FDS
 		read_ret = recv(fd, &(buffer[bytes_read]), bytes_left, 0);
 		if (read_ret == -1)
 		{
@@ -660,6 +672,33 @@ int		ConnectionClass::_guaranteedRead(int fd, int to_read, std::string& str_buff
 	str_buffer.append(buffer);
 	free(buffer);
 	buffer = NULL;
+	return (bytes_read);
+}
+*/
+int		ConnectionClass::_guaranteedRead(int fd, int to_read, std::string& str_buffer)
+{
+	int 	read_ret;
+	int		bytes_read = 0;
+	int		bytes_left = to_read;
+	char	buffer[to_read + 1];
+
+	while (bytes_left)
+	{
+		/** POTENTIAL BLOCK HERE IF CONTENT-LENGTH HIGHER THAN CONTENT AND BLCOKING FDS **/
+		read_ret = recv(fd, &(buffer[bytes_read]), bytes_left, 0);
+		if (read_ret == -1)
+		{
+			return (-1);
+		}
+		else if (read_ret == 0)
+		{
+			return (0);
+		}
+		bytes_left -= read_ret;
+		bytes_read += read_ret;
+	}
+	buffer[bytes_read] = '\0';
+	str_buffer.append(buffer);
 	return (bytes_read);
 }
 

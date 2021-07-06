@@ -6,22 +6,23 @@
 /*   By: asablayr <marvin@42.fr>                    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2021/06/07 19:42:54 by asablayr          #+#    #+#             */
-/*   Updated: 2021/06/25 17:34:12 by asablayr         ###   ########.fr       */
+/*   Updated: 2021/07/05 14:40:38 by asablayr         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include <vector>
 #include <iostream>
 #include <fstream>
+#include <cstdlib>
 #include "serverClass.hpp"
 #include "webserv.hpp"
 
 static void	input_context(contextClass const& context, serverClass& base_server, std::vector<serverClass*>& vector_server)
 {
-	for (auto it = context._directives.begin(); it != context._directives.end(); it++)
+	for (std::map<std::string, std::string>::const_iterator it = context._directives.begin(); it != context._directives.end(); it++)
 		if (base_server[it->first])
 			*(base_server[it->first]) = it->second;
-	for (auto it = context._blocks.begin(); it != context._blocks.end(); it++)
+	for (std::vector<contextClass*>::const_iterator it = context._blocks.begin(); it != context._blocks.end(); it++)
 	{
 		if ((*it)->_name == "server")
 		{
@@ -50,10 +51,7 @@ std::vector<serverClass*>	setup_server(std::string conf_file)
 		contextClass main_context("main", buff);
 		input_context(main_context, *base_serv, server_map);
 		if (server_map.empty())
-		{
-			std::cout << "no server in conf file\n";
 			server_map.push_back(base_serv);
-		}
 	}
 	else
 	{

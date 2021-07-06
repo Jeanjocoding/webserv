@@ -6,12 +6,14 @@
 /*   By: asablayr <marvin@42.fr>                    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2021/06/06 15:27:02 by asablayr          #+#    #+#             */
-/*   Updated: 2021/06/25 17:31:10 by asablayr         ###   ########.fr       */
+/*   Updated: 2021/07/04 19:56:09 by asablayr         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include <iostream>
 #include <vector>
+#include <cstdio>
+#include <cstdlib>
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <netdb.h>
@@ -37,8 +39,6 @@ int main(int ac, char** av)
 	{
 		(*it)->startServer();
 		std::cout << "server started on : " << (*it)->_listen << std::endl;
-		if (!(*it)->_location.empty())
-			std::cout << "has location : " << (*it)->_location.begin()->first;
 		FD_SET((*it)->_server_socket, &rfds);//add server socket to fd_set
 	}
 	while (true)
@@ -46,7 +46,7 @@ int main(int ac, char** av)
 		rfds_copy = rfds;
 		if (select(FD_SETSIZE, &rfds_copy, NULL, NULL, NULL) < 0)
 		{
-			perror("select eror");
+			std::perror("select eror");
 			exit(EXIT_FAILURE);
 		}
 		for (int i = 0; i < FD_SETSIZE; i++)
@@ -60,7 +60,7 @@ int main(int ac, char** av)
 					{
 						int client_socket = accept(i, (*it)->_addr->ai_addr, &((*it)->_addr->ai_addrlen));
 						if (client_socket < 0)
-							perror("accept");
+							std::perror("accept");
 						else
 						{
 							connection_map[client_socket] = ConnectionClass(client_socket, *it);
@@ -73,10 +73,10 @@ int main(int ac, char** av)
 				if (check)
 					continue;
 				handle_connection(connection_map[i]);
-//				connection_map.erase(i);//maybe not for keep alive
-//				close(i);//maybe not
+				connection_map.erase(i);//maybe not for keep alive
+				close(i);//maybe not
 				
-//				FD_CLR(i, &rfds);
+				FD_CLR(i, &rfds);
 			}
 		}
 	}
