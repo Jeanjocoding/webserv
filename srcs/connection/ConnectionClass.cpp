@@ -198,7 +198,7 @@ int		ConnectionClass::_read_buffer(readingBuffer& buffer, std::vector<HttpReques
 		req_count++;
 		currentRequest.clear();
 	}
-	_printBufferInfo(buffer, "before no read gnr");
+//	_printBufferInfo(buffer, "before no read gnr");
 	if (buffer.deb >= buffer.end)
 	{
 //		std::cout << "there seems to be nothing left to parse after the last request. it probably means there was no pipelining at all" << std::endl;
@@ -411,7 +411,7 @@ int		ConnectionClass::_findAndParseContentHeaders(HttpRequest& currentRequest, s
 {
 	if (_caseInsensitiveComparison(header.first, "Transfer-Encoding"))
 	{
-		std::cout << "the request has ther TE header" << std::endl;
+//		std::cout << "the request has ther TE header" << std::endl;
 		ft_strsplit_and_trim(header.second, currentRequest.getModifyableTE());
 		print_vec(currentRequest.getModifyableTE());
 		currentRequest.setHasTE(1);
@@ -420,7 +420,7 @@ int		ConnectionClass::_findAndParseContentHeaders(HttpRequest& currentRequest, s
 			currentRequest.setIsChunked(1);
 			currentRequest.setContentLength(0);
 			currentRequest.setHasContent(1);
-			std::cout << "the request is chunked" << std::endl;
+//			std::cout << "the request is chunked" << std::endl;
 			return (1);
 		}
 		else
@@ -711,7 +711,7 @@ int		ConnectionClass::_read_chunked_line(readingBuffer& buffer, int& length_pars
 	int deleteThisDebuggingShit = currentRequest.isValid();
 	deleteThisDebuggingShit += 1;
 	deb_read = buffer.deb;
-	_printBufferInfo(buffer, "before read_chunked_line");
+//	_printBufferInfo(buffer, "before read_chunked_line");
 	while ((crlf_index = _findInBuf("\r\n", buffer.buf, 2, buffer.end, deb_read)) == -1)
 	{
 		if ((buffer.end + read_size) <  READING_BUF_SIZE) // je vérifie que j'ai de la place dans mon buffer
@@ -762,12 +762,12 @@ int		ConnectionClass::_read_chunked_line(readingBuffer& buffer, int& length_pars
 		buffer.deb = crlf_index + 2;
 		return (2);
 	}*/
-	std::cout << "crlf index: " << buffer.buf[crlf_index] << std::endl;
+//	std::cout << "crlf index: " << buffer.buf[crlf_index] << std::endl;
 	line.clear();
 	line.append(&(buffer.buf[buffer.deb]), crlf_index - buffer.deb);
 	std::cout << "line found by chunk is: " << line << std::endl;
 	buffer.deb = crlf_index + 2;
-	_printBufferInfo(buffer, "after read_chunked_line");
+//	_printBufferInfo(buffer, "after read_chunked_line");
 	return (1);
 }
 
@@ -776,7 +776,7 @@ int		ConnectionClass::_readAndAppendChunkBlock(HttpRequest& currentRequest, read
 	std::string	request_content;
 	int		to_read;
 	int 		read_ret;
-	int		block_length_w_crlf = block_length + 4;
+	int		block_length_w_crlf = block_length + 2;
 
 //	buffer.deb = buffer.deb + 1 - 1; // a virer
 //	std::cout << "_read_request_content has not been implemented yet. it always returns 1" << std::endl;
@@ -792,7 +792,7 @@ int		ConnectionClass::_readAndAppendChunkBlock(HttpRequest& currentRequest, read
 			request_content.append(&(buffer.buf[buffer.deb]), block_length);
 			currentRequest.appendToContent(request_content);
 			buffer.deb += block_length_w_crlf;
-//			std::cout << "request_content: " << request_content << std::endl;
+			std::cout << "request_content: " << request_content << std::endl;
 //			std::cout << ": " << request_content << std::endl;
 //			_printBufferInfo(buffer, "after read_content");
 			return (request_content.length());
@@ -812,11 +812,12 @@ int		ConnectionClass::_readAndAppendChunkBlock(HttpRequest& currentRequest, read
 			else
 			{
 				length_parsed += read_ret;
-				if (request_content.length() > 4)
+				if (request_content.length() > 2)
 				{
-					request_content.resize(request_content.length() - 4); // je n'ajoute pas les crlfs
+					request_content.resize(request_content.length() - 2); // je n'ajoute pas les crlfs
 					currentRequest.appendToContent(request_content);
 				}
+				std::cout << "request_content: " << request_content << std::endl;
 				return (request_content.length());
 			}
 		}
@@ -838,13 +839,14 @@ int		ConnectionClass::_readAndAppendChunkBlock(HttpRequest& currentRequest, read
 	return (1);
 }
 
+/* sert a vider le buffer du dernier crlf et/ ou le lire sur le socket */
 int		ConnectionClass::_processRemainingCrlf(readingBuffer& buffer)
 {
 	std::string	trash;
 	int		left_inbuf = buffer.end - buffer.deb;
 	int ret_read;
 
-	_printBufferInfo(buffer, "in remainingcrlf");
+//	_printBufferInfo(buffer, "in remainingcrlf");
 	if (left_inbuf < 2)
 	{
 		ret_read = _guaranteedRead(_socketNbr, 2 - left_inbuf, trash);
@@ -871,8 +873,9 @@ int		ConnectionClass::_getChunkedData(HttpRequest& currentRequest, readingBuffer
 		return (0);
 
 
-	if (line_hex.find_first_not_of("0123456789ABCDEF") != line_hex.npos)
+	if (line_hex.find_first_not_of("0123456789ABCDEFabcdef") != line_hex.npos)
 		return (_invalidRequestProcedure(currentRequest, 400));
+//	upperize_string(line_hex);
 	long nbred = strtol(line_hex.c_str(), NULL, 16);
 	std::cout << "number found by strtol: " << nbred << std::endl;
 
@@ -886,7 +889,7 @@ int		ConnectionClass::_getChunkedData(HttpRequest& currentRequest, readingBuffer
 			return (-1);
 		else if (read_ret == 0)
 			return (0);
-		if (line_hex.find_first_not_of("0123456789ABCDEF") != line_hex.npos)
+		if (line_hex.find_first_not_of("0123456789ABCDEFabcdef") != line_hex.npos)
 			return (_invalidRequestProcedure(currentRequest, 400));
 		nbred = strtol(line_hex.c_str(), NULL, 16);
 		std::cout << "number found by strtol: " << nbred << std::endl;		
@@ -998,6 +1001,7 @@ int		ConnectionClass::_get_next_request(readingBuffer &buffer, HttpRequest& curr
 		{
 			std::cout << "Too many header lines, need to send a bad request. for now, _get_next_request returns -1" 
 				<< std::endl;
+			return (_invalidRequestProcedure(currentRequest, 400));
 			return (-1);
 		}
 	}

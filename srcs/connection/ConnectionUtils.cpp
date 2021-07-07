@@ -94,6 +94,17 @@ void	ft_strsplit(std::string to_split, std::vector<std::string>& result)
 	result.push_back(to_split.substr(deb_word, to_split.length() - deb_word));
 }
 
+int	upperize_string(std::string& str)
+{
+	size_t i = 0;
+
+	while (i < str.length())
+	{
+		str[i] = toupper(str[i]);
+		i++;
+	}
+	return (i);
+}
 
 /*int main(void)
 {
