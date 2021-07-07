@@ -426,7 +426,15 @@ int		ConnectionClass::_findAndParseContentHeaders(HttpRequest& currentRequest, s
 		else
 			return (_invalidRequestProcedure(currentRequest, 400));
 	}
-	if (_caseInsensitiveComparison(header.first, "Content-Length"))
+	else if (_caseInsensitiveComparison(header.first, "Trailer"))
+	{
+		std::cout << "the request has the Trailer header" << std::endl;
+		ft_strsplit_and_trim(header.second, currentRequest.getModifyableTrailers());
+		print_vec(currentRequest.getModifyableTrailers());
+		currentRequest.setHasTrailer(1);
+		return (0);
+	}
+	else if (_caseInsensitiveComparison(header.first, "Content-Length"))
 	{
 		if (header.second.find_first_not_of("0123456789") != header.second.npos)
 			return (_invalidRequestProcedure(currentRequest, 400));
@@ -765,7 +773,7 @@ int		ConnectionClass::_read_chunked_line(readingBuffer& buffer, int& length_pars
 //	std::cout << "crlf index: " << buffer.buf[crlf_index] << std::endl;
 	line.clear();
 	line.append(&(buffer.buf[buffer.deb]), crlf_index - buffer.deb);
-	std::cout << "line found by chunk is: " << line << std::endl;
+//	std::cout << "line found by chunk is: " << line << std::endl;
 	buffer.deb = crlf_index + 2;
 //	_printBufferInfo(buffer, "after read_chunked_line");
 	return (1);
@@ -792,7 +800,7 @@ int		ConnectionClass::_readAndAppendChunkBlock(HttpRequest& currentRequest, read
 			request_content.append(&(buffer.buf[buffer.deb]), block_length);
 			currentRequest.appendToContent(request_content);
 			buffer.deb += block_length_w_crlf;
-			std::cout << "request_content: " << request_content << std::endl;
+//			std::cout << "request_content: " << request_content << std::endl;
 //			std::cout << ": " << request_content << std::endl;
 //			_printBufferInfo(buffer, "after read_content");
 			return (request_content.length());
@@ -817,7 +825,7 @@ int		ConnectionClass::_readAndAppendChunkBlock(HttpRequest& currentRequest, read
 					request_content.resize(request_content.length() - 2); // je n'ajoute pas les crlfs
 					currentRequest.appendToContent(request_content);
 				}
-				std::cout << "request_content: " << request_content << std::endl;
+//				std::cout << "request_content: " << request_content << std::endl;
 				return (request_content.length());
 			}
 		}
@@ -864,7 +872,7 @@ int		ConnectionClass::_getChunkedData(HttpRequest& currentRequest, readingBuffer
 	std::string	line_hex;
 	int	read_ret;
 	int 	ret_chunked;
-	int	process_ret;
+//	int	process_ret;
 
 	read_ret = _read_chunked_line(buffer, length_parsed, currentRequest, 10, line_hex);
 	if (read_ret == -1)
@@ -877,7 +885,7 @@ int		ConnectionClass::_getChunkedData(HttpRequest& currentRequest, readingBuffer
 		return (_invalidRequestProcedure(currentRequest, 400));
 //	upperize_string(line_hex);
 	long nbred = strtol(line_hex.c_str(), NULL, 16);
-	std::cout << "number found by strtol: " << nbred << std::endl;
+//	std::cout << "number found by strtol: " << nbred << std::endl;
 
 	while (nbred > 0)
 	{
@@ -892,12 +900,9 @@ int		ConnectionClass::_getChunkedData(HttpRequest& currentRequest, readingBuffer
 		if (line_hex.find_first_not_of("0123456789ABCDEFabcdef") != line_hex.npos)
 			return (_invalidRequestProcedure(currentRequest, 400));
 		nbred = strtol(line_hex.c_str(), NULL, 16);
-		std::cout << "number found by strtol: " << nbred << std::endl;		
+//		std::cout << "number found by strtol: " << nbred << std::endl;		
 	}
-	process_ret = _processRemainingCrlf(buffer);
-	if (process_ret == 0 || process_ret == -1)
-		return (process_ret);
-	std::cout << "full content after chunk reading: " << currentRequest.getContent() << " - length; " << currentRequest.getContent().length() << std::endl;
+//	std::cout << "full content after chunk reading: " << currentRequest.getContent() << " - length; " << currentRequest.getContent().length() << std::endl;
 
 	return (currentRequest.getContent().length());
 }
@@ -973,6 +978,159 @@ void		ConnectionClass::_save_request_and_buffer(HttpRequest& currentRequest, rea
 	_hasRest = REQUEST_AND_BUFF_REST;
 }
 
+int		ConnectionClass::_findInTrailers(std::string& to_find, HttpRequest& currentRequest)
+{
+	size_t i = 0;
+	std::vector<std::string>& trail_vec = currentRequest.getModifyableTrailers();
+
+	while (i < trail_vec.size())
+	{
+		if (_caseInsensitiveComparison(to_find, trail_vec[i]))
+			return (1);
+		i++;
+	}
+	return (0);
+}
+
+int		ConnectionClass::_parseTrailerLine(const char *line, int len, HttpRequest& currentRequest)
+{
+	int	index = 0;
+	int	deb_value;
+	int	end_value;
+
+	std::pair<std::string, std::string>	trailer;
+
+//	std::cout << "parsing trailer" << std::endl;	
+	while (line[index] != ':')
+	{
+		if (line[index] == ' ')
+			return (_invalidRequestProcedure(currentRequest, 400));
+		index++;
+		if (index == len)
+			return (_invalidRequestProcedure(currentRequest, 400));
+	}
+	trailer.first.append(line, index);
+	index++;
+	if (index == len)
+		return (_invalidRequestProcedure(currentRequest, 400));
+	while (line[index] == ' ') // je vire les espaces au début
+	{
+		index++;
+		if (index == len)
+			return (_invalidRequestProcedure(currentRequest, 400));
+	}
+	deb_value = index;
+	index = len - 1;
+	while (line[index] == ' ') //je vire les espaces à la fin
+	{
+		index--;
+	}
+	end_value = index + 1;
+	trailer.second.append(&(line[deb_value]), end_value - deb_value);
+	if (!_findInTrailers(trailer.first, currentRequest))
+		return(_invalidRequestProcedure(currentRequest, 400));
+	if (currentRequest.getTrailingHeaders().size() > (currentRequest.getModifyableTrailers().size() * 3))
+		return(_invalidRequestProcedure(currentRequest, 400));
+//	if (_findAndParseContentHeaders(currentRequest, trailer) == -1)
+//		return (-1);
+//	std::cout << "trailer = " << trailer.first << ": " << trailer.second << std::endl;
+	currentRequest.addTrailingHeader(trailer);
+//	std::cout << "trailing headers size: " << currentRequest.getTrailingHeaders().size() << std::endl;
+
+	return (1);
+}
+
+int		ConnectionClass::_read_line_trailer(readingBuffer& buffer, int& length_parsed, HttpRequest& currentRequest)
+{
+	int		crlf_index;
+	int		read_ret;
+
+	int deb_read = buffer.deb;
+//	_printBufferInfo(buffer, "in read_line_trailer");
+	if (buffer.buf[buffer.deb] == '\r' && buffer.buf[buffer.deb + 1] == '\n')
+	{
+		buffer.deb += 2;
+		return (2);
+	}
+	while ((crlf_index = _findInBuf("\r\n", buffer.buf, 2, buffer.end, deb_read)) == -1)
+	{
+		if ((buffer.end + SINGLE_READ_SIZE) <  READING_BUF_SIZE) // je vérifie que j'ai de la place dans mon buffer
+		{
+			read_ret = recv(_socketNbr, &(buffer.buf[buffer.end]), SINGLE_READ_SIZE, 0);
+			if (read_ret == -1)
+				return (-1);
+			if (read_ret == 0)
+				return (0);
+			if (deb_read)
+				deb_read = buffer.end - 1; // j'enleve 1 au cas ou crlf est coupé en 2 ; a protéger segfault			
+			buffer.end += read_ret;
+			length_parsed += read_ret;
+		}
+		else if (buffer.deb > (READING_BUF_SIZE / 2)) // je regarde si ça vaut le coup de faire le memmove
+		{
+			std::memmove(buffer.buf, &(buffer.buf[buffer.deb]), buffer.end - buffer.deb); // le -1 sert a gérer crlf coupé en 2 encore une fois
+			buffer.end -= buffer.deb;
+			buffer.deb = 0;
+			deb_read = buffer.end - 1;
+
+			read_ret = recv(_socketNbr, &(buffer.buf[buffer.end]), SINGLE_READ_SIZE, 0);
+			if (read_ret == -1)
+				return (-1);
+			if (read_ret == 0)
+				return (0);
+			if (deb_read)
+				deb_read = buffer.end - 1; // j'enleve 1 au cas ou crlf est coupé en 2 ; a protéger segfault			
+			buffer.end += read_ret;
+			length_parsed += read_ret;
+		}
+		else
+		{
+			std::string	long_request_string;
+			int		long_line_length;
+
+			long_request_string.append(buffer.buf, buffer.deb, buffer.end - buffer.deb);
+			read_ret = _read_long_line(long_request_string, buffer, length_parsed);
+			if (read_ret == -1)
+				return (-1);
+			if (read_ret == 0)
+				return (0);
+			long_line_length = long_request_string.length();
+			if (_parseTrailerLine(long_request_string.c_str(), long_line_length, currentRequest) == -1)
+				return (HTTP_ERROR);
+			deb_read = 0;
+			return (1);
+		}
+	}
+	if (buffer.buf[buffer.deb] == '\r' && buffer.buf[buffer.deb + 1] == '\n')
+	{
+		buffer.deb = crlf_index + 2;
+		return (2);
+	}
+	if (_parseTrailerLine(&(buffer.buf[buffer.deb]), crlf_index - buffer.deb, currentRequest) == -1)
+		return (HTTP_ERROR);
+	buffer.deb = crlf_index + 2;
+	return (1);
+}
+
+
+int		ConnectionClass::_readTrailers(readingBuffer& buffer, int& length_parsed, HttpRequest& currentRequest)
+{
+	int read_ret;
+
+//	std::cout << "in read trailers" << std::endl;
+	read_ret = _read_line_trailer(buffer, length_parsed, currentRequest);
+	if (read_ret == 0 || read_ret == -1)
+		return (read_ret);
+	while (read_ret == 1)
+	{
+		read_ret = _read_line_trailer(buffer, length_parsed, currentRequest);	
+		if (read_ret == 0 || read_ret == -1)
+			return (read_ret);
+	}
+//	std::cout << "trailer length after read: " << currentRequest.getTrailingHeaders().size() << std::endl;
+	return (2);
+}
+
 int		ConnectionClass::_get_next_request(readingBuffer &buffer, HttpRequest& currentRequest, int& length_parsed, bool no_read_mode)
 {
 	int	ret_read_line;
@@ -1042,8 +1200,17 @@ int		ConnectionClass::_get_next_request(readingBuffer &buffer, HttpRequest& curr
 			int chunk_ret = _getChunkedData(currentRequest, buffer, length_parsed);
 			if (chunk_ret == 0 || chunk_ret == -1)
 				return (chunk_ret);
+			if (currentRequest.HasTrailers())
+			{
+				chunk_ret = _readTrailers(buffer, length_parsed, currentRequest);
+				if (chunk_ret == 0 || chunk_ret == -1)
+					return (chunk_ret);
+			}
+//			chunk_ret = _processRemainingCrlf(buffer);
+//			if (chunk_ret == 0 || chunk_ret == -1)
+//				return (chunk_ret);
 		}
-		std::cout << "gnr returns 1" << std::endl;
+//		std::cout << "gnr returns 1" << std::endl;
 		return (1);
 	}
 	if (ret_read_line == SAVE_REQUEST)

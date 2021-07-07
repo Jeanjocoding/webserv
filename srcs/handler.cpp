@@ -42,6 +42,9 @@ void	print_pipeline(std::vector<HttpRequest>& requestPipeline)
 		std::cout << std::endl;
 		std::cout << "BODY: " << requestPipeline[i].getContent() << std::endl;
 		std::cout << std::endl;
+		std::cout << "TRAILERS: " << std::endl;
+		requestPipeline[i].printTrailers();
+		std::cout << std::endl;
 		i++;
 	}
 	std::cout <<  "              ------------------------------              " << std::endl;

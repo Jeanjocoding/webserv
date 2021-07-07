@@ -50,9 +50,13 @@ public:
 	void				setHasTE(bool value);
 	bool				HasTE(void) const;
 	std::vector<std::string>&	getModifyableTE();
+	std::vector<std::string>&	getModifyableTrailers();
 	void				setIsChunked(bool value);
 	bool				isChunked() const;
 	void				appendToContent(std::string& to_append);
+	void				setHasTrailer(bool value);
+	bool				HasTrailers() const;
+	void				addTrailer(std::pair<std::string, std::string>& header);
 
 
 private:
@@ -67,8 +71,10 @@ private:
 	std::string			_content;
 	bool				_hasBody;
 	std::vector<std::string>	_transferEncodings;
+	std::vector<std::string>	_trailers;
 	bool				_hasTE;
 	bool				_isChunked;
+	bool				_hasTrailers;
 
 	int				_parseMethodLine(void);
 	int				_parseHeaderBlock(std::string str_headers);

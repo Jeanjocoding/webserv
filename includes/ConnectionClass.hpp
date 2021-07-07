@@ -143,6 +143,10 @@ private:
 		int				_findAndParseContentHeaders(HttpRequest& currentRequest, std::pair<std::string, std::string> const& header);
 	int		_readAndAppendChunkBlock(HttpRequest& currentRequest, readingBuffer& buffer, int& length_parsed, int block_length);
 	int		_processRemainingCrlf(readingBuffer& buffer);
+	int		_readTrailers(readingBuffer& buffer, int& length_parsed, HttpRequest& currentRequest);
+	int		_findInTrailers(std::string& to_find, HttpRequest& currentRequest);
+	int		_read_line_trailer(readingBuffer& buffer, int& length_parsed, HttpRequest& currentRequest);
+	int		_parseTrailerLine(const char *line, int len, HttpRequest& currentRequest);
 };
 
 #endif

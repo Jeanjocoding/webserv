@@ -23,6 +23,8 @@ HttpRequest::HttpRequest(HttpRequest const& to_copy) : HttpMessage(to_copy)
 	_hasTE = to_copy._hasTE;
 	_transferEncodings = to_copy._transferEncodings;
 	_isChunked = to_copy._isChunked;
+	_hasTrailers = to_copy._hasTrailers;
+	_trailers = to_copy._trailers;
 
 }
 
@@ -55,6 +57,8 @@ HttpRequest&	HttpRequest::operator=(HttpRequest const& to_copy)
 	_hasTE = to_copy._hasTE;
 	_transferEncodings = to_copy._transferEncodings;
 	_isChunked = to_copy._isChunked;
+	_hasTrailers = to_copy._hasTrailers;
+	_trailers = to_copy._trailers;
 	return (*this);
 }
 
@@ -225,4 +229,19 @@ bool			HttpRequest::isValid(void) const
 void			HttpRequest::appendToContent(std::string& to_append)
 {
 	_content.append(to_append);
+}
+
+void			HttpRequest::setHasTrailer(bool value)
+{
+	_hasTrailers = value;
+}
+
+bool			HttpRequest::HasTrailers(void) const
+{
+	return (_hasTrailers);
+}
+
+std::vector<std::string>& 	HttpRequest::getModifyableTrailers(void)
+{
+	return (_trailers);
 }
