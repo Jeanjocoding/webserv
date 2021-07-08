@@ -43,8 +43,8 @@
 #include "ConnectionUtils.hpp"
 #include <vector>
 
-#define	READING_BUF_SIZE 512 //ces tailles sont très petites
-#define	SINGLE_READ_SIZE 128	// pour voir plus facilement les bugs
+#define	READING_BUF_SIZE  8192
+#define	SINGLE_READ_SIZE 2048
 #define	MAX_LINE_LENGTH 12000	// POUR SECURITY
 #define	MAX_HEAD_LINES 100	// POUR SECURITY
 #define	MAX_URI_SIZE 1000 // POUR SECURITY
@@ -139,7 +139,7 @@ private:
 	int		_caseInsensitiveComparison(std::string s1, std::string s2) const;
 	int		_guaranteedRead(int fd, int to_read, std::string& str_buffer);
 	int		_getChunkedData(HttpRequest& currentRequest, readingBuffer& buffer, int& length_parsed);
-	int		_read_chunked_line(readingBuffer& buffer, int& length_parsed, HttpRequest& currentRequest, int read_size, std::string& line);
+	int		_read_chunked_line(readingBuffer& buffer, int& length_parsed, int read_size, std::string& line);
 		int				_findAndParseContentHeaders(HttpRequest& currentRequest, std::pair<std::string, std::string> const& header);
 	int		_readAndAppendChunkBlock(HttpRequest& currentRequest, readingBuffer& buffer, int& length_parsed, int block_length);
 	int		_processRemainingCrlf(readingBuffer& buffer);
