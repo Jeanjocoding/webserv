@@ -73,10 +73,10 @@ int main(int ac, char** av)
 				if (check)
 					continue;
 				handle_connection(connection_map[i]);
-//				connection_map.erase(i);//maybe not for keep alive
-//				close(i);//maybe not
+				connection_map.erase(i);//maybe not for keep alive
+				close(i);//maybe not
 				
-//				FD_CLR(i, &rfds);
+				FD_CLR(i, &rfds);
 			}
 		}
 	}

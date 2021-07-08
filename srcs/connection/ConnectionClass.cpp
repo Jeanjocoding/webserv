@@ -24,10 +24,11 @@ ConnectionClass::ConnectionClass(void)
 
 ConnectionClass::ConnectionClass(ConnectionClass const& to_copy): _socketNbr(to_copy._socketNbr), _server(to_copy._server), _status(to_copy._status), _isPersistent(to_copy._isPersistent), _hasRest(to_copy._hasRest)
 {
-	if (_hasRest)
+	if (to_copy._hasRest)
 	{
 		_restBuffer = new std::string(*(to_copy._restBuffer));
-		_incompleteRequest = new HttpRequest(*(to_copy._incompleteRequest));
+		if (to_copy._hasRest == REQUEST_AND_BUFF_REST)
+			_incompleteRequest = new HttpRequest(*(to_copy._incompleteRequest));
 	}
 	return;	
 }
@@ -44,7 +45,8 @@ ConnectionClass::~ConnectionClass(void)
 	if (_hasRest)
 	{
 		delete _restBuffer;
-		delete _incompleteRequest;
+		if (_hasRest == REQUEST_AND_BUFF_REST)
+			delete _incompleteRequest;
 	}
 	return;
 }
@@ -59,7 +61,8 @@ ConnectionClass&	ConnectionClass::operator=(ConnectionClass const& to_copy)
 	if (_hasRest)
 	{
 		_restBuffer = new std::string(*(to_copy._restBuffer));
-		_incompleteRequest = new HttpRequest(*(to_copy._incompleteRequest));
+		if (_hasRest == REQUEST_AND_BUFF_REST)
+			_incompleteRequest = new HttpRequest(*(to_copy._incompleteRequest));
 	}
 	return (*this);
 }
@@ -100,7 +103,7 @@ void				ConnectionClass::_printBufferInfo(readingBuffer& buffer, std::string msg
 	std::cout << std::endl;
 	std::cout << "--------------------------------" << std::endl;
 	std::cout << "BUFFER INFOS - " << msg << " : " << std::endl;
-	std::cout << "full buffer: " << buffer.buf << std::endl;
+//	std::cout << "full buffer: " << buffer.buf << std::endl;
 	std::cout << "buffer.deb: " << buffer.deb << std::endl;;
 	std::cout << "buffer.end: " << buffer.end << std::endl;
 	std::string str_buffer(&(buffer.buf[buffer.deb]), buffer.end - buffer.deb);
@@ -157,16 +160,19 @@ int		ConnectionClass::_read_buffer(readingBuffer& buffer, std::vector<HttpReques
 	buffer.buf[buffer.end] = '\0';
 
 	/* parsing all the requests contained in one single read **/
-	while ((length_parsed < SINGLE_READ_SIZE && length_parsed < buffer.end) || req_count == 0) // je chope toutes les requêtes qui sont dans le buffer
+	while ((length_parsed < SINGLE_READ_SIZE && buffer.deb < buffer.end) || req_count == 0) // je chope toutes les requêtes qui sont dans le buffer
 	{
+//		_printBufferInfo(buffer, "before gnr: ");
 		getnr_ret = _get_next_request(buffer, currentRequest, length_parsed, NO_READ_MODE_DISABLED);
 		if (getnr_ret == -1)
 			return (-1);
 		if (getnr_ret == 0)
 			return (0);
+		requestPipeline.push_back(currentRequest);
 		if (getnr_ret == HTTP_ERROR)
 			return (HTTP_ERROR);
-		requestPipeline.push_back(currentRequest);
+		else
+			requestPipeline.back().setValidity(1);
 		req_count++;
 		currentRequest.clear();
 	}
@@ -181,11 +187,13 @@ int		ConnectionClass::_read_buffer(readingBuffer& buffer, std::vector<HttpReques
 		return (-1);
 	else if (getnr_ret == 0)
 		return (0);
-	else if (getnr_ret == HTTP_ERROR)
-		return (HTTP_ERROR);
 	else if (getnr_ret == SAVE_REQUEST)
 		return (1);
 	requestPipeline.push_back(currentRequest);
+	if (getnr_ret == HTTP_ERROR)
+		return (HTTP_ERROR);
+	else
+		requestPipeline.back().setValidity(1);
 	if (buffer.deb < buffer.end)
 	{
 		_save_only_buffer(buffer);
@@ -232,10 +240,12 @@ int		ConnectionClass::_read_long_line(std::string& str, readingBuffer& buffer, i
 
 int		ConnectionClass::_invalidRequestProcedure(HttpRequest& currentRequest, int errorCode)
 {
-	std::cout << "invalid request procedure is called" << std::endl;
+	std::cout << "invalid request procedure is called. headers:" << std::endl;
+	currentRequest.printHeaders();
+	std::cout << std::endl;
 	currentRequest.setValidity(0);
 	currentRequest.setErrorCode(errorCode);
-	return (-1);
+	return (HTTP_ERROR);
 }
 
 int		ConnectionClass::_parseProtocol(HttpRequest& currentRequest, std::string& protocol)
@@ -319,8 +329,8 @@ int		ConnectionClass::_parse_first_line(const char *line, int len, HttpRequest& 
 		return (_invalidRequestProcedure(currentRequest, 501));
 	if (target.length() > MAX_URI_SIZE)
 		return (_invalidRequestProcedure(currentRequest, 414));
-	if (_parseProtocol(currentRequest, protocol) == -1)
-		return (-1);
+	if (_parseProtocol(currentRequest, protocol) == HTTP_ERROR)
+		return (HTTP_ERROR);
 	else
 	{
 		currentRequest.addRequestLine(method, target);
@@ -375,7 +385,6 @@ int		ConnectionClass::_findAndParseContentHeaders(HttpRequest& currentRequest, s
 	}
 	else if (_caseInsensitiveComparison(header.first, "Trailer"))
 	{
-//		std::cout << "the request has the Trailer header" << std::endl;
 		ft_strsplit_and_trim(header.second, currentRequest.getModifyableTrailers());
 		print_vec(currentRequest.getModifyableTrailers());
 		currentRequest.setHasTrailer(1);
@@ -385,7 +394,6 @@ int		ConnectionClass::_findAndParseContentHeaders(HttpRequest& currentRequest, s
 	{
 		if (header.second.find_first_not_of("0123456789") != header.second.npos)
 			return (_invalidRequestProcedure(currentRequest, 400));
-//		std::cout << " PASSED FIRT CHECK" << std::endl;
 		long nbred = strtol(header.second.c_str(), NULL, 10);
 		if (currentRequest.getContentLength())
 		{
@@ -436,8 +444,13 @@ int		ConnectionClass::_parseHeaderLine(const char *line, int len, HttpRequest& c
 		index--;
 	end_value = index + 1;
 	header.second.append(&(line[deb_value]), end_value - deb_value);
-	if (_findAndParseContentHeaders(currentRequest, header) == -1)
-		return (-1);
+	int find_ret = _findAndParseContentHeaders(currentRequest, header);
+	if (find_ret == -1 || find_ret == HTTP_ERROR)
+	{
+		std::cout << "findAndparse returns an error" << std::endl;
+		return (find_ret);
+	}
+	
 	currentRequest.addHeader(header);
 	return (1);
 }
@@ -516,7 +529,7 @@ int		ConnectionClass::_read_line(readingBuffer& buffer, int& length_parsed, Http
 			if (read_ret == 0)
 				return (0);
 			long_line_length = long_request_string.length();
-			if (_parse_line(long_request_string.c_str(), long_line_length, currentRequest) == -1)
+			if (_parse_line(long_request_string.c_str(), long_line_length, currentRequest) == HTTP_ERROR)
 				return (HTTP_ERROR);
 			deb_read = 0;
 			return (1);
@@ -527,7 +540,7 @@ int		ConnectionClass::_read_line(readingBuffer& buffer, int& length_parsed, Http
 		buffer.deb = crlf_index + 2;
 		return (2);
 	}
-	if (_parse_line(&(buffer.buf[buffer.deb]), crlf_index - buffer.deb, currentRequest) == -1)
+	if (_parse_line(&(buffer.buf[buffer.deb]), crlf_index - buffer.deb, currentRequest) == HTTP_ERROR)
 		return (HTTP_ERROR);
 	buffer.deb = crlf_index + 2;
 	return (1);
@@ -916,7 +929,7 @@ int		ConnectionClass::_read_line_trailer(readingBuffer& buffer, int& length_pars
 			if (read_ret == 0)
 				return (0);
 			long_line_length = long_request_string.length();
-			if (_parseTrailerLine(long_request_string.c_str(), long_line_length, currentRequest) == -1)
+			if (_parseTrailerLine(long_request_string.c_str(), long_line_length, currentRequest) == HTTP_ERROR)
 				return (HTTP_ERROR);
 			deb_read = 0;
 			return (1);
@@ -927,7 +940,7 @@ int		ConnectionClass::_read_line_trailer(readingBuffer& buffer, int& length_pars
 		buffer.deb = crlf_index + 2;
 		return (2);
 	}
-	if (_parseTrailerLine(&(buffer.buf[buffer.deb]), crlf_index - buffer.deb, currentRequest) == -1)
+	if (_parseTrailerLine(&(buffer.buf[buffer.deb]), crlf_index - buffer.deb, currentRequest) == HTTP_ERROR)
 		return (HTTP_ERROR);
 	buffer.deb = crlf_index + 2;
 	return (1);
@@ -939,12 +952,12 @@ int		ConnectionClass::_readTrailers(readingBuffer& buffer, int& length_parsed, H
 	int read_ret;
 
 	read_ret = _read_line_trailer(buffer, length_parsed, currentRequest);
-	if (read_ret == 0 || read_ret == -1)
+	if (read_ret == 0 || read_ret == -1 || read_ret == HTTP_ERROR)
 		return (read_ret);
 	while (read_ret == 1)
 	{
 		read_ret = _read_line_trailer(buffer, length_parsed, currentRequest);	
-		if (read_ret == 0 || read_ret == -1)
+		if (read_ret == 0 || read_ret == -1 || read_ret == HTTP_ERROR)
 			return (read_ret);
 	}
 	return (2);
@@ -961,8 +974,8 @@ int		ConnectionClass::_get_next_request(readingBuffer &buffer, HttpRequest& curr
 	if (buffer.buf[buffer.deb] == '\r' && buffer.buf[buffer.deb + 1] == '\n')
 	{
 		buffer.deb += 2;
-		buffer.deb += 2;
-		length_parsed += 2;
+//		buffer.deb += 2;
+//		length_parsed += 2;
 	}
 
 	if (buffer.buf[buffer.deb] == '\r' && buffer.buf[buffer.deb + 1] == '\n')
@@ -977,7 +990,6 @@ int		ConnectionClass::_get_next_request(readingBuffer &buffer, HttpRequest& curr
 			std::cout << "Too many header lines, need to send a bad request. for now, _get_next_request returns -1" 
 				<< std::endl;
 			return (_invalidRequestProcedure(currentRequest, 400));
-			return (-1);
 		}
 	}
 	if (ret_read_line == -1)
@@ -1009,13 +1021,13 @@ int		ConnectionClass::_get_next_request(readingBuffer &buffer, HttpRequest& curr
 		else if (currentRequest.isChunked())
 		{
 			int chunk_ret = _getChunkedData(currentRequest, buffer, length_parsed);
-			if (chunk_ret == 0 || chunk_ret == -1)
+			if (chunk_ret == 0 || chunk_ret == -1 || chunk_ret == HTTP_ERROR)
 				return (chunk_ret);
 			if (currentRequest.HasTrailers())
 			{
 				chunk_ret = _readTrailers(buffer, length_parsed, currentRequest);
-				if (chunk_ret == 0 || chunk_ret == -1)
-					return (chunk_ret);
+			if (chunk_ret == 0 || chunk_ret == -1 || chunk_ret == HTTP_ERROR)
+				return (chunk_ret);
 			}
 		}
 		return (1);

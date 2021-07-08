@@ -43,8 +43,8 @@
 #include "ConnectionUtils.hpp"
 #include <vector>
 
-#define	READING_BUF_SIZE  8192
-#define	SINGLE_READ_SIZE 2048
+#define	READING_BUF_SIZE  600
+#define	SINGLE_READ_SIZE 200
 #define	MAX_LINE_LENGTH 12000	// POUR SECURITY
 #define	MAX_HEAD_LINES 100	// POUR SECURITY
 #define	MAX_URI_SIZE 1000 // POUR SECURITY

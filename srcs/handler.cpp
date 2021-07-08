@@ -45,6 +45,9 @@ void	print_pipeline(std::vector<HttpRequest>& requestPipeline)
 		std::cout << "TRAILERS: " << std::endl;
 		requestPipeline[i].printTrailers();
 		std::cout << std::endl;
+		std::cout << "validity: " << requestPipeline[i].isValid() << std::endl;
+		std::cout << std::endl;
+		std::cout << std::endl;
 		i++;
 	}
 	std::cout <<  "              ------------------------------              " << std::endl;
