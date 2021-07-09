@@ -6,7 +6,7 @@
 /*   By: asablayr <marvin@42.fr>                    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2021/06/07 18:49:16 by asablayr          #+#    #+#             */
-/*   Updated: 2021/07/04 20:00:32 by asablayr         ###   ########.fr       */
+/*   Updated: 2021/07/09 22:48:49 by asablayr         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -39,6 +39,7 @@ serverClass::serverClass()
 	_default_error_pages = baseErrorPages();
 	_client_body_size_max = DEFAULT_BODY_MAX;
 	_keepalive_timeout = DEFAULT_KEEPALIVE_TIMEOUT;
+	_addr = 0;
 }
 
 serverClass::serverClass(serverClass const& to_copy)
@@ -57,7 +58,16 @@ serverClass::serverClass(serverClass const& to_copy)
 	_keepalive_timeout = to_copy._keepalive_timeout;
 
 	_server_socket = to_copy._server_socket;
-	_addr = to_copy._addr;
+	_addr = 0;
+}
+
+serverClass::~serverClass()
+{
+	close(_server_socket);
+	for (std::map<std::string, contextClass*>::iterator it = _location.begin(); it != _location.end(); it++)
+		delete it->second;
+	if (_addr)
+		freeaddrinfo(_addr);
 }
 
 serverClass& serverClass::operator = (serverClass const& to_copy)
@@ -76,7 +86,7 @@ serverClass& serverClass::operator = (serverClass const& to_copy)
 	_keepalive_timeout = to_copy._keepalive_timeout;
 
 	_server_socket = to_copy._server_socket;
-	_addr = to_copy._addr;
+	_addr = 0;
 	return (*this);
 }
 
@@ -134,12 +144,12 @@ void serverClass::startServer()
 		_port.erase(0, _port.find(":") + 1);
 		_host.erase(_host.find(_port) - 1, _port.size() + 1);
 	}
-	std::cout << "host : " << _host << "port : " << _port << std::endl;
 	retval = getaddrinfo(_host.c_str(), _port.c_str(), &hint, &_addr);
 	if (retval)
 	{
 		std::cerr << "getaddrinfo: " << gai_strerror(retval) << std::endl;
-		exit(EXIT_FAILURE);
+//		exit(EXIT_FAILURE);
+		throw;
 	}
 	_server_socket = socket(_addr->ai_family, _addr->ai_socktype, _addr->ai_protocol);
 	if (_server_socket == -1)
@@ -153,7 +163,8 @@ void serverClass::startServer()
 	if (bind(_server_socket, _addr->ai_addr, _addr->ai_addrlen) < 0)
 	{
 		std::cerr << "Failed to bind to port " << _port << ". errno: " << errno << std::endl;
-		exit(EXIT_FAILURE);
+//		exit(EXIT_FAILURE);
+		throw "bind error";
 	}
 	if (listen(_server_socket, 10) < 0)
 	{
@@ -169,9 +180,4 @@ std::map<unsigned short, std::string>	serverClass::baseErrorPages(void)
 	res[400] = ERR_400_PATH;
 	res[404] = ERR_404_PATH;
 	return res;
-}
-
-serverClass::~serverClass()
-{
-	close(_server_socket);
 }

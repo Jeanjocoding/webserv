@@ -6,7 +6,7 @@
 /*   By: asablayr <marvin@42.fr>                    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2021/06/12 15:24:19 by asablayr          #+#    #+#             */
-/*   Updated: 2021/07/05 13:26:24 by asablayr         ###   ########.fr       */
+/*   Updated: 2021/07/09 22:15:30 by asablayr         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -133,6 +133,7 @@ void contextClass::setDirectives(void)
        _directive_set.push_back(_accepted_directive_set["error_log"]);
        _directive_set.push_back(_accepted_directive_set["root"]);
        _directive_set.push_back(_accepted_directive_set["return"]);
+       _directive_set.push_back(_accepted_directive_set["limit_accept"]);
 	}
     else
 	{

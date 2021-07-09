@@ -6,7 +6,7 @@
 /*   By: asablayr <marvin@42.fr>                    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2021/06/06 15:27:02 by asablayr          #+#    #+#             */
-/*   Updated: 2021/07/04 19:56:09 by asablayr         ###   ########.fr       */
+/*   Updated: 2021/07/09 22:53:26 by asablayr         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -37,9 +37,18 @@ int main(int ac, char** av)
 	FD_ZERO(&rfds);//memset fd_set
 	for (std::vector<serverClass*>::iterator it = server_map.begin(); it != server_map.end(); it++)
 	{
-		(*it)->startServer();
-		std::cout << "server started on : " << (*it)->_listen << std::endl;
-		FD_SET((*it)->_server_socket, &rfds);//add server socket to fd_set
+		try 
+		{
+			(*it)->startServer();
+			std::cout << "server started on : " << (*it)->_listen << std::endl;
+			FD_SET((*it)->_server_socket, &rfds);//add server socket to fd_set
+		}
+		catch (char const*)
+		{
+			for (std::vector<serverClass*>::iterator i = server_map.begin(); i != server_map.end(); i++)
+				delete *i;
+			exit(EXIT_FAILURE);
+		}
 	}
 	while (true)
 	{
@@ -47,6 +56,8 @@ int main(int ac, char** av)
 		if (select(FD_SETSIZE, &rfds_copy, NULL, NULL, NULL) < 0)
 		{
 			std::perror("select eror");
+			for (std::vector<serverClass*>::iterator i = server_map.begin(); i != server_map.end(); i++)
+				delete *i;
 			exit(EXIT_FAILURE);
 		}
 		for (int i = 0; i < FD_SETSIZE; i++)
