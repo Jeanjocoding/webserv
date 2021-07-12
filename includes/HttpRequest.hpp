@@ -56,7 +56,8 @@ public:
 	void				appendToContent(std::string& to_append);
 	void				setHasTrailer(bool value);
 	bool				HasTrailers() const;
-	void				addTrailer(std::pair<std::string, std::string>& header);
+	std::vector<std::string>&	getModifyableConnectionOptions();
+
 
 
 private:
@@ -72,6 +73,7 @@ private:
 	bool				_hasBody;
 	std::vector<std::string>	_transferEncodings;
 	std::vector<std::string>	_trailers;
+	std::vector<std::string>	_connectionOptions;
 	bool				_hasTE;
 	bool				_isChunked;
 	bool				_hasTrailers;

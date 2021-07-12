@@ -20,7 +20,7 @@
 #include "ConnectionUtils.hpp"
 #include "ConnectionClass.hpp"
 
-void	print_pipeline(std::vector<HttpRequest>& requestPipeline)
+void	print_pipeline(std::vector<HttpRequest>& requestPipeline, ConnectionClass& connection)
 {
 	size_t i = 0;
 
@@ -46,6 +46,7 @@ void	print_pipeline(std::vector<HttpRequest>& requestPipeline)
 		requestPipeline[i].printTrailers();
 		std::cout << std::endl;
 		std::cout << "validity: " << requestPipeline[i].isValid() << std::endl;
+		std::cout << "persistence: " << connection.isPersistent() << std::endl;
 		std::cout << std::endl;
 		std::cout << std::endl;
 		i++;
@@ -70,7 +71,7 @@ void	handle_connection(ConnectionClass& connection)
 			std::perror("close");
 		return;
 	}
-	print_pipeline(RequestPipeline);
+	print_pipeline(RequestPipeline, connection);
 //	HttpRequest request(request_infos.second);
 //	std::cout << "message received by server: " << request_infos.second << std::endl;
 	send_ret = connection.sendResponse("HTTP/1.1 200 OK\r\n\r\n<html><body><h1>Welcome to Webser</h1></body></html>\r\n");

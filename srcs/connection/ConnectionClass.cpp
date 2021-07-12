@@ -19,6 +19,7 @@
 ConnectionClass::ConnectionClass(void)
 {
 	_hasRest = 0;
+	_isPersistent = 1;
 	return;
 }
 
@@ -30,6 +31,7 @@ ConnectionClass::ConnectionClass(ConnectionClass const& to_copy): _socketNbr(to_
 		if (to_copy._hasRest == REQUEST_AND_BUFF_REST)
 			_incompleteRequest = new HttpRequest(*(to_copy._incompleteRequest));
 	}
+	_isPersistent = to_copy._isPersistent;
 	return;	
 }
 
@@ -37,6 +39,7 @@ ConnectionClass::ConnectionClass(int socknum, serverClass* server): _socketNbr(s
 {
 	_status = CO_ISOPEN;
 	_hasRest = 0;
+	_isPersistent = 1;
 	return;	
 }
 
@@ -174,6 +177,8 @@ int		ConnectionClass::_read_buffer(readingBuffer& buffer, std::vector<HttpReques
 		else
 			requestPipeline.back().setValidity(1);
 		req_count++;
+		if (!_isPersistent)
+			return (1);
 		currentRequest.clear();
 	}
 	if (buffer.deb >= buffer.end)
@@ -412,6 +417,19 @@ int		ConnectionClass::_findAndParseContentHeaders(HttpRequest& currentRequest, s
 	return (0);
 }
 
+int		ConnectionClass::_findAndParsePersistanceHeaders(HttpRequest& currentRequest, std::pair<std::string, std::string> const& header) 
+{
+	if (_caseInsensitiveComparison(header.first, "Connection"))
+	{
+		ft_strsplit_and_trim(header.second, currentRequest.getModifyableConnectionOptions());
+		if (find_in_vec_insensitive(currentRequest.getModifyableConnectionOptions(), "close"))
+			_isPersistent = 0;
+		else if (find_in_vec_insensitive(currentRequest.getModifyableConnectionOptions(), "keep-alive"))
+			_isPersistent = 1;
+	}
+	return (1);
+}
+
 int		ConnectionClass::_parseHeaderLine(const char *line, int len, HttpRequest& currentRequest)
 {
 	int	index = 0;
@@ -450,7 +468,7 @@ int		ConnectionClass::_parseHeaderLine(const char *line, int len, HttpRequest& c
 		std::cout << "findAndparse returns an error" << std::endl;
 		return (find_ret);
 	}
-	
+	_findAndParsePersistanceHeaders(currentRequest, header);
 	currentRequest.addHeader(header);
 	return (1);
 }
@@ -1067,7 +1085,7 @@ int			ConnectionClass::receiveRequest(std::vector<HttpRequest>& requestPipeline)
 	return (1);
 }
 
-int				ConnectionClass::sendResponse(std::string response)
+int			ConnectionClass::sendResponse(std::string response)
 {
 	return (send(_socketNbr, response.c_str(), response.length(), 0));
 }
@@ -1086,4 +1104,9 @@ int				ConnectionClass::closeConnection(void)
 int				ConnectionClass::getStatus(void)
 {
 	return (_status);
+}
+
+bool				ConnectionClass::isPersistent() const
+{
+	return (_isPersistent);
 }
