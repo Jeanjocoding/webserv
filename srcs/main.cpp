@@ -84,10 +84,14 @@ int main(int ac, char** av)
 				if (check)
 					continue;
 				handle_connection(connection_map[i]);
-				connection_map.erase(i);//maybe not for keep alive
-				close(i);//maybe not
+				if (connection_map[i].getStatus() == CO_ISCLOSED) // erases if connection is not persistent
+				{
+					FD_CLR(i, &rfds);
+					connection_map.erase(i);
+				}
+//				close(i);//maybe not
 				
-				FD_CLR(i, &rfds);
+//				FD_CLR(i, &rfds);
 			}
 		}
 	}

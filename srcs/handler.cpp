@@ -63,18 +63,21 @@ void	handle_connection(ConnectionClass& connection)
 //	std::cout << "connection server on port : " << connection._server->_port << std::endl;
 	retVal = connection.receiveRequest(RequestPipeline);
 	if (retVal == -1)
+	{
+		connection.closeConnection();
 		return;
+	}
 	else if (retVal == 0)
 	{
 		std::cout << "connection closed by client" << std::endl;
-		if (connection.closeConnection() == -1)
-			std::perror("close");
+		connection.closeConnection();
 		return;
 	}
 //	print_pipeline(RequestPipeline, connection);
-//	HttpRequest request(request_infos.second);
-//	std::cout << "message received by server: " << request_infos.second << std::endl;
-	send_ret = connection.sendResponse("HTTP/1.1 200 OK\r\n\r\n<html><body><h1>Welcome to Webser</h1></body></html>\r\n");
+	send_ret = connection.sendResponse("HTTP/1.1 200 OK\r\nContent-length: 52\r\n\r\n<html><body><h1>Welcome to Webser</h1></body></html>");
 	if (send_ret == -1)
 		std::perror("send");
+	if (!connection.isPersistent())
+		connection.closeConnection();
+
 }

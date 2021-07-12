@@ -45,6 +45,8 @@
 
 #define	READING_BUF_SIZE  600
 #define	SINGLE_READ_SIZE 200
+#define EMPTYBUF_READ_SIZE 4096
+#define MAX_READ_BEFORE_FORCE_CLOSE 25000
 #define	MAX_LINE_LENGTH 12000	// POUR SECURITY
 #define	MAX_HEAD_LINES 100	// POUR SECURITY
 #define	MAX_URI_SIZE 1000 // POUR SECURITY
@@ -52,6 +54,7 @@
 #define CO_ISCLOSED 2
 #define TCP_ERROR -1
 #define HTTP_ERROR -2
+#define FORCE_CLOSE_NEEDED -3
 #define CONNECTION_CLOSED 0
 #define NO_READ_MODE_DISABLED 0
 #define NO_READ_MODE_ACTIVATED 1
@@ -149,6 +152,7 @@ private:
 	int		_read_line_trailer(readingBuffer& buffer, int& length_parsed, HttpRequest& currentRequest);
 	int		_parseTrailerLine(const char *line, int len, HttpRequest& currentRequest);
 	int		_findAndParsePersistanceHeaders(HttpRequest& currentRequest, std::pair<std::string, std::string> const& header);
+	int		_emptyReadBuffers() const;
 };
 
 #endif

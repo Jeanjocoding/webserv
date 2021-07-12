@@ -245,11 +245,12 @@ int		ConnectionClass::_read_long_line(std::string& str, readingBuffer& buffer, i
 
 int		ConnectionClass::_invalidRequestProcedure(HttpRequest& currentRequest, int errorCode)
 {
-	std::cout << "invalid request procedure is called. headers:" << std::endl;
+	std::cout << "invalid request procedure is called. , persistence desactivated. headers:" << std::endl;
 	currentRequest.printHeaders();
 	std::cout << std::endl;
 	currentRequest.setValidity(0);
 	currentRequest.setErrorCode(errorCode);
+	_isPersistent = 0;
 	return (HTTP_ERROR);
 }
 
@@ -370,7 +371,7 @@ int		ConnectionClass::_caseInsensitiveComparison(std::string s1, std::string s2)
 }
 
 
-/** parses headers related to content (Content-length and transfert-encoding) **/
+/** parses headers related to content (Content-length and transfert-encoding) */
 int		ConnectionClass::_findAndParseContentHeaders(HttpRequest& currentRequest, std::pair<std::string, std::string> const& header)
 {
 	if (_caseInsensitiveComparison(header.first, "Transfer-Encoding"))
@@ -391,7 +392,7 @@ int		ConnectionClass::_findAndParseContentHeaders(HttpRequest& currentRequest, s
 	else if (_caseInsensitiveComparison(header.first, "Trailer"))
 	{
 		ft_strsplit_and_trim(header.second, currentRequest.getModifyableTrailers());
-		print_vec(currentRequest.getModifyableTrailers());
+//		print_vec(currentRequest.getModifyableTrailers());
 		currentRequest.setHasTrailer(1);
 		return (0);
 	}
@@ -489,7 +490,7 @@ int		ConnectionClass::_parse_line(const char *line, int len, HttpRequest &curren
  * and it very rarely do copy operations. For increased efficiency, the line is directly
  * sent to the parser and is not returned. Downside of these optilizations is more
  * reading/debugging complexity and less modularity. This code is more or less duplicated three times,
- * there are 3 different read_line. **/
+ * there are 3 different read_line. */
 int		ConnectionClass::_read_line(readingBuffer& buffer, int& length_parsed, HttpRequest& currentRequest, bool no_read_mode)
 {
 	int		crlf_index;
@@ -564,7 +565,7 @@ int		ConnectionClass::_read_line(readingBuffer& buffer, int& length_parsed, Http
 	return (1);
 }
 
-/** read or recv do not guarantee that all the bytes asked will be read. This one does, or it returns an error **/
+/** read or recv do not guarantee that all the bytes asked will be read. This one does, or it returns an error */
 int		ConnectionClass::_guaranteedRead(int fd, int to_read, std::string& str_buffer)
 {
 	int 	read_ret;
@@ -574,7 +575,7 @@ int		ConnectionClass::_guaranteedRead(int fd, int to_read, std::string& str_buff
 
 	while (bytes_left)
 	{
-		/** POTENTIAL BLOCK HERE IF CONTENT-LENGTH HIGHER THAN CONTENT AND BLCOKING FDS **/
+		/** POTENTIAL BLOCK HERE IF CONTENT-LENGTH HIGHER THAN CONTENT AND BLCOKING FDS */
 		read_ret = recv(fd, &(buffer[bytes_read]), bytes_left, 0);
 		if (read_ret == -1)
 		{
@@ -593,7 +594,7 @@ int		ConnectionClass::_guaranteedRead(int fd, int to_read, std::string& str_buff
 }
 
 /** more or less a duplication of _read_line, will maybe unify in a future but at least this saves 
- * a lot of if/else conditions and enforces the SRP principle **/
+ * a lot of if/else conditions and enforces the SRP principle */
 int		ConnectionClass::_read_chunked_line(readingBuffer& buffer, int& length_parsed, int read_size, std::string& line)
 {
 	int		crlf_index;
@@ -653,7 +654,7 @@ int		ConnectionClass::_read_chunked_line(readingBuffer& buffer, int& length_pars
 }
 
 /** rather explicit title, the code is more or less duplicated with read_content but having one function 
- * for both would have also been a pain with if/elses, and less efficient **/
+ * for both would have also been a pain with if/elses, and less efficient */
 int		ConnectionClass::_readAndAppendChunkBlock(HttpRequest& currentRequest, readingBuffer& buffer, int& length_parsed, int block_length)
 {
 	std::string	request_content;
@@ -713,7 +714,7 @@ int		ConnectionClass::_readAndAppendChunkBlock(HttpRequest& currentRequest, read
 	return (1);
 }
 
-/* sert a vider le buffer du dernier crlf et/ ou le lire sur le socket */
+/** sert a vider le buffer du dernier crlf et/ ou le lire sur le socket */
 int		ConnectionClass::_processRemainingCrlf(readingBuffer& buffer)
 {
 	std::string	trash;
@@ -732,7 +733,7 @@ int		ConnectionClass::_processRemainingCrlf(readingBuffer& buffer)
 }
 
 /** this is the main for getting chunk sizes, reading on buffer or socket accordingly, and adding
- * it all to the content of the HttpRequest **/
+ * it all to the content of the HttpRequest */
 int		ConnectionClass::_getChunkedData(HttpRequest& currentRequest, readingBuffer& buffer, int& length_parsed)
 {
 
@@ -818,7 +819,7 @@ int		ConnectionClass::_read_request_content(HttpRequest& CurrentRequest, reading
 }
 
 /** there is data remaining in the buffer but not enough to start parsing a new request so 
- * we will only need to copy the buffer when we go back **/
+ * we will only need to copy the buffer when we go back */
 void		ConnectionClass::_save_only_buffer(readingBuffer& buffer)
 {
 	_restBuffer = new std::string(&(buffer.buf[buffer.deb]), buffer.end - buffer.deb);
@@ -827,7 +828,7 @@ void		ConnectionClass::_save_only_buffer(readingBuffer& buffer)
 
 /** when we run out of data while we were constructing an HttpRequest object, and we don't want 
  * to keep reading to avoid monopolizing cpu for only one connection, we save the request and 
- * the buffer and go back at processing them at next iteration **/
+ * the buffer and go back at processing them at next iteration */
 void		ConnectionClass::_save_request_and_buffer(HttpRequest& currentRequest, readingBuffer& buffer)
 {
 	_incompleteRequest = new HttpRequest(currentRequest);
@@ -849,7 +850,7 @@ int		ConnectionClass::_findInTrailers(std::string& to_find, HttpRequest& current
 	return (0);
 }
 
-/** Trailers are header that come after a chunked request. this function gets them **/
+/** Trailers are header that come after a chunked request. this function gets them */
 int		ConnectionClass::_parseTrailerLine(const char *line, int len, HttpRequest& currentRequest)
 {
 	int	index = 0;
@@ -892,7 +893,7 @@ int		ConnectionClass::_parseTrailerLine(const char *line, int len, HttpRequest& 
 	return (1);
 }
 
-/** last duplication of _read_line, but for trailers **/ 
+/** last duplication of _read_line, but for trailers */ 
 int		ConnectionClass::_read_line_trailer(readingBuffer& buffer, int& length_parsed, HttpRequest& currentRequest)
 {
 	int		crlf_index;
@@ -964,7 +965,7 @@ int		ConnectionClass::_read_line_trailer(readingBuffer& buffer, int& length_pars
 	return (1);
 }
 
-/** read and parse trailers while they exist **/ 
+/** read and parse trailers while they exist */ 
 int		ConnectionClass::_readTrailers(readingBuffer& buffer, int& length_parsed, HttpRequest& currentRequest)
 {
 	int read_ret;
@@ -981,9 +982,9 @@ int		ConnectionClass::_readTrailers(readingBuffer& buffer, int& length_parsed, H
 	return (2);
 }
 
-/** get next request in the buffer or in the socket. if no_read_mode == NO_READ_MODE_ACTIVATED, it will
+/** get next request in the buffer or in the socket. if no_read_mode == NO_READ_MODE_ACTIVATED, it will 
  * not read on the socket after it runs out of data in the buffer, it will save everything and come back
- * next select iteration **/ 
+ * next select iteration */ 
 int		ConnectionClass::_get_next_request(readingBuffer &buffer, HttpRequest& currentRequest, int& length_parsed, bool no_read_mode)
 {
 	int	ret_read_line;
@@ -1059,6 +1060,8 @@ int		ConnectionClass::_get_next_request(readingBuffer &buffer, HttpRequest& curr
 	return (1);
 }
 
+/** Read on the socket and fills the vector received in argument with parsed requests under the form
+ * of HttpRequest objects */
 int			ConnectionClass::receiveRequest(std::vector<HttpRequest>& requestPipeline)
 {
 	readingBuffer	buffer;
@@ -1090,14 +1093,50 @@ int			ConnectionClass::sendResponse(std::string response)
 	return (send(_socketNbr, response.c_str(), response.length(), 0));
 }
 
-/** this is a dirty close, need to implement a clean close **/
+/** Empties the reading buffer before closing the connection */
+int				ConnectionClass::_emptyReadBuffers() const
+{
+	int read_ret;
+	int total_read = 0;
+	char trashbuf[EMPTYBUF_READ_SIZE];
+
+	while ((read_ret = recv(_socketNbr, trashbuf, EMPTYBUF_READ_SIZE, 0)) == EMPTYBUF_READ_SIZE)
+	{
+		total_read += read_ret;
+		if (total_read > MAX_READ_BEFORE_FORCE_CLOSE)
+			return (FORCE_CLOSE_NEEDED);
+	}
+	if (read_ret == 0)
+		return (0);
+	else if (read_ret == -1)
+	{
+//		perror("recv");
+		return (-1);
+	}
+	else
+		return (1);
+}
+
+/** this function tries to implement a "graceful close", as it is described in the RFC.
+ * it first shuts down the write end of the socket, then it reads on the socket until there 
+ * isn't anything left, then it shuts down the read end, and then it closes the socket. This 
+ * procedure is supposed to minimize the risk of TCP connection reset */
 int				ConnectionClass::closeConnection(void)
 {
+	int empty_read_value;
 	int return_value;
 
+//	std::cout << "close connection is called" << std::endl;
+	shutdown(_socketNbr, SHUT_WR);
+//		perror("shutdown");
+	empty_read_value = _emptyReadBuffers();
+	shutdown(_socketNbr, SHUT_RD);
+//		perror("shutdown");
 	return_value = close(_socketNbr);
 	if (return_value == 0)
 		_status = CO_ISCLOSED;
+	else
+		perror("close");
 	return (return_value);
 }
 
