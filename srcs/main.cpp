@@ -89,9 +89,6 @@ int main(int ac, char** av)
 					FD_CLR(i, &rfds);
 					connection_map.erase(i);
 				}
-//				close(i);//maybe not
-				
-//				FD_CLR(i, &rfds);
 			}
 		}
 	}
