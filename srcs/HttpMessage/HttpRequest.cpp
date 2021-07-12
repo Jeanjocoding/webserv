@@ -29,6 +29,7 @@ HttpRequest::HttpRequest(HttpRequest const& to_copy) : HttpMessage(to_copy)
 	_isChunked = to_copy._isChunked;
 	_hasTrailers = to_copy._hasTrailers;
 	_trailers = to_copy._trailers;
+	_connectionOptions = to_copy._connectionOptions;
 
 }
 
@@ -63,6 +64,7 @@ HttpRequest&	HttpRequest::operator=(HttpRequest const& to_copy)
 	_isChunked = to_copy._isChunked;
 	_hasTrailers = to_copy._hasTrailers;
 	_trailers = to_copy._trailers;
+	_connectionOptions = to_copy._connectionOptions;
 	return (*this);
 }
 
@@ -86,6 +88,7 @@ void		HttpRequest::clear(void)
 	_isChunked = 0;
 	_trailers.clear();
 	_hasTrailers = 0;
+	_connectionOptions.clear();
 
 }
 
@@ -226,4 +229,9 @@ bool			HttpRequest::HasTrailers(void) const
 std::vector<std::string>& 	HttpRequest::getModifyableTrailers(void)
 {
 	return (_trailers);
+}
+
+std::vector<std::string>&	HttpRequest::getModifyableConnectionOptions(void)
+{
+	return (_connectionOptions);
 }

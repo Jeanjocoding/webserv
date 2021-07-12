@@ -100,6 +100,7 @@ public:
 	int				_socketNbr;
 	serverClass*	_server;
 	int				getStatus();
+	bool				isPersistent(void) const;
 
 	// this constructor should be private, but it doesn't work for now when it is.
 	//need to fix, probably an unwanted copy at some point.
@@ -147,6 +148,7 @@ private:
 	int		_findInTrailers(std::string& to_find, HttpRequest& currentRequest);
 	int		_read_line_trailer(readingBuffer& buffer, int& length_parsed, HttpRequest& currentRequest);
 	int		_parseTrailerLine(const char *line, int len, HttpRequest& currentRequest);
+	int		_findAndParsePersistanceHeaders(HttpRequest& currentRequest, std::pair<std::string, std::string> const& header);
 };
 
 #endif
