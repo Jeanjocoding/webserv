@@ -20,14 +20,17 @@ ConnectionClass::ConnectionClass(void)
 {
 	_hasRestBuffer = 0;
 	_hasRestRequest = 0;
+	_hasBegRest = 0;
 	_isPersistent = 1;
 	return;
 }
 
-ConnectionClass::ConnectionClass(ConnectionClass const& to_copy): _socketNbr(to_copy._socketNbr), _server(to_copy._server), _status(to_copy._status), _isPersistent(to_copy._isPersistent), _hasRestRequest(to_copy._hasRestRequest), _hasRestBuffer(to_copy._hasRestBuffer)
+ConnectionClass::ConnectionClass(ConnectionClass const& to_copy): _socketNbr(to_copy._socketNbr), _server(to_copy._server), _status(to_copy._status), _isPersistent(to_copy._isPersistent), _hasRestRequest(to_copy._hasRestRequest), _hasRestBuffer(to_copy._hasRestBuffer), _hasBegRest(to_copy._hasBegRest)
 {
 	if (to_copy._hasRestBuffer)
 		_restBuffer = new std::string(*(to_copy._restBuffer));
+	if (to_copy._hasBegRest)
+		_beginningRestBuffer = new std::string(*(to_copy._beginningRestBuffer));
 	if (to_copy._hasRestRequest )
 		_incompleteRequest = new HttpRequest(*(to_copy._incompleteRequest));
 	_isPersistent = to_copy._isPersistent;
@@ -39,6 +42,7 @@ ConnectionClass::ConnectionClass(int socknum, serverClass* server): _socketNbr(s
 	_status = CO_ISOPEN;
 	_hasRestBuffer = 0;
 	_hasRestRequest = 0;
+	_hasBegRest = 0;
 	_isPersistent = 1;
 	return;	
 }
@@ -60,10 +64,13 @@ ConnectionClass&	ConnectionClass::operator=(ConnectionClass const& to_copy)
 	_isPersistent = to_copy._isPersistent;
 	_hasRestBuffer = to_copy._hasRestBuffer;
 	_hasRestRequest = to_copy._hasRestRequest;
+	_hasBegRest = to_copy._hasBegRest;
 	if (_hasRestBuffer)
 		_restBuffer = new std::string(*(to_copy._restBuffer));
 	if (_hasRestRequest)
 		_incompleteRequest = new HttpRequest(*(to_copy._incompleteRequest));
+	if (to_copy._hasBegRest)
+		_beginningRestBuffer = new std::string(*(to_copy._beginningRestBuffer));
 	return (*this);
 }
 
@@ -491,7 +498,11 @@ int		ConnectionClass::_read_line(readingBuffer& buffer, HttpRequest& currentRequ
 //	int		read_ret;
 
 	std::cout << "in read_line" << std::endl;
+	std::cout << "has rest buffer: " << _hasRestBuffer <<  std::endl;
+	_printBufferInfo(buffer, "in read line");
 	int deb_read = buffer.deb;
+
+	/** A PROTEGER DES SEGFAULTS/BUGS SI JE SUIS AU BOUT DU BUFFER */
 	if (buffer.buf[buffer.deb] == '\r' && buffer.buf[buffer.deb + 1] == '\n' && !_hasRestBuffer)
 	{
 		buffer.deb += 2;
@@ -500,6 +511,14 @@ int		ConnectionClass::_read_line(readingBuffer& buffer, HttpRequest& currentRequ
 	if (_hasRestBuffer && _restBuffer->length() && (*_restBuffer)[_restBuffer->length() - 1] == '\r' 
 		&& buffer.buf[buffer.deb] == '\n')
 	{
+		if (_restBuffer->length() == 1)
+		{
+			buffer.deb += 1;
+			_hasRestBuffer = 0;
+			_restBuffer->clear();
+			delete _restBuffer;
+			return (2);
+		}
 		if (_parse_line(_restBuffer->c_str(), _restBuffer->length() - 1, currentRequest) == HTTP_ERROR)
 			return (HTTP_ERROR);
 		buffer.deb += 1;
@@ -531,7 +550,7 @@ int		ConnectionClass::_read_line(readingBuffer& buffer, HttpRequest& currentRequ
 			return (HTTP_ERROR);
 	}
 	buffer.deb = crlf_index + 2;
-	_printBufferInfo(buffer, "end read_line");
+//	_printBufferInfo(buffer, "end read_line");
 	return (1);
 }
 
@@ -797,11 +816,19 @@ void		ConnectionClass::_save_request_and_buffer(HttpRequest& currentRequest, rea
 	_incompleteRequest = new HttpRequest(currentRequest);
 	_hasRestRequest = 1;
 	if (_hasRestBuffer)
+	{
 		_restBuffer->append(&(buffer.buf[buffer.deb]), buffer.end - buffer.deb);
-	else
+		_hasRestBuffer = 1;
+	}
+	else if (buffer.end > buffer.deb)
+	{
 		_restBuffer = new std::string(&(buffer.buf[buffer.deb]), buffer.end - buffer.deb);
-	std::cout << "rest buffer: " << *_restBuffer << std::endl;
-	_hasRestBuffer = 1;
+		_hasRestBuffer = 1;
+	}
+	else
+		_hasRestBuffer = 0;
+	if (_hasRestBuffer)
+		std::cout << "rest buffer: " << *_restBuffer << std::endl;
 }
 
 int		ConnectionClass::_findInTrailers(std::string& to_find, HttpRequest& currentRequest)
@@ -950,6 +977,14 @@ int		ConnectionClass::_readTrailers(readingBuffer& buffer, int& length_parsed, H
 	return (2);
 }
 
+int		ConnectionClass::_saveBegRestProcedure(HttpRequest& currentRequest, readingBuffer& buffer)
+{
+	_incompleteRequest = new HttpRequest(currentRequest);
+	_hasRestRequest = 1;
+	_beginningRestBuffer = new std::string(&(buffer.buf[buffer.deb]), buffer.end - buffer.deb);
+	return (SAVE_REQUEST);
+}
+
 /** get next request in the buffer or in the socket. if no_read_mode == NO_READ_MODE_ACTIVATED, it will 
  * not read on the socket after it runs out of data in the buffer, it will save everything and come back
  * next select iteration */ 
@@ -958,15 +993,47 @@ int		ConnectionClass::_get_next_request(readingBuffer &buffer, HttpRequest& curr
 	int	ret_read_line;
 	int	ret_read_content;	
 
-	_printBufferInfo(buffer, "gnr");
-	if (buffer.buf[buffer.deb] == '\r' && buffer.buf[buffer.deb + 1] == '\n')
-	{
-		buffer.deb += 2;
-	}
+// il faut mobiliser le reste ici!
+// si il y a du reste qui n'est pas contenu, c'est forcément plus petit qu'une ligne
 
-	if (buffer.buf[buffer.deb] == '\r' && buffer.buf[buffer.deb + 1] == '\n') // c'est la
+//	_printBufferInfo(buffer, "gnr");
+
+	/** Tout ce 'if' sert uniquement au cas ou je commence à lire une requete et il me reste juste un bout de CRLF dans le buffer.
+	 * il est recommandé par la RFC de tolérer un crlf perdu en debut de requête, donc ça sert à ça
+	*/
+	if (!(currentRequest.getLineCount()) && !_hasRestBuffer) // si c'est le tout debut de la requete et que j'ai toujours pas eu de caractere autre que CRLF
 	{
-		return (_invalidRequestProcedure(currentRequest, 400));
+		if (_hasBegRest)
+		{
+			std::cout << "IN ANNOYING PROCEDURE, NOT TESTED" << std::endl;
+			int i = 0;
+			std::cout << "has beg rest" << std::endl;
+			_beginningRestBuffer->append(&(buffer.buf[buffer.deb]), buffer.end - buffer.deb);
+			if ((*_beginningRestBuffer)[i] == '\r' && (*_beginningRestBuffer)[i + 1] == '\n')
+				i += 2;
+			if ((*_beginningRestBuffer)[i] == '\r' && (*_beginningRestBuffer)[i + 1] == '\n')
+				return (_invalidRequestProcedure(currentRequest, 400));
+			std::memmove(buffer.buf, &(_beginningRestBuffer[i]), _beginningRestBuffer->length() - i);
+			buffer.deb = 0;
+			buffer.end = _beginningRestBuffer->length() - i;
+			delete _beginningRestBuffer;
+			_hasBegRest = 0;
+		}
+		else if (buffer.deb == '\r')
+		{
+			std::cout << "IN ANNOYING PROCEDURE, NOT TESTED" << std::endl;
+			if ((buffer.end - buffer.deb) < 4)
+				return (_saveBegRestProcedure(currentRequest, buffer));
+			if (buffer.buf[buffer.deb] == '\r' && buffer.buf[buffer.deb + 1] == '\n')
+			{
+				buffer.deb += 2;
+			}
+			if (buffer.buf[buffer.deb] == '\r' && buffer.buf[buffer.deb + 1] == '\n') // c'est la
+			{
+				if (!(currentRequest.getLineCount()))
+					return (_invalidRequestProcedure(currentRequest, 400));
+			}
+		}
 	}
 	while ((ret_read_line = _read_line(buffer, currentRequest)) == 1)
 	{

@@ -115,6 +115,7 @@ private:
 
 	HttpRequest	*_incompleteRequest;
 	std::string	*_restBuffer;
+	std::string	*_beginningRestBuffer;
 	std::string	_currentLine;
 
 //	readingBuffer			_buffer;
@@ -124,6 +125,7 @@ private:
 	bool				_isPersistent;
 	int				_hasRestRequest;
 	int				_hasRestBuffer;
+	int				_hasBegRest;
 	int				_hasContentToParse;
 	int				_isChunking;
 	int				_isReadingChunknbr;
@@ -159,6 +161,7 @@ private:
 	int		_parseTrailerLine(const char *line, int len, HttpRequest& currentRequest);
 	int		_findAndParsePersistanceHeaders(HttpRequest& currentRequest, std::pair<std::string, std::string> const& header);
 	int		_emptyReadBuffers() const;
+	int		_saveBegRestProcedure(HttpRequest& currentRequest, readingBuffer& buffer);
 };
 
 #endif
