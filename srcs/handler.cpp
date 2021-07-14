@@ -73,7 +73,7 @@ void	handle_connection(ConnectionClass& connection)
 		connection.closeConnection();
 		return;
 	}
-//	print_pipeline(RequestPipeline, connection);
+	print_pipeline(RequestPipeline, connection);
 	send_ret = connection.sendResponse("HTTP/1.1 200 OK\r\nContent-length: 52\r\n\r\n<html><body><h1>Welcome to Webser</h1></body></html>");
 	if (send_ret == -1)
 		std::perror("send");
