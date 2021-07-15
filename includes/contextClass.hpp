@@ -6,7 +6,7 @@
 /*   By: asablayr <marvin@42.fr>                    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2021/06/12 14:11:07 by asablayr          #+#    #+#             */
-/*   Updated: 2021/07/05 13:14:22 by asablayr         ###   ########.fr       */
+/*   Updated: 2021/07/15 14:41:37 by asablayr         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -21,6 +21,7 @@
 class contextClass
 {
 	public:
+			contextClass();
 			contextClass(std::string context_name, std::string buff);
 			contextClass(contextClass const&);
 
@@ -42,7 +43,6 @@ class contextClass
 			std::vector<contextClass*>				_blocks;
 
 	private:
-			contextClass();
 
 			void								setBlocks(void);
 			void								setDirectives(void);
