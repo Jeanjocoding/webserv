@@ -126,10 +126,17 @@ private:
 	int				_hasRestRequest;
 	int				_hasRestBuffer;
 	int				_hasBegRest;
-	int				_hasContentToParse;
+
+	int				_hasRead;
+	int				_isHandlingBody;
+
+	int				_isParsingContent;
+	int				_ContentLeftToRead;
+
+
 	int				_isChunking;
 	int				_isReadingChunknbr;
-	int				_ContentLeftToRead;
+	int				_leftChunkedToRead;
 
 	int		_read_long_line(std::string& str, readingBuffer& buffer, int& length_parsed);
 	int		_read_buffer(readingBuffer& buffer, std::vector<HttpRequest>& requestPipeline);
@@ -150,10 +157,10 @@ private:
 	void		_save_only_buffer(readingBuffer& readingBuffer);
 	int		_caseInsensitiveComparison(std::string s1, std::string s2) const;
 	int		_guaranteedRead(int fd, int to_read, std::string& str_buffer);
-	int		_getChunkedData(HttpRequest& currentRequest, readingBuffer& buffer, int& length_parsed);
-	int		_read_chunked_line(readingBuffer& buffer, int& length_parsed, int read_size, std::string& line);
+	int		_getChunkedData(HttpRequest& currentRequest, readingBuffer& buffer);
+	int		_read_chunked_line(readingBuffer& buffer, std::string& line);
 		int				_findAndParseContentHeaders(HttpRequest& currentRequest, std::pair<std::string, std::string> const& header);
-	int		_readAndAppendChunkBlock(HttpRequest& currentRequest, readingBuffer& buffer, int& length_parsed, int block_length);
+	int		_readAndAppendChunkBlock(HttpRequest& currentRequest, readingBuffer& buffer);
 	int		_processRemainingCrlf(readingBuffer& buffer);
 	int		_readTrailers(readingBuffer& buffer, int& length_parsed, HttpRequest& currentRequest);
 	int		_findInTrailers(std::string& to_find, HttpRequest& currentRequest);
@@ -162,6 +169,8 @@ private:
 	int		_findAndParsePersistanceHeaders(HttpRequest& currentRequest, std::pair<std::string, std::string> const& header);
 	int		_emptyReadBuffers() const;
 	int		_saveBegRestProcedure(HttpRequest& currentRequest, readingBuffer& buffer);
+	int		_keepReadingContent(HttpRequest& currentRequest, readingBuffer& buffer);
+	int		_save_only_request(HttpRequest& currentRequest);
 };
 
 #endif

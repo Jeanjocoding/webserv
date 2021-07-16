@@ -54,6 +54,7 @@ public:
 	void				setIsChunked(bool value);
 	bool				isChunked() const;
 	void				appendToContent(std::string& to_append);
+	void				appendToContent(char *str, int len);
 	void				setHasTrailer(bool value);
 	bool				HasTrailers() const;
 	std::vector<std::string>&	getModifyableConnectionOptions();

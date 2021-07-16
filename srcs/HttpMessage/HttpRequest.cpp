@@ -216,6 +216,11 @@ void			HttpRequest::appendToContent(std::string& to_append)
 	_content.append(to_append);
 }
 
+void			HttpRequest::appendToContent(char *str, int len)
+{
+	_content.append(str, len);
+}
+
 void			HttpRequest::setHasTrailer(bool value)
 {
 	_hasTrailers = value;

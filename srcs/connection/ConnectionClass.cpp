@@ -21,12 +21,26 @@ ConnectionClass::ConnectionClass(void)
 	_hasRestBuffer = 0;
 	_hasRestRequest = 0;
 	_hasBegRest = 0;
+	_isHandlingBody = 0;
+	_isParsingContent = 0;
+	_ContentLeftToRead = 0;
+	_isChunking = 0;
+	_isReadingChunknbr = 0;
+	_leftChunkedToRead = 0;
 	_isPersistent = 1;
+	_hasRead = 0;
 	return;
 }
 
 ConnectionClass::ConnectionClass(ConnectionClass const& to_copy): _socketNbr(to_copy._socketNbr), _server(to_copy._server), _status(to_copy._status), _isPersistent(to_copy._isPersistent), _hasRestRequest(to_copy._hasRestRequest), _hasRestBuffer(to_copy._hasRestBuffer), _hasBegRest(to_copy._hasBegRest)
 {
+	_isHandlingBody = to_copy._isHandlingBody;
+	_isParsingContent = to_copy._isParsingContent;
+	_ContentLeftToRead = to_copy._ContentLeftToRead;
+	_isChunking = to_copy._isChunking;
+	_isReadingChunknbr = to_copy._isReadingChunknbr;
+	_leftChunkedToRead = to_copy._leftChunkedToRead;
+	_hasRead = to_copy._hasRead;
 	if (to_copy._hasRestBuffer)
 		_restBuffer = new std::string(*(to_copy._restBuffer));
 	if (to_copy._hasBegRest)
@@ -43,7 +57,14 @@ ConnectionClass::ConnectionClass(int socknum, serverClass* server): _socketNbr(s
 	_hasRestBuffer = 0;
 	_hasRestRequest = 0;
 	_hasBegRest = 0;
+	_isHandlingBody = 0;
+	_isParsingContent = 0;
+	_ContentLeftToRead = 0;
+	_isChunking = 0;
+	_isReadingChunknbr = 0;
+	_leftChunkedToRead = 0;
 	_isPersistent = 1;
+	_hasRead = 0;
 	return;	
 }
 
@@ -53,6 +74,8 @@ ConnectionClass::~ConnectionClass(void)
 		delete _restBuffer;
 	if (_hasRestRequest)
 		delete _incompleteRequest;
+	if (_hasBegRest)
+		delete _beginningRestBuffer;
 	return;
 }
 
@@ -65,6 +88,7 @@ ConnectionClass&	ConnectionClass::operator=(ConnectionClass const& to_copy)
 	_hasRestBuffer = to_copy._hasRestBuffer;
 	_hasRestRequest = to_copy._hasRestRequest;
 	_hasBegRest = to_copy._hasBegRest;
+	_hasRead = to_copy._hasRead;
 	if (_hasRestBuffer)
 		_restBuffer = new std::string(*(to_copy._restBuffer));
 	if (_hasRestRequest)
@@ -147,7 +171,19 @@ int		ConnectionClass::_read_buffer(readingBuffer& buffer, std::vector<HttpReques
 		delete _incompleteRequest;
 		_hasRestRequest = 0;
 	}
+	if (_isHandlingBody)
+	{
+		if (_isParsingContent)
+			read_ret = _read_request_content(currentRequest, buffer);
+		else
+			read_ret = _getChunkedData(currentRequest, buffer);
+		if (read_ret == -1 || read_ret == 0 || read_ret == HTTP_ERROR)
+			return (read_ret);
+		return (1); // meme retour en cas de succes ou de save_Request. pb?
+		
+	}
 	read_ret = recv(_socketNbr, &(buffer.buf[buffer.end]), SINGLE_READ_SIZE, 0);
+	_hasRead = 1;
 	if (read_ret == -1)
 	{	
 		perror("read"); // a faire partout pour le debugging?
@@ -158,7 +194,6 @@ int		ConnectionClass::_read_buffer(readingBuffer& buffer, std::vector<HttpReques
 	buffer.end += read_ret;
 	length_parsed += read_ret;
 	buffer.buf[buffer.end] = '\0';
-
 	/* parsing all the requests contained in one single read **/
 	while (buffer.deb < buffer.end) // je chope toutes les requêtes qui sont dans le buffer
 	{
@@ -497,9 +532,9 @@ int		ConnectionClass::_read_line(readingBuffer& buffer, HttpRequest& currentRequ
 	int		crlf_index;
 //	int		read_ret;
 
-	std::cout << "in read_line" << std::endl;
-	std::cout << "has rest buffer: " << _hasRestBuffer <<  std::endl;
-	_printBufferInfo(buffer, "in read line");
+//	std::cout << "in read_line" << std::endl;
+//	std::cout << "has rest buffer: " << _hasRestBuffer <<  std::endl;
+//	_printBufferInfo(buffer, "in read line");
 	int deb_read = buffer.deb;
 
 	/** A PROTEGER DES SEGFAULTS/BUGS SI JE SUIS AU BOUT DU BUFFER */
@@ -584,7 +619,7 @@ int		ConnectionClass::_guaranteedRead(int fd, int to_read, std::string& str_buff
 
 /** more or less a duplication of _read_line, will maybe unify in a future but at least this saves 
  * a lot of if/else conditions and enforces the SRP principle */
-int		ConnectionClass::_read_chunked_line(readingBuffer& buffer, int& length_parsed, int read_size, std::string& line)
+/*int		ConnectionClass::_read_chunked_line(readingBuffer& buffer, int& length_parsed, int read_size, std::string& line)
 {
 	int		crlf_index;
 	int		read_ret;
@@ -640,64 +675,145 @@ int		ConnectionClass::_read_chunked_line(readingBuffer& buffer, int& length_pars
 	line.append(&(buffer.buf[buffer.deb]), crlf_index - buffer.deb);
 	buffer.deb = crlf_index + 2;
 	return (1);
+}*/
+
+int		ConnectionClass::_read_chunked_line(readingBuffer& buffer, std::string& line)
+{
+	int		crlf_index;
+//	int		read_ret;
+
+	std::cout << "in read_chunked line" << std::endl;
+	std::cout << "has rest buffer: " << _hasRestBuffer <<  std::endl;
+	_printBufferInfo(buffer, "in read chunked line");
+	int deb_read = buffer.deb;
+
+	/** A PROTEGER DES SEGFAULTS/BUGS SI JE SUIS AU BOUT DU BUFFER */
+	if (buffer.buf[buffer.deb] == '\r' && buffer.buf[buffer.deb + 1] == '\n' && !_hasRestBuffer)
+	{
+		buffer.deb += 2;
+		return (2);
+	}
+	if (_hasRestBuffer && _restBuffer->length() && (*_restBuffer)[_restBuffer->length() - 1] == '\r' 
+		&& buffer.buf[buffer.deb] == '\n')
+	{
+		if (_restBuffer->length() == 1)
+		{
+			buffer.deb += 1;
+			_hasRestBuffer = 0;
+			_restBuffer->clear();
+			delete _restBuffer;
+			return (2);
+		}
+		line.append(_restBuffer->c_str(), _restBuffer->length() - 1);
+		buffer.deb += 1;
+		_hasRestBuffer = 0;
+		_restBuffer->clear();
+		delete _restBuffer;
+		return (1);
+	}
+	if ((crlf_index = _findInBuf("\r\n", buffer.buf, 2, buffer.end, deb_read)) == -1)
+			return (SAVE_REQUEST); 
+/*	if (buffer.buf[buffer.deb] == '\r' && buffer.buf[buffer.deb + 1] == '\n')
+	{
+		buffer.deb = crlf_index + 2;
+		return (2);
+	}*/
+	if (_hasRestBuffer)
+	{
+		_restBuffer->append(&(buffer.buf[buffer.deb]), crlf_index - buffer.deb);
+		line.append(_restBuffer->c_str(), _restBuffer->length() - 1);
+		_restBuffer->clear();
+		delete _restBuffer;
+		_restBuffer = 0;
+		_hasRestBuffer = 0;
+	}
+	else
+		line.append(&(buffer.buf[buffer.deb]), crlf_index - buffer.deb);
+	buffer.deb = crlf_index + 2;
+	return (1);
 }
 
 /** rather explicit title, the code is more or less duplicated with read_content but having one function 
  * for both would have also been a pain with if/elses, and less efficient */
-int		ConnectionClass::_readAndAppendChunkBlock(HttpRequest& currentRequest, readingBuffer& buffer, int& length_parsed, int block_length)
+int		ConnectionClass::_readAndAppendChunkBlock(HttpRequest& currentRequest, readingBuffer& buffer)
 {
 	std::string	request_content;
-	int		to_read;
+//	int		to_read;
 	int 		read_ret;
-	int		block_length_w_crlf = block_length + 2;
+	int		size_append;
 
 	/** PAS OUBLIER DE GERER BUF.DEB ET BUF.END **/
 	if (buffer.end > buffer.deb)  // determin if there is unporocessed data remaining in the buffer
 	{
 		int diff = buffer.end - buffer.deb; 
-		if (diff >= block_length_w_crlf) // determins if the whole chunk is in the buffer
+		if (diff >= _ContentLeftToRead) // determins if the whole chunk is in the buffer
 		{
-			request_content.append(&(buffer.buf[buffer.deb]), block_length);
+			request_content.append(&(buffer.buf[buffer.deb]), _ContentLeftToRead - 2);
 			currentRequest.appendToContent(request_content);
-			buffer.deb += block_length_w_crlf;
+			buffer.deb += _ContentLeftToRead;
+			_ContentLeftToRead = 0;
 			return (request_content.length());
 		}
 		else
 		{
-			if (diff <= block_length)  // ne prend pas en compte le crlf, cst la diff avec au dessus
-				request_content.append(&(buffer.buf[buffer.deb]), diff);
-			else
-				request_content.append(&(buffer.buf[buffer.deb]), block_length);
-			buffer.deb += diff; // allows not adding twice the same data (is it really relevant? because buffer not used by guar_Read)
-			to_read = block_length_w_crlf - diff; 
-			read_ret = _guaranteedRead(_socketNbr, to_read, request_content);
-			buffer.deb = buffer.end;  // PERMET DE MONTRER QUE TOUT A ETE PROCESS
-			if (read_ret == 0 || read_ret == -1)
-				return (read_ret);
+			if (diff <= (_ContentLeftToRead - 2))  // ne prend pas en compte le crlf, cst la diff avec au dessus
+			{
+				currentRequest.appendToContent(&(buffer.buf[buffer.deb]), diff);
+				_ContentLeftToRead -= diff;
+			}
 			else
 			{
-				length_parsed += read_ret;
-				if (request_content.length() > 2)
-				{
-					request_content.resize(request_content.length() - 2); // je n'ajoute pas les crlfs
-					currentRequest.appendToContent(request_content);
-				}
-				return (request_content.length());
+				currentRequest.appendToContent(&(buffer.buf[buffer.deb]), _ContentLeftToRead - 2);
+				_ContentLeftToRead = 2;
+			}
+			buffer.deb += diff; // allows not adding twice the same data (is it really relevant? because buffer not used by guar_Read)
+			buffer.deb = buffer.end;  // PERMET DE MONTRER QUE TOUT A ETE PROCESS
+			if (!_hasRead)
+			{
+				if (_ContentLeftToRead < SINGLE_READ_SIZE)
+					read_ret = recv(_socketNbr, &(buffer.buf[buffer.deb]), _ContentLeftToRead, 0);
+				else
+					read_ret = recv(_socketNbr, &(buffer.buf[buffer.deb]), SINGLE_READ_SIZE, 0);
+				if (read_ret == 0 || read_ret == -1)
+					return (read_ret);
+				buffer.end += read_ret;
+				_ContentLeftToRead -= read_ret;
+				_hasRead = 1;
+				int size_append = (buffer.end - buffer.deb -2);
+				if (size_append > 0)
+					currentRequest.appendToContent(&(buffer.buf[buffer.deb]), size_append);
+				buffer.deb = buffer.end;  // PERMET DE MONTRER QUE TOUT A ETE PROCESS
+				return (1);
+			}
+			else
+			{
+				return (_save_only_request(currentRequest));
 			}
 		}
 	}
 	else 
 	{
-		read_ret = _guaranteedRead(_socketNbr, block_length_w_crlf, request_content);
-		buffer.deb = buffer.end;  // PERMET DE MONTRER QUE TOUT A ETE PROCESS
-		if (read_ret == 0 || read_ret == -1)
-			return (read_ret);
+		if (!_hasRead)
+		{
+			if (_ContentLeftToRead < SINGLE_READ_SIZE)
+				read_ret = recv(_socketNbr, &(buffer.buf[buffer.deb]), _ContentLeftToRead, 0);
+			else
+				read_ret = recv(_socketNbr, &(buffer.buf[buffer.deb]), SINGLE_READ_SIZE, 0);
+			if (read_ret == 0 || read_ret == -1)
+				return (read_ret);
+			buffer.end += read_ret;
+			_hasRead = 1;
+			_ContentLeftToRead -= read_ret;
+			size_append = buffer.end - buffer.deb - 2;
+			if (size_append > 0)
+				currentRequest.appendToContent(&(buffer.buf[buffer.deb]), size_append);
+			buffer.deb = buffer.end; //sur de sur?
+			return (1);
+
+		}
 		else
 		{
-			length_parsed += read_ret;
-			request_content.resize(request_content.length() - 4); // je n'ajoute pas les crlfs
-			currentRequest.appendToContent(request_content);
-			return (request_content.length());
+			return (_save_only_request(currentRequest));
 		}
 	}
 	return (1);
@@ -723,37 +839,65 @@ int		ConnectionClass::_processRemainingCrlf(readingBuffer& buffer)
 
 /** this is the main for getting chunk sizes, reading on buffer or socket accordingly, and adding
  * it all to the content of the HttpRequest */
-int		ConnectionClass::_getChunkedData(HttpRequest& currentRequest, readingBuffer& buffer, int& length_parsed)
+int		ConnectionClass::_getChunkedData(HttpRequest& currentRequest, readingBuffer& buffer)
 {
 
 	std::string	line_hex;
 	int	read_ret;
 	int 	ret_chunked;
+	long	nbred;
+//	int	diff;
 
-	read_ret = _read_chunked_line(buffer, length_parsed, 10, line_hex);
-	if (read_ret == -1)
-		return (-1);
-	else if (read_ret == 0)
-		return (0);
-
-
-	if (line_hex.find_first_not_of("0123456789ABCDEFabcdef") != line_hex.npos)
-		return (_invalidRequestProcedure(currentRequest, 400));
-	long nbred = strtol(line_hex.c_str(), NULL, 16);
-
-	while (nbred > 0)
+	if (!_ContentLeftToRead)
 	{
-		ret_chunked = _readAndAppendChunkBlock(currentRequest, buffer, length_parsed, nbred);
-		if (ret_chunked == 0 || ret_chunked == -1)
-			return (ret_chunked);
-		read_ret = _read_chunked_line(buffer, length_parsed, 10, line_hex);
-		if (read_ret == -1)
-			return (-1);
-		else if (read_ret == 0)
-			return (0);
+		_isReadingChunknbr = 1;
+		if (_hasRestBuffer) // signifie que j'ai pas encore lu sur cette itération
+		{
+			read_ret = recv(_socketNbr, buffer.buf, 10, 0);
+			if (read_ret == 0 || read_ret == -1)
+				return (read_ret);
+			_hasRead = 1;
+			
+		}
+		read_ret = _read_chunked_line(buffer, line_hex);
+		if (read_ret == SAVE_REQUEST)
+			return (SAVE_REQUEST);
+		_isReadingChunknbr = 0;
 		if (line_hex.find_first_not_of("0123456789ABCDEFabcdef") != line_hex.npos)
 			return (_invalidRequestProcedure(currentRequest, 400));
 		nbred = strtol(line_hex.c_str(), NULL, 16);
+		_ContentLeftToRead = nbred + 2; // déduire buffer (je le fais problement déjà apres);
+/*		if (nbred == 0)
+			return (currentRequest.getContent().length());
+		diff = buffer.end - buffer.deb;
+		if (diff)
+		{
+			if (diff >= nbred)
+
+		}*/
+	}
+	while (_ContentLeftToRead > 0)
+	{
+		ret_chunked = _readAndAppendChunkBlock(currentRequest, buffer);
+		if (ret_chunked == 0 || ret_chunked == -1)
+			return (ret_chunked);
+		if (ret_chunked == SAVE_REQUEST)
+			return (SAVE_REQUEST);
+		_isReadingChunknbr = 1;
+		read_ret = _read_chunked_line(buffer, line_hex);
+		if (read_ret == SAVE_REQUEST)
+			return (SAVE_REQUEST);
+		_isReadingChunknbr = 0;
+		if (line_hex.find_first_not_of("0123456789ABCDEFabcdef") != line_hex.npos)
+			return (_invalidRequestProcedure(currentRequest, 400));
+		nbred = strtol(line_hex.c_str(), NULL, 16);
+		if (!nbred)
+		{
+			_ContentLeftToRead = 0;
+			_isChunking = 0;
+			break;
+		}
+		_ContentLeftToRead = nbred + 2;
 	}
 	return (currentRequest.getContent().length());
 }
@@ -763,38 +907,50 @@ int		ConnectionClass::_read_request_content(HttpRequest& CurrentRequest, reading
 
 	std::string	request_content;
 //	int		to_read;
-//	int 		read_ret;
+	int 		read_ret;
+	int 		diff = buffer.end - buffer.deb;
 
-	if ((buffer.end - buffer.deb) >= CurrentRequest.getContentLength()) // if part of the content is already in the buffer
+	std::cout << "in read_Request_Content" << std::endl;
+	if (diff) // if part of the content is already in the buffer
 	{
 //		int diff = buffer.end - buffer.deb;
-//		if (diff >= CurrentRequest.getContentLength()) // if all the content is already in the buffer, no need to read on the socket
-//		{
-			request_content.append(&(buffer.buf[buffer.deb]), CurrentRequest.getContentLength());
-			CurrentRequest.setContent(request_content);
-			buffer.deb += CurrentRequest.getContentLength();
-			return (request_content.length());
-/*		}
-		else // need to read on the socket, data missing
+		if (diff >= _ContentLeftToRead) // if all the content is already in the buffer, no need to read on the socket
 		{
-			request_content.append(&(buffer.buf[buffer.deb]), diff);
+			CurrentRequest.appendToContent(&(buffer.buf[buffer.deb]), CurrentRequest.getContentLength());
 			buffer.deb += diff;
-			to_read = CurrentRequest.getContentLength() - diff;
-			read_ret = _guaranteedRead(_socketNbr, to_read, request_content);
-			length_parsed += read_ret;
-			if (read_ret == 0 || read_ret == 1)
-				return (read_ret);
-			else
-			{
-				CurrentRequest.setContent(request_content);
-				return (request_content.length());
-			}
-		}*/
+			_isParsingContent = 0;
+			_isHandlingBody = 0;
+			_ContentLeftToRead = 0;
+			return (request_content.length());
+		}
+		else // need to save, data missing
+		{
+			CurrentRequest.appendToContent(&(buffer.buf[buffer.deb]), diff);
+			buffer.deb += diff;
+			_ContentLeftToRead -= diff;
+			return (_save_only_request(CurrentRequest));
+		}
 	}
 	else // all the content must be read from the socket
 	{
-		_save_request_and_buffer(CurrentRequest, buffer);
-		return (SAVE_REQUEST);
+		if (!_hasRead)
+		{
+			if (_ContentLeftToRead < SINGLE_READ_SIZE)
+				read_ret = recv(_socketNbr, &(buffer.buf[buffer.deb]), _ContentLeftToRead, 0);
+			else
+				read_ret = recv(_socketNbr, &(buffer.buf[buffer.deb]), SINGLE_READ_SIZE, 0);
+			if (read_ret == 0 || read_ret == -1)
+				return (read_ret);
+			buffer.end += read_ret;
+			_hasRead = 1;
+			CurrentRequest.appendToContent(&(buffer.buf[buffer.deb]), diff);
+			_ContentLeftToRead -= read_ret;
+			buffer.deb = buffer.end;
+			if (!_ContentLeftToRead)
+				return (_save_only_request(CurrentRequest));
+		}
+		else
+			return (_save_only_request(CurrentRequest));
 	}
 	return (1);
 
@@ -985,6 +1141,12 @@ int		ConnectionClass::_saveBegRestProcedure(HttpRequest& currentRequest, reading
 	return (SAVE_REQUEST);
 }
 
+int		ConnectionClass::_save_only_request(HttpRequest& currentRequest)
+{
+		_incompleteRequest = new HttpRequest(currentRequest);	
+		return (SAVE_REQUEST);
+}
+
 /** get next request in the buffer or in the socket. if no_read_mode == NO_READ_MODE_ACTIVATED, it will 
  * not read on the socket after it runs out of data in the buffer, it will save everything and come back
  * next select iteration */ 
@@ -1001,6 +1163,8 @@ int		ConnectionClass::_get_next_request(readingBuffer &buffer, HttpRequest& curr
 	/** Tout ce 'if' sert uniquement au cas ou je commence à lire une requete et il me reste juste un bout de CRLF dans le buffer.
 	 * il est recommandé par la RFC de tolérer un crlf perdu en debut de requête, donc ça sert à ça
 	*/
+
+//	if (_isHandlingBody)
 	if (!(currentRequest.getLineCount()) && !_hasRestBuffer) // si c'est le tout debut de la requete et que j'ai toujours pas eu de caractere autre que CRLF
 	{
 		if (_hasBegRest)
@@ -1064,18 +1228,41 @@ int		ConnectionClass::_get_next_request(readingBuffer &buffer, HttpRequest& curr
 	{
 		if (currentRequest.getContentLength())
 		{
+			_isHandlingBody = 1;
+			_isParsingContent = 1;
+			_ContentLeftToRead = currentRequest.getContentLength();
 			ret_read_content = _read_request_content(currentRequest, buffer);
 			if (ret_read_content == -1 || ret_read_content == 0)
 			{
+				_isHandlingBody = 0;
+				_isParsingContent = 0;
 				std::cout << "ret_read_content returned -1 OR 0, meaning an error occured. For now, get_next_request forwards this ret_value" << std::endl;
 				return (ret_read_content);
 			}
+			else if (ret_read_content == SAVE_REQUEST)
+			{
+				return (SAVE_REQUEST); //PROCÉDURE SAVE SE FAIT DANS LA FUNC
+			}
+			_isHandlingBody = 0;
+			_isParsingContent = 0;
 		}
 		else if (currentRequest.isChunked())
 		{
-			int chunk_ret = _getChunkedData(currentRequest, buffer, length_parsed);
+			_isHandlingBody = 1;
+			_isChunking = 1;
+			int chunk_ret = _getChunkedData(currentRequest, buffer);
 			if (chunk_ret == 0 || chunk_ret == -1 || chunk_ret == HTTP_ERROR)
+			{
+				_isHandlingBody = 0;
+				_isChunking = 0;
 				return (chunk_ret);
+			}
+			else if (chunk_ret == SAVE_REQUEST)
+			{
+				return (_save_only_request(currentRequest));
+			}
+			_isHandlingBody = 0;
+			_isChunking = 0;
 			if (currentRequest.HasTrailers())
 			{
 				chunk_ret = _readTrailers(buffer, length_parsed, currentRequest);
@@ -1103,6 +1290,7 @@ int			ConnectionClass::receiveRequest(std::vector<HttpRequest>& requestPipeline)
 	int		read_ret;
 
 	_initializeBuffer(buffer);
+	_hasRead = 0;
 	read_ret = _read_buffer(buffer, requestPipeline); // fonction principale
 	if (read_ret == HTTP_ERROR)
 	{
