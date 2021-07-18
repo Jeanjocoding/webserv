@@ -6,7 +6,7 @@
 /*   By: asablayr <marvin@42.fr>                    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2021/06/07 18:49:16 by asablayr          #+#    #+#             */
-/*   Updated: 2021/07/09 22:48:49 by asablayr         ###   ########.fr       */
+/*   Updated: 2021/07/15 18:00:59 by asablayr         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -64,7 +64,7 @@ serverClass::serverClass(serverClass const& to_copy)
 serverClass::~serverClass()
 {
 	close(_server_socket);
-	for (std::map<std::string, contextClass*>::iterator it = _location.begin(); it != _location.end(); it++)
+	for (std::map<std::string, LocationClass*>::iterator it = _location.begin(); it != _location.end(); it++)
 		delete it->second;
 	if (_addr)
 		freeaddrinfo(_addr);

@@ -6,12 +6,13 @@
 /*   By: asablayr <marvin@42.fr>                    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2021/06/21 17:42:15 by asablayr          #+#    #+#             */
-/*   Updated: 2021/07/05 13:37:21 by asablayr         ###   ########.fr       */
+/*   Updated: 2021/07/18 12:16:41 by asablayr         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include <iostream>
 #include <fstream>
+#include <sstream>
 #include "directiveClass.hpp"
 
 directiveClass::directiveClass()
@@ -119,7 +120,7 @@ static bool	sizeParse(std::string& arg)
 
 	while (arg[i] && arg[i] == ' ')
 		i++;
-	while (arg[i] && arg[i] < '0' && arg[i] < '9')
+	while (arg[i] && arg[i] >= '0' && arg[i] <= '9')
 		i++;
 	if (arg[i])
 	{
@@ -141,7 +142,7 @@ static bool	numberParse(std::string& arg)
 
 	while (arg[i] && arg[i] == ' ')
 		i++;
-	while (arg[i] && arg[i] < '0' && arg[i] < '9')
+	while (arg[i] && arg[i] >= '0' && arg[i] <= '9')
 		i++;
 	while (arg[i] && arg[i] == ' ')
 		i++;
@@ -156,11 +157,11 @@ static bool	numberSizeParse(std::string& arg)
 
 	while (arg[i] && arg[i] == ' ')
 		i++;
-	while (arg[i] && arg[i] < '0' && arg[i] < '9')
+	while (arg[i] && arg[i] >= '0' && arg[i] <= '9')
 		i++;
 	while (arg[i] && arg[i] == ' ')
 		i++;
-	while (arg[i] && arg[i] < '0' && arg[i] < '9')
+	while (arg[i] && arg[i] >= '0' && arg[i] <= '9')
 		i++;
 	if (arg[i])
 	{
@@ -182,7 +183,7 @@ static bool	timeParse(std::string& arg)
 
 	while (arg[i] && arg[i] == ' ')
 		i++;
-	while (arg[i] && arg[i] < '0' && arg[i] < '9')
+	while (arg[i] && arg[i] >= '0' && arg[i] <= '9')
 		i++;
 	if (arg[i])
 	{
@@ -206,15 +207,15 @@ static bool	pathParse(std::string& arg)
 
 	while (arg[i] && arg[i] == ' ')
 		i++;
-	if (arg[i] != '/')
+	if (!arg[i] || (arg[i] != '/' && arg[i] != '.'))
 		return false;
 	while (arg[i] && arg[i] != ' ')
 		i++;
 	while (arg[i] && arg[i] == ' ')
 		i++;
-	if (arg[i] && arg[i] == ';')
-		return true;
-	return false;
+	if (arg[i])
+		return false;
+	return true;
 }
 
 static bool	allAnyParse(std::string& arg)
@@ -385,6 +386,41 @@ static bool	codeUriParse(std::string arg)
 	return (pathParse(arg));
 }
 
+static bool methodParse(std::string arg)
+{
+	std::istringstream iss(arg);
+	std::vector<std::string> vect;
+	std::string set[] = {"GET", "POST", "DELETE", "HEAD", "PUT"};
+	std::string tmp;
+	for (unsigned int i = 0; iss >> tmp; i++)
+		vect.push_back(tmp);
+	if (vect.empty())
+		return false;
+	for (std::vector<std::string>::iterator it = vect.begin(); it != vect.end(); it++)
+	{
+		bool check = false;
+		for (int i = 0; i < 5 ; i++)
+		{
+			if (set[i] == *it)
+			{
+				check = true;
+				break;
+			}
+		}
+		if (check == false)
+			return false;
+	}
+	for (std::vector<std::string>::iterator it = vect.begin(); it != --vect.end(); it++)
+	{
+		for (std::vector<std::string>::iterator i = it + 1; i != vect.end(); i++)
+		{
+			if (*i == *it)
+				return false;
+		}
+	}
+	return true;
+}
+
 bool	directiveClass::parse(std::string arg)
 {
 	if (arg.empty())
@@ -394,9 +430,9 @@ bool	directiveClass::parse(std::string arg)
 		case SYNTAX_ON_OFF:
 			return (onOffParse(arg));
 		case SYNTAX_STRING:
-			return (stringParse());//to write
+			return (stringParse());
 		case SYNTAX_FILE:
-			return (fileParse(arg));//to write
+			return (fileParse(arg));
 		case SYNTAX_PATH:
 			return (pathParse(arg));
 		case SYNTAX_SIZE:
@@ -417,6 +453,8 @@ bool	directiveClass::parse(std::string arg)
 			return (rateParse(arg));
 		case SYNTAX_CODE_URI:
 			return (codeUriParse(arg));
+		case SYNTAX_METHOD:
+			return (methodParse(arg));
 		default:
 			return false;
 	}

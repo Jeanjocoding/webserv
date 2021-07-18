@@ -6,7 +6,7 @@
 /*   By: asablayr <marvin@42.fr>                    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2021/06/12 14:11:07 by asablayr          #+#    #+#             */
-/*   Updated: 2021/06/28 13:08:26 by asablayr         ###   ########.fr       */
+/*   Updated: 2021/07/17 11:17:08 by asablayr         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -31,6 +31,7 @@
 #define	SYNTAX_ADDRESS		12
 #define	SYNTAX_RATE			13
 #define	SYNTAX_CODE_URI		14
+#define	SYNTAX_METHOD		15
 
 class directiveClass
 {

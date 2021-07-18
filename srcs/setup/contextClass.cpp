@@ -6,7 +6,7 @@
 /*   By: asablayr <marvin@42.fr>                    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2021/06/12 15:24:19 by asablayr          #+#    #+#             */
-/*   Updated: 2021/07/09 22:15:30 by asablayr         ###   ########.fr       */
+/*   Updated: 2021/07/17 17:14:29 by asablayr         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -14,13 +14,69 @@
 #include <cstdlib>
 #include <sstream>
 #include "contextClass.hpp"
+#include "LocationClass.hpp"
 
 contextClass::contextClass()
 {
 }
 
-contextClass::contextClass(std::string name, std::string buff): _name(name)
+contextClass::contextClass(std::string const& name, std::string buff): _name(name)
 {
+	setAcceptedDirectives();
+	setDirectives();
+	setBlocks();
+	
+	_block_content = getBlock(_name, buff).second;
+	if (_name != "main")
+	{
+		_block_content.erase(0, _block_content.find('{') + 1);
+		_block_content.erase(_block_content.rfind('}'), 1);
+	}
+	getBlocksInContext();
+	getDirectivesInContext();
+	getAcceptedDirectivesInContext();
+	while (!_block_content.empty() && _block_content[0] == ' ')
+		_block_content.erase(0, 1);
+	if (!_block_content.empty())
+	{
+		std::cerr << "gibberish spotted in context " << _name << " : " << _block_content << std::endl;
+		exit(EXIT_FAILURE);
+	}
+}
+
+contextClass::contextClass(contextClass const& copy)
+{
+	_name = copy._name;
+	_block_content = copy._block_content;
+	_directive_set = copy._directive_set;
+	_block_set = copy._block_set;
+	_directives = copy._directives;
+	_blocks = copy._blocks;
+	_accepted_directive_set = copy._accepted_directive_set;
+}
+
+contextClass& contextClass::operator = (contextClass const& copy)
+{
+	_name = copy._name;
+	_block_content = copy._block_content;
+	_directive_set = copy._directive_set;
+	_block_set = copy._block_set;
+	_directives = copy._directives;
+	_blocks = copy._blocks;
+	_accepted_directive_set = copy._accepted_directive_set;
+	return *this;
+}
+
+contextClass::~contextClass()
+{
+	for (std::vector<contextClass*>::iterator it = _blocks.begin(); it != _blocks.end(); it++)
+		delete *it;
+}
+
+void contextClass::setContext(std::string name, std::string buff)
+{
+
+	_name = name;
 	setAcceptedDirectives();
 	setDirectives();
 	setBlocks();
@@ -44,37 +100,6 @@ contextClass::contextClass(std::string name, std::string buff): _name(name)
 		std::cerr << "gibberish spotted in context " << _name << " : " << _block_content << std::endl;
 		exit(EXIT_FAILURE);
 	}
-}
-
-contextClass::contextClass(contextClass const& copy)
-{
-	_name = copy._name;
-	_param = copy._param;
-	_block_content = copy._block_content;
-	_directive_set = copy._directive_set;
-	_block_set = copy._block_set;
-	_directives = copy._directives;
-	_blocks = copy._blocks;
-	_accepted_directive_set = copy._accepted_directive_set;
-}
-
-contextClass& contextClass::operator = (contextClass const& copy)
-{
-	_name = copy._name;
-	_param = copy._param;
-	_block_content = copy._block_content;
-	_directive_set = copy._directive_set;
-	_block_set = copy._block_set;
-	_directives = copy._directives;
-	_blocks = copy._blocks;
-	_accepted_directive_set = copy._accepted_directive_set;
-	return *this;
-}
-
-contextClass::~contextClass()
-{
-	for (std::vector<contextClass*>::iterator it = _blocks.begin(); it != _blocks.end(); it++)
-		delete *it;
 }
 
 void contextClass::setBlocks(void)
@@ -133,7 +158,7 @@ void contextClass::setDirectives(void)
        _directive_set.push_back(_accepted_directive_set["error_log"]);
        _directive_set.push_back(_accepted_directive_set["root"]);
        _directive_set.push_back(_accepted_directive_set["return"]);
-       _directive_set.push_back(_accepted_directive_set["limit_accept"]);
+       _directive_set.push_back(_accepted_directive_set["limit_except"]);
 	}
     else
 	{
@@ -315,8 +340,7 @@ void	contextClass::getBlocksInContext(void)
 		{
 			for (std::pair<std::string, std::string> check = getParamedBlock(*it, _block_content); !check.first.empty(); check = getParamedBlock(*it, _block_content))
 			{
-				_blocks.push_back(new contextClass(*it, check.second));
-				_blocks[_blocks.size() - 1]->_param = check.first;
+				_blocks.push_back(new LocationClass(check.first, check.second));
 				_block_content.erase(_block_content.find(check.second), check.second.size());
 			}
 		}
@@ -638,7 +662,7 @@ void contextClass::setAcceptedDirectives(void)
 	_accepted_directive_set["keepalive_time"]._syntax = SYNTAX_TIME;
 	_accepted_directive_set["keepalive_timeout"]._syntax = SYNTAX_TIME;
 	_accepted_directive_set["large_client_header_buffers"]._syntax = SYNTAX_NUMBER_SIZE;
-	_accepted_directive_set["limit_except"]._syntax = SYNTAX_BLOCK;
+	_accepted_directive_set["limit_except"]._syntax = SYNTAX_METHOD;
 	_accepted_directive_set["limit_rate"]._syntax = SYNTAX_RATE;
 	_accepted_directive_set["limit_rate_after"]._syntax = SYNTAX_SIZE;
 	_accepted_directive_set["lingering_close"]._syntax = SYNTAX_ON_OFF;
