@@ -6,7 +6,7 @@
 /*   By: asablayr <marvin@42.fr>                    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2021/07/04 17:42:52 by asablayr          #+#    #+#             */
-/*   Updated: 2021/07/05 15:10:59 by asablayr         ###   ########.fr       */
+/*   Updated: 2021/07/18 18:27:20 by asablayr         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -1062,13 +1062,13 @@ int		ConnectionClass::_get_next_request(readingBuffer &buffer, HttpRequest& curr
 
 /** Read on the socket and fills the vector received in argument with parsed requests under the form
  * of HttpRequest objects */
-int			ConnectionClass::receiveRequest(std::vector<HttpRequest>& requestPipeline)
+int			ConnectionClass::receiveRequest(void)
 {
 	readingBuffer	buffer;
 	int		read_ret;
 
 	_initializeBuffer(buffer);
-	read_ret = _read_buffer(buffer, requestPipeline); // fonction principale
+	read_ret = _read_buffer(buffer, _request_pipeline); // fonction principale
 	if (read_ret == HTTP_ERROR)
 	{
 		std::cout << "an invalid request has been detected" << std::endl;
@@ -1081,10 +1081,11 @@ int			ConnectionClass::receiveRequest(std::vector<HttpRequest>& requestPipeline)
 	}
 	else if (read_ret == 0)
 	{
+		_status = CO_ISCLOSED;
 		std::cout << "the connection has been closed" << std::endl;
 		return (0);
 	}
-
+	_status = CO_ISREADY;
 	return (1);
 }
 
@@ -1140,9 +1141,14 @@ int				ConnectionClass::closeConnection(void)
 	return (return_value);
 }
 
-int				ConnectionClass::getStatus(void)
+int				ConnectionClass::getStatus(void) const
 {
 	return (_status);
+}
+
+void			ConnectionClass::setStatus(int state)
+{
+	_status = state;
 }
 
 bool				ConnectionClass::isPersistent() const

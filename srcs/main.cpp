@@ -6,7 +6,7 @@
 /*   By: asablayr <marvin@42.fr>                    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2021/06/06 15:27:02 by asablayr          #+#    #+#             */
-/*   Updated: 2021/07/09 22:53:26 by asablayr         ###   ########.fr       */
+/*   Updated: 2021/07/18 18:34:02 by asablayr         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -28,6 +28,7 @@ int main(int ac, char** av)
 	std::vector<serverClass*>			server_map;
 	std::map<int, ConnectionClass>		connection_map;
 	fd_set								rfds, rfds_copy;
+	fd_set								wfds, wfds_copy;
 
 	if (ac == 2)//&& av[1] == *.conf
 		server_map = setup_server(av[1]);
@@ -35,6 +36,7 @@ int main(int ac, char** av)
 		server_map = setup_server(DEFAULT_CONF_FILE);
 
 	FD_ZERO(&rfds);//memset fd_set
+	FD_ZERO(&wfds);//memset fd_set
 	for (std::vector<serverClass*>::iterator it = server_map.begin(); it != server_map.end(); it++)
 	{
 		try 
@@ -53,7 +55,8 @@ int main(int ac, char** av)
 	while (true)
 	{
 		rfds_copy = rfds;
-		if (select(FD_SETSIZE, &rfds_copy, NULL, NULL, NULL) < 0)
+		wfds_copy = wfds;
+		if (select(FD_SETSIZE, &rfds_copy, &wfds_copy, NULL, NULL) < 0)
 		{
 			std::perror("select eror");
 			for (std::vector<serverClass*>::iterator i = server_map.begin(); i != server_map.end(); i++)
@@ -83,11 +86,37 @@ int main(int ac, char** av)
 				}
 				if (check)
 					continue;
-				handle_connection(connection_map[i]);
+//				handle_connection(connection_map[i]);
+				if (connection_map[i].receiveRequest() <= 0) // close connection if error while receiving paquets
+					connection_map[i].closeConnection();
 				if (connection_map[i].getStatus() == CO_ISCLOSED) // erases if connection is not persistent
 				{
 					FD_CLR(i, &rfds);
 					connection_map.erase(i);
+				}
+				else if (connection_map[i].getStatus() == CO_ISREADY) // at least one request ready to be answered
+				{
+					FD_CLR(i, &rfds);
+					FD_SET(i, &wfds);
+				}
+			}
+			else if (FD_ISSET(i, &wfds_copy))
+			{
+//				answer_connection(connection_map[i]);
+				if (connection_map[i].sendResponse("HTTP/1.1 200 OK\r\nContent-length: 52\r\n\r\n<html><body><h1>Welcome to Webser</h1></body></html>") == -1)
+					std::perror("send");
+				else
+					connection_map[i].setStatus(CO_ISDONE);
+				if (connection_map[i].getStatus() == CO_ISCLOSED) // erases if connection is not persistent
+				{
+					connection_map[i].closeConnection();
+					FD_CLR(i, &wfds);
+					connection_map.erase(i);
+				}
+				else if (connection_map[i].getStatus() == CO_ISDONE) // all request have been answered
+				{
+					FD_CLR(i, &wfds);
+					FD_SET(i, &rfds);
 				}
 			}
 		}
