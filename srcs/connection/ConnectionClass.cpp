@@ -173,13 +173,26 @@ int		ConnectionClass::_read_buffer(readingBuffer& buffer, std::vector<HttpReques
 	}
 	if (_isHandlingBody)
 	{
+		_print_content_info(buffer, currentRequest, "in read buffer, beg isHandling");
 		if (_isParsingContent)
+		{
 			read_ret = _read_request_content(currentRequest, buffer);
+		}
 		else
+		{
 			read_ret = _getChunkedData(currentRequest, buffer);
-		if (read_ret == -1 || read_ret == 0 || read_ret == HTTP_ERROR)
+			std::cout << "NEED TO HANDLE TRAILERS" << std::endl;
+		}
+		if (read_ret == -1 || read_ret == 0)
 			return (read_ret);
-		return (1); // meme retour en cas de succes ou de save_Request. pb?
+		if (!_isHandlingBody)
+		{
+			requestPipeline.push_back(currentRequest);
+			if (read_ret != HTTP_ERROR)	
+				requestPipeline.back().setValidity(1);
+		}
+		_print_content_info(buffer, currentRequest, "in read buffer, after isHandling");
+		return (1); 
 		
 	}
 	read_ret = recv(_socketNbr, &(buffer.buf[buffer.end]), SINGLE_READ_SIZE, 0);
@@ -902,6 +915,42 @@ int		ConnectionClass::_getChunkedData(HttpRequest& currentRequest, readingBuffer
 	return (currentRequest.getContent().length());
 }
 
+void		ConnectionClass::_print_content_info(readingBuffer& buffer, HttpRequest& currentRequest, std::string message)
+{
+	std::cout << " ------------------ CONTENT INFO: " << message << "-------------- " << std::endl;
+	std::cout << "_hasRead: " << _hasRead << std::endl;
+	std::cout << "_isHandlingBody: " << _isHandlingBody << std::endl;
+	std::cout << "_isParsingContent: " << _isParsingContent << std::endl;
+	std::cout << "_ContentLeftToRead: " << _ContentLeftToRead << std::endl;
+	std::cout << "_isChunking: " << _isChunking << std::endl;
+	std::cout << "_isReadingChunkNbr: " << _isReadingChunknbr << std::endl;
+//:w
+	std::cout << "_isParsingContent: " << _isParsingContent << std::endl;
+	std::cout << "content in request: " << currentRequest.getContent() << std::endl;
+	std::cout << "content length in request: " << currentRequest.getContentLength() << std::endl;
+	std::cout << "buffer.deb: " << buffer.deb << ", buffer.end: " << buffer.end << std::endl;
+	std::string str_buffer(&(buffer.buf[buffer.deb]), buffer.end - buffer.deb);
+	std::cout << "buffer from buf.deb to buf.end: " << str_buffer << std::endl;;
+	std::cout << "end content info -"<< std::endl << std::endl;
+
+}
+
+void		ConnectionClass::_print_content_info(HttpRequest& currentRequest, std::string message)
+{
+	std::cout << " ------------------ CONTENT INFO: " << message << "-------------- " << std::endl;
+	std::cout << "_hasRead: " << _hasRead << std::endl;
+	std::cout << "_isHandlingBody: " << _isHandlingBody << std::endl;
+	std::cout << "_isParsingContent: " << _isParsingContent << std::endl;
+	std::cout << "_ContentLeftToRead: " << _ContentLeftToRead << std::endl;
+	std::cout << "_isChunking: " << _isChunking << std::endl;
+	std::cout << "_isReadingChunkNbr: " << _isReadingChunknbr << std::endl;
+//	std::cout << "_isParsingContent: " << _isParsingContent << std::endl;
+	std::cout << "content in request: " << currentRequest.getContent() << std::endl;
+	std::cout << "content length in request: " << currentRequest.getContentLength() << std::endl;
+	std::cout << "end content info -"<< std::endl << std::endl;
+
+}
+
 int		ConnectionClass::_read_request_content(HttpRequest& CurrentRequest, readingBuffer& buffer)
 {
 
@@ -911,6 +960,7 @@ int		ConnectionClass::_read_request_content(HttpRequest& CurrentRequest, reading
 	int 		diff = buffer.end - buffer.deb;
 
 	std::cout << "in read_Request_Content" << std::endl;
+	_print_content_info(buffer, CurrentRequest, "deb read request");
 	if (diff) // if part of the content is already in the buffer
 	{
 //		int diff = buffer.end - buffer.deb;
@@ -943,11 +993,19 @@ int		ConnectionClass::_read_request_content(HttpRequest& CurrentRequest, reading
 				return (read_ret);
 			buffer.end += read_ret;
 			_hasRead = 1;
-			CurrentRequest.appendToContent(&(buffer.buf[buffer.deb]), diff);
+			_print_content_info(buffer, CurrentRequest, "before appending");
+			CurrentRequest.appendToContent(&(buffer.buf[buffer.deb]), read_ret);
+			std::cout << "content: " << CurrentRequest.getContent() << std::endl;
 			_ContentLeftToRead -= read_ret;
 			buffer.deb = buffer.end;
-			if (!_ContentLeftToRead)
+			if (_ContentLeftToRead)
 				return (_save_only_request(CurrentRequest));
+			else
+			{
+				_isHandlingBody = 0;
+				_isParsingContent = 0;
+				return (CurrentRequest.getContentLength());
+			}
 		}
 		else
 			return (_save_only_request(CurrentRequest));
@@ -1143,8 +1201,9 @@ int		ConnectionClass::_saveBegRestProcedure(HttpRequest& currentRequest, reading
 
 int		ConnectionClass::_save_only_request(HttpRequest& currentRequest)
 {
-		_incompleteRequest = new HttpRequest(currentRequest);	
-		return (SAVE_REQUEST);
+	_hasRestRequest = 1;
+	_incompleteRequest = new HttpRequest(currentRequest);	
+	return (SAVE_REQUEST);
 }
 
 /** get next request in the buffer or in the socket. if no_read_mode == NO_READ_MODE_ACTIVATED, it will 

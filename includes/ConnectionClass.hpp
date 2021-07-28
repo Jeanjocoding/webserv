@@ -171,6 +171,8 @@ private:
 	int		_saveBegRestProcedure(HttpRequest& currentRequest, readingBuffer& buffer);
 	int		_keepReadingContent(HttpRequest& currentRequest, readingBuffer& buffer);
 	int		_save_only_request(HttpRequest& currentRequest);
+	void		_print_content_info(readingBuffer& buffer, HttpRequest& currentRequest, std::string message);
+	void		_print_content_info(HttpRequest& currentRequest, std::string message);
 };
 
 #endif
