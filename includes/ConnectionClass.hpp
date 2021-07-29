@@ -153,7 +153,7 @@ private:
 	void				_printBufferInfo(readingBuffer& buffer, std::string msg);
 	int		_invalidRequestProcedure(HttpRequest& currentRequest, int errorCode);
 	int				_findInBuf(std::string to_find,char *buf, int findlen, int buflen, int begsearch);
-	void		_save_request_and_buffer(HttpRequest& currentRequest, readingBuffer& readingBuffer);
+	int		_save_request_and_buffer(HttpRequest& currentRequest, readingBuffer& readingBuffer);
 	void		_save_only_buffer(readingBuffer& readingBuffer);
 	int		_caseInsensitiveComparison(std::string s1, std::string s2) const;
 	int		_guaranteedRead(int fd, int to_read, std::string& str_buffer);

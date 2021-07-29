@@ -175,7 +175,7 @@ int		ConnectionClass::_read_buffer(readingBuffer& buffer, std::vector<HttpReques
 	{
 		/** ici , je n'ai pas besoin de save de buffer, car je lirais toujours au maximum ce dont j'ai besoin
 		 * car si je suis ici c'est que la elcture s'est interrompue au moment de lire le body */ 
-		_print_content_info(buffer, currentRequest, "in read buffer, beg isHandling");
+//		_print_content_info(buffer, currentRequest, "in read buffer, beg isHandling");
 		if (_isParsingContent)
 		{
 			read_ret = _read_request_content(currentRequest, buffer);
@@ -183,6 +183,7 @@ int		ConnectionClass::_read_buffer(readingBuffer& buffer, std::vector<HttpReques
 		else
 		{
 			read_ret = _getChunkedData(currentRequest, buffer);
+			std::cout << "read_ret: " << read_ret << std::endl;
 			std::cout << "NEED TO HANDLE TRAILERS" << std::endl;
 		}
 		if (read_ret == -1 || read_ret == 0)
@@ -194,6 +195,8 @@ int		ConnectionClass::_read_buffer(readingBuffer& buffer, std::vector<HttpReques
 				requestPipeline.back().setValidity(1);
 		}
 		_print_content_info(buffer, currentRequest, "in read buffer, after isHandling");
+		if (!_hasRestBuffer && buffer.end > buffer.deb) // si j'ai lu tout le content mais qu'il reste du buffer
+			_save_only_buffer(buffer);
 		return (1); 
 		
 	}
@@ -758,7 +761,10 @@ int		ConnectionClass::_readAndAppendChunkBlock(HttpRequest& currentRequest, read
 	int 		read_ret;
 	int		size_append;
 
+// pb: ne finis pas mais ne retourne pas save request visiblement
+
 	/** PAS OUBLIER DE GERER BUF.DEB ET BUF.END **/
+	_print_content_info(buffer, currentRequest, "in read and append");
 	if (buffer.end > buffer.deb)  // determin if there is unporocessed data remaining in the buffer
 	{
 		int diff = buffer.end - buffer.deb; 
@@ -768,7 +774,7 @@ int		ConnectionClass::_readAndAppendChunkBlock(HttpRequest& currentRequest, read
 			currentRequest.appendToContent(request_content);
 			buffer.deb += _ContentLeftToRead;
 			_ContentLeftToRead = 0;
-			return (request_content.length());
+			return (1);
 		}
 		else
 		{
@@ -780,7 +786,7 @@ int		ConnectionClass::_readAndAppendChunkBlock(HttpRequest& currentRequest, read
 			else
 			{
 				currentRequest.appendToContent(&(buffer.buf[buffer.deb]), _ContentLeftToRead - 2);
-				_ContentLeftToRead = 2;
+				_ContentLeftToRead = 1;
 			}
 			buffer.deb += diff; // allows not adding twice the same data (is it really relevant? because buffer not used by guar_Read)
 			buffer.deb = buffer.end;  // PERMET DE MONTRER QUE TOUT A ETE PROCESS
@@ -819,17 +825,22 @@ int		ConnectionClass::_readAndAppendChunkBlock(HttpRequest& currentRequest, read
 				return (read_ret);
 			buffer.end += read_ret;
 			_hasRead = 1;
+			if (read_ret == _ContentLeftToRead)
+				size_append = _ContentLeftToRead - 2;
+			else
+				size_append = read_ret;
 			_ContentLeftToRead -= read_ret;
-			size_append = buffer.end - buffer.deb - 2;
+//			size_append = buffer.end - buffer.deb - 2;
 			if (size_append > 0)
 				currentRequest.appendToContent(&(buffer.buf[buffer.deb]), size_append);
 			buffer.deb = buffer.end; //sur de sur?
-			return (1);
+			if (_ContentLeftToRead)
+				return (_save_only_request(currentRequest));
 
 		}
 		else
 		{
-			return (_save_only_request(currentRequest));
+			return (_save_only_request(currentRequest)); // only request car normalement tout est aved dans request
 		}
 	}
 	return (1);
@@ -862,26 +873,37 @@ int		ConnectionClass::_getChunkedData(HttpRequest& currentRequest, readingBuffer
 	int	read_ret;
 	int 	ret_chunked;
 	long	nbred;
+	int 	last_reached = 0;
 //	int	diff;
 
+	std::cout << "is in _getChunked" << std::endl;
+	_print_content_info(buffer, currentRequest, "in get chunked");
 	if (!_ContentLeftToRead)
 	{
 		_isReadingChunknbr = 1;
-		if (_hasRestBuffer) // signifie que j'ai pas encore lu sur cette itération
+		if (_hasRestBuffer || _hasRead == 0) // signifie que j'ai pas encore lu sur cette itération
 		{
 			read_ret = recv(_socketNbr, buffer.buf, 10, 0);
+			std::cout << "red ret after recv: " << read_ret << std::endl;
+			_printBufferInfo(buffer, "after recv");
 			if (read_ret == 0 || read_ret == -1)
 				return (read_ret);
+			buffer.end += read_ret;
 			_hasRead = 1;
 			
 		}
+		std::cout << "calling read cunk line here" << std::endl;
 		read_ret = _read_chunked_line(buffer, line_hex);
+		std::cout << "line hex: " << line_hex << std::endl;
 		if (read_ret == SAVE_REQUEST)
-			return (SAVE_REQUEST);
+			return (_save_request_and_buffer(currentRequest, buffer));
 		_isReadingChunknbr = 0;
 		if (line_hex.find_first_not_of("0123456789ABCDEFabcdef") != line_hex.npos)
 			return (_invalidRequestProcedure(currentRequest, 400));
 		nbred = strtol(line_hex.c_str(), NULL, 16);
+		std::cout << "nbred not in loop" << nbred << std::endl;
+		if (!nbred)
+			last_reached = 1;
 		_ContentLeftToRead = nbred + 2; // déduire buffer (je le fais problement déjà apres);
 /*		if (nbred == 0)
 			return (currentRequest.getContent().length());
@@ -892,25 +914,35 @@ int		ConnectionClass::_getChunkedData(HttpRequest& currentRequest, readingBuffer
 
 		}*/
 	}
-	while (_ContentLeftToRead > 0)
+	while (_ContentLeftToRead > 0) // boucle nécessaire car il faut que ça marche quand je parcours un long buffer
 	{
+//		_print_content_info(buffer, currentRequest, "in read and append");
 		ret_chunked = _readAndAppendChunkBlock(currentRequest, buffer);
+		_print_content_info(buffer, currentRequest, "out of read and append");
+		std::cout << "ret reand and append: " << ret_chunked << std::endl;
 		if (ret_chunked == 0 || ret_chunked == -1)
 			return (ret_chunked);
 		if (ret_chunked == SAVE_REQUEST)
 			return (SAVE_REQUEST);
+		if (last_reached == 1)
+		{
+			_ContentLeftToRead = 0;
+			_isChunking = 0;
+			_isHandlingBody = 0;
+			break;
+		}
 		_isReadingChunknbr = 1;
 		read_ret = _read_chunked_line(buffer, line_hex);
 		if (read_ret == SAVE_REQUEST)
-			return (SAVE_REQUEST);
+			return (_save_request_and_buffer(currentRequest, buffer)); // ici, je dois sauvegarder requête car ça n'est pas fait dans la fonction
 		_isReadingChunknbr = 0;
 		if (line_hex.find_first_not_of("0123456789ABCDEFabcdef") != line_hex.npos)
 			return (_invalidRequestProcedure(currentRequest, 400));
 		nbred = strtol(line_hex.c_str(), NULL, 16);
+		std::cout << "nbred in loop" << nbred << std::endl;
 		if (!nbred)
 		{
-			_ContentLeftToRead = 0;
-			_isChunking = 0;
+			last_reached = 1;
 			break;
 		}
 		_ContentLeftToRead = nbred + 2;
@@ -922,6 +954,7 @@ void		ConnectionClass::_print_content_info(readingBuffer& buffer, HttpRequest& c
 {
 	std::cout << " ------------------ CONTENT INFO: " << message << "-------------- " << std::endl;
 	std::cout << "_hasRead: " << _hasRead << std::endl;
+	std::cout << "_hasRestBuffer: " << _hasRestBuffer << std::endl;
 	std::cout << "_isHandlingBody: " << _isHandlingBody << std::endl;
 	std::cout << "_isParsingContent: " << _isParsingContent << std::endl;
 	std::cout << "_ContentLeftToRead: " << _ContentLeftToRead << std::endl;
@@ -1030,7 +1063,7 @@ void		ConnectionClass::_save_only_buffer(readingBuffer& buffer)
 /** when we run out of data while we were constructing an HttpRequest object, and we don't want 
  * to keep reading to avoid monopolizing cpu for only one connection, we save the request and 
  * the buffer and go back at processing them at next iteration */
-void		ConnectionClass::_save_request_and_buffer(HttpRequest& currentRequest, readingBuffer& buffer)
+int		ConnectionClass::_save_request_and_buffer(HttpRequest& currentRequest, readingBuffer& buffer)
 {
 	_incompleteRequest = new HttpRequest(currentRequest);
 	_hasRestRequest = 1;
@@ -1048,6 +1081,7 @@ void		ConnectionClass::_save_request_and_buffer(HttpRequest& currentRequest, rea
 		_hasRestBuffer = 0;
 	if (_hasRestBuffer)
 		std::cout << "rest buffer: " << *_restBuffer << std::endl;
+	return (SAVE_REQUEST);
 }
 
 int		ConnectionClass::_findInTrailers(std::string& to_find, HttpRequest& currentRequest)
