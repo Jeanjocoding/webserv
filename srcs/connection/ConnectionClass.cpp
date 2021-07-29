@@ -173,6 +173,8 @@ int		ConnectionClass::_read_buffer(readingBuffer& buffer, std::vector<HttpReques
 	}
 	if (_isHandlingBody)
 	{
+		/** ici , je n'ai pas besoin de save de buffer, car je lirais toujours au maximum ce dont j'ai besoin
+		 * car si je suis ici c'est que la elcture s'est interrompue au moment de lire le body */ 
 		_print_content_info(buffer, currentRequest, "in read buffer, beg isHandling");
 		if (_isParsingContent)
 		{
@@ -230,6 +232,7 @@ int		ConnectionClass::_read_buffer(readingBuffer& buffer, std::vector<HttpReques
 	}
 	if (buffer.deb >= buffer.end)
 	{
+//		_save_only_buffer(buffer);
 		return (1);
 	}
 
@@ -967,11 +970,13 @@ int		ConnectionClass::_read_request_content(HttpRequest& CurrentRequest, reading
 		if (diff >= _ContentLeftToRead) // if all the content is already in the buffer, no need to read on the socket
 		{
 			CurrentRequest.appendToContent(&(buffer.buf[buffer.deb]), CurrentRequest.getContentLength());
-			buffer.deb += diff;
+			buffer.deb += _ContentLeftToRead;
 			_isParsingContent = 0;
 			_isHandlingBody = 0;
 			_ContentLeftToRead = 0;
-			return (request_content.length());
+//			if (buffer)
+//			_save_only_buffer(buffer);
+			return (1);
 		}
 		else // need to save, data missing
 		{
