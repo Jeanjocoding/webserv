@@ -29,6 +29,7 @@ ConnectionClass::ConnectionClass(void)
 	_leftChunkedToRead = 0;
 	_isPersistent = 1;
 	_hasRead = 0;
+	_isProcessingLastNL = 0;
 	return;
 }
 
@@ -41,6 +42,7 @@ ConnectionClass::ConnectionClass(ConnectionClass const& to_copy): _socketNbr(to_
 	_isReadingChunknbr = to_copy._isReadingChunknbr;
 	_leftChunkedToRead = to_copy._leftChunkedToRead;
 	_hasRead = to_copy._hasRead;
+	_isProcessingLastNL = to_copy._isProcessingLastNL;
 	if (to_copy._hasRestBuffer)
 		_restBuffer = new std::string(*(to_copy._restBuffer));
 	if (to_copy._hasBegRest)
@@ -64,6 +66,7 @@ ConnectionClass::ConnectionClass(int socknum, serverClass* server): _socketNbr(s
 	_isReadingChunknbr = 0;
 	_leftChunkedToRead = 0;
 	_isPersistent = 1;
+	_isProcessingLastNL = 0;
 	_hasRead = 0;
 	return;	
 }
@@ -89,6 +92,7 @@ ConnectionClass&	ConnectionClass::operator=(ConnectionClass const& to_copy)
 	_hasRestRequest = to_copy._hasRestRequest;
 	_hasBegRest = to_copy._hasBegRest;
 	_hasRead = to_copy._hasRead;
+	_isProcessingLastNL = to_copy._isProcessingLastNL;
 	if (_hasRestBuffer)
 		_restBuffer = new std::string(*(to_copy._restBuffer));
 	if (_hasRestRequest)
@@ -185,9 +189,24 @@ int		ConnectionClass::_read_buffer(readingBuffer& buffer, std::vector<HttpReques
 			read_ret = _getChunkedData(currentRequest, buffer);
 			std::cout << "read_ret: " << read_ret << std::endl;
 			std::cout << "NEED TO HANDLE TRAILERS" << std::endl;
+
 		}
 		if (read_ret == -1 || read_ret == 0)
 			return (read_ret);
+		if (_isProcessingLastNL)
+		{
+			std::cout << " I process last nl" << std::endl;
+			read_ret = _last_nl_procedure(buffer);
+			if (read_ret == 0 || read_ret == -1)
+				return (read_ret);
+			else if (read_ret == SAVE_REQUEST)
+			{
+				_save_request_and_buffer(currentRequest, buffer);
+				return (1);
+			}
+			_isProcessingLastNL = 0;
+//			return (1);
+		}
 		if (!_isHandlingBody)
 		{
 			requestPipeline.push_back(currentRequest);
@@ -199,6 +218,22 @@ int		ConnectionClass::_read_buffer(readingBuffer& buffer, std::vector<HttpReques
 			_save_only_buffer(buffer);
 		return (1); 
 		
+	}
+	if (_isProcessingLastNL)
+	{
+		read_ret = _last_nl_procedure(buffer);
+		if (read_ret == 0 || read_ret == -1)
+			return (read_ret);
+		else if (read_ret == SAVE_REQUEST)
+		{
+			_save_request_and_buffer(currentRequest, buffer);
+			return (1);
+		}
+		requestPipeline.push_back(currentRequest);
+		if (read_ret != HTTP_ERROR)	
+			requestPipeline.back().setValidity(1);
+		_isProcessingLastNL = 0;
+		return (1);
 	}
 	read_ret = recv(_socketNbr, &(buffer.buf[buffer.end]), SINGLE_READ_SIZE, 0);
 	_hasRead = 1;
@@ -770,8 +805,10 @@ int		ConnectionClass::_readAndAppendChunkBlock(HttpRequest& currentRequest, read
 		int diff = buffer.end - buffer.deb; 
 		if (diff >= _ContentLeftToRead) // determins if the whole chunk is in the buffer
 		{
-			request_content.append(&(buffer.buf[buffer.deb]), _ContentLeftToRead - 2);
-			currentRequest.appendToContent(request_content);
+			if (_ContentLeftToRead - 2)
+			{
+				currentRequest.appendToContent(&(buffer.buf[buffer.deb]), _ContentLeftToRead - 2);
+			}
 			buffer.deb += _ContentLeftToRead;
 			_ContentLeftToRead = 0;
 			return (1);
@@ -780,8 +817,12 @@ int		ConnectionClass::_readAndAppendChunkBlock(HttpRequest& currentRequest, read
 		{
 			if (diff <= (_ContentLeftToRead - 2))  // ne prend pas en compte le crlf, cst la diff avec au dessus
 			{
+				std::cout << "diff: " << diff << std::endl;
+				std::cout << "content before appending: " << currentRequest.getContent() << std::endl;
 				currentRequest.appendToContent(&(buffer.buf[buffer.deb]), diff);
+				std::cout << "content after appending: " << currentRequest.getContent() << std::endl;
 				_ContentLeftToRead -= diff;
+//				buffer.deb += diff;
 			}
 			else
 			{
@@ -789,7 +830,7 @@ int		ConnectionClass::_readAndAppendChunkBlock(HttpRequest& currentRequest, read
 				_ContentLeftToRead = 1;
 			}
 			buffer.deb += diff; // allows not adding twice the same data (is it really relevant? because buffer not used by guar_Read)
-			buffer.deb = buffer.end;  // PERMET DE MONTRER QUE TOUT A ETE PROCESS
+//			buffer.deb = buffer.end;  // PERMET DE MONTRER QUE TOUT A ETE PROCESS
 			if (!_hasRead)
 			{
 				if (_ContentLeftToRead < SINGLE_READ_SIZE)
@@ -825,7 +866,7 @@ int		ConnectionClass::_readAndAppendChunkBlock(HttpRequest& currentRequest, read
 				return (read_ret);
 			buffer.end += read_ret;
 			_hasRead = 1;
-			if (read_ret == _ContentLeftToRead)
+			if (read_ret == _ContentLeftToRead || read_ret == _ContentLeftToRead - 1)
 				size_append = _ContentLeftToRead - 2;
 			else
 				size_append = read_ret;
@@ -847,7 +888,7 @@ int		ConnectionClass::_readAndAppendChunkBlock(HttpRequest& currentRequest, read
 }
 
 /** sert a vider le buffer du dernier crlf et/ ou le lire sur le socket */
-int		ConnectionClass::_processRemainingCrlf(readingBuffer& buffer)
+/*int		ConnectionClass::_processRemainingCrlf(readingBuffer& buffer)
 {
 	std::string	trash;
 	int		left_inbuf = buffer.end - buffer.deb;
@@ -862,6 +903,42 @@ int		ConnectionClass::_processRemainingCrlf(readingBuffer& buffer)
 	buffer.deb = buffer.end;
 	return (1);
 	
+}*/
+
+int		ConnectionClass::_last_nl_procedure(readingBuffer& buffer)
+{
+	int		left_inbuf = buffer.end - buffer.deb;
+	int ret_read;
+
+	std::cout << "processing last nl" << std::endl;
+	if (_hasRestBuffer)
+	{
+		std::memmove(buffer.buf, _restBuffer->c_str(), _restBuffer->length());
+		left_inbuf = buffer.end - buffer.deb;
+		delete _restBuffer;
+		_restBuffer = 0;
+	}
+	_printBufferInfo(buffer, "in last nl deb");
+	if (left_inbuf < 2)
+	{
+		if (!_hasRead)
+		{
+			//besoin de protection?
+			ret_read = recv(_socketNbr, &(buffer.buf[buffer.deb]), 2 - left_inbuf, 0);
+			buffer.end += ret_read;
+			if (ret_read == 0 || ret_read == -1)
+				return (ret_read);
+			if (buffer.end - buffer.deb < 2)
+				return (SAVE_REQUEST);
+		}
+		else
+			return (SAVE_REQUEST);
+	}
+	if (buffer.buf[buffer.deb] != '\r' || buffer.buf[buffer.deb + 1] != '\n')
+		return (HTTP_ERROR);
+	buffer.deb += 2;
+	_isProcessingLastNL = 0;
+	return (1);	
 }
 
 /** this is the main for getting chunk sizes, reading on buffer or socket accordingly, and adding
@@ -901,9 +978,18 @@ int		ConnectionClass::_getChunkedData(HttpRequest& currentRequest, readingBuffer
 		if (line_hex.find_first_not_of("0123456789ABCDEFabcdef") != line_hex.npos)
 			return (_invalidRequestProcedure(currentRequest, 400));
 		nbred = strtol(line_hex.c_str(), NULL, 16);
+		line_hex.clear();
 		std::cout << "nbred not in loop" << nbred << std::endl;
 		if (!nbred)
+		{
 			last_reached = 1;
+			_ContentLeftToRead = 0;
+			_isChunking = 0;
+			_isHandlingBody = 0;
+			if (!currentRequest.HasTrailers())
+				_isProcessingLastNL = 1;
+			return (1);
+		}
 		_ContentLeftToRead = nbred + 2; // déduire buffer (je le fais problement déjà apres);
 /*		if (nbred == 0)
 			return (currentRequest.getContent().length());
@@ -929,6 +1015,8 @@ int		ConnectionClass::_getChunkedData(HttpRequest& currentRequest, readingBuffer
 			_ContentLeftToRead = 0;
 			_isChunking = 0;
 			_isHandlingBody = 0;
+			if (!currentRequest.HasTrailers())
+				_isProcessingLastNL = 1;
 			break;
 		}
 		_isReadingChunknbr = 1;
@@ -938,12 +1026,21 @@ int		ConnectionClass::_getChunkedData(HttpRequest& currentRequest, readingBuffer
 		_isReadingChunknbr = 0;
 		if (line_hex.find_first_not_of("0123456789ABCDEFabcdef") != line_hex.npos)
 			return (_invalidRequestProcedure(currentRequest, 400));
+		std::cout << "line_hexin loop: " << line_hex << std::endl;
 		nbred = strtol(line_hex.c_str(), NULL, 16);
-		std::cout << "nbred in loop" << nbred << std::endl;
+		std::cout << "nbred in loop: " << nbred << std::endl;
+		line_hex.clear();
 		if (!nbred)
 		{
 			last_reached = 1;
-			break;
+			_ContentLeftToRead = 0;
+			_isChunking = 0;
+			_isHandlingBody = 0;
+			if (!currentRequest.HasTrailers())
+				_isProcessingLastNL = 1;
+			return (1);
+//			last_reached = 1;
+//			break;
 		}
 		_ContentLeftToRead = nbred + 2;
 	}
@@ -963,7 +1060,7 @@ void		ConnectionClass::_print_content_info(readingBuffer& buffer, HttpRequest& c
 //:w
 	std::cout << "_isParsingContent: " << _isParsingContent << std::endl;
 	std::cout << "content in request: " << currentRequest.getContent() << std::endl;
-	std::cout << "content length in request: " << currentRequest.getContentLength() << std::endl;
+	std::cout << "content length in request: " << currentRequest.getContent().length() << std::endl;
 	std::cout << "buffer.deb: " << buffer.deb << ", buffer.end: " << buffer.end << std::endl;
 	std::string str_buffer(&(buffer.buf[buffer.deb]), buffer.end - buffer.deb);
 	std::cout << "buffer from buf.deb to buf.end: " << str_buffer << std::endl;;
@@ -982,7 +1079,7 @@ void		ConnectionClass::_print_content_info(HttpRequest& currentRequest, std::str
 	std::cout << "_isReadingChunkNbr: " << _isReadingChunknbr << std::endl;
 //	std::cout << "_isParsingContent: " << _isParsingContent << std::endl;
 	std::cout << "content in request: " << currentRequest.getContent() << std::endl;
-	std::cout << "content length in request: " << currentRequest.getContentLength() << std::endl;
+	std::cout << "content length in request: " << currentRequest.getContent().length() << std::endl;
 	std::cout << "end content info -"<< std::endl << std::endl;
 
 }
@@ -1364,8 +1461,21 @@ int		ConnectionClass::_get_next_request(readingBuffer &buffer, HttpRequest& curr
 			if (currentRequest.HasTrailers())
 			{
 				chunk_ret = _readTrailers(buffer, length_parsed, currentRequest);
-			if (chunk_ret == 0 || chunk_ret == -1 || chunk_ret == HTTP_ERROR)
-				return (chunk_ret);
+				if (chunk_ret == 0 || chunk_ret == -1 || chunk_ret == HTTP_ERROR)
+					return (chunk_ret);
+			}
+			else
+			{
+				_isProcessingLastNL = 1;
+				chunk_ret = _last_nl_procedure(buffer);
+				if (chunk_ret == 0 || chunk_ret == -1 || chunk_ret == HTTP_ERROR)
+					return (chunk_ret);
+				else if (chunk_ret == SAVE_REQUEST)
+				{
+					_save_request_and_buffer(currentRequest, buffer);
+					return (SAVE_REQUEST);
+				}
+				_isProcessingLastNL = 0;
 			}
 		}
 		return (1);

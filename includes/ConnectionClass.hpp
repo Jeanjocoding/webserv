@@ -43,8 +43,8 @@
 #include "ConnectionUtils.hpp"
 #include <vector>
 
-#define	READING_BUF_SIZE  600
-#define	SINGLE_READ_SIZE 4
+#define	READING_BUF_SIZE  10000
+#define	SINGLE_READ_SIZE 3000
 #define EMPTYBUF_READ_SIZE 4096
 #define MAX_READ_BEFORE_FORCE_CLOSE 25000
 #define	MAX_LINE_LENGTH 12000	// POUR SECURITY
@@ -138,6 +138,8 @@ private:
 	int				_isReadingChunknbr;
 	int				_leftChunkedToRead;
 
+	int				_isProcessingLastNL;
+
 	int		_read_long_line(std::string& str, readingBuffer& buffer, int& length_parsed);
 	int		_read_buffer(readingBuffer& buffer, std::vector<HttpRequest>& requestPipeline);
 	int		_read_line(readingBuffer& buffer, HttpRequest& currentRequest);
@@ -173,6 +175,7 @@ private:
 	int		_save_only_request(HttpRequest& currentRequest);
 	void		_print_content_info(readingBuffer& buffer, HttpRequest& currentRequest, std::string message);
 	void		_print_content_info(HttpRequest& currentRequest, std::string message);
+	int		_last_nl_procedure(readingBuffer& buffer);
 };
 
 #endif
