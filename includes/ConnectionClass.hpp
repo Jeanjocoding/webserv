@@ -44,7 +44,7 @@
 #include <vector>
 
 #define	READING_BUF_SIZE  10000
-#define	SINGLE_READ_SIZE 3000
+#define	SINGLE_READ_SIZE 4000
 #define EMPTYBUF_READ_SIZE 4096
 #define MAX_READ_BEFORE_FORCE_CLOSE 25000
 #define	MAX_LINE_LENGTH 12000	// POUR SECURITY
@@ -139,11 +139,12 @@ private:
 	int				_leftChunkedToRead;
 
 	int				_isProcessingLastNL;
+	int				_isProcessingTrailers;
 
 	int		_read_long_line(std::string& str, readingBuffer& buffer, int& length_parsed);
 	int		_read_buffer(readingBuffer& buffer, std::vector<HttpRequest>& requestPipeline);
 	int		_read_line(readingBuffer& buffer, HttpRequest& currentRequest);
-	int		_get_next_request(readingBuffer &buffer, HttpRequest& currentRequest, int& length_parsed);
+	int		_get_next_request(readingBuffer &buffer, HttpRequest& currentRequest);
 	void		_initializeBuffer(readingBuffer& buffer);
 	int		_read_first_line(readingBuffer& buffer, int& length_parsed, HttpRequest& currentRequest);
 	int		_parse_line(const char *line, int len, HttpRequest& currentRequest);
@@ -164,9 +165,9 @@ private:
 		int				_findAndParseContentHeaders(HttpRequest& currentRequest, std::pair<std::string, std::string> const& header);
 	int		_readAndAppendChunkBlock(HttpRequest& currentRequest, readingBuffer& buffer);
 	int		_processRemainingCrlf(readingBuffer& buffer);
-	int		_readTrailers(readingBuffer& buffer, int& length_parsed, HttpRequest& currentRequest);
+	int		_readTrailers(readingBuffer& buffer, HttpRequest& currentRequest);
 	int		_findInTrailers(std::string& to_find, HttpRequest& currentRequest);
-	int		_read_line_trailer(readingBuffer& buffer, int& length_parsed, HttpRequest& currentRequest);
+	int		_read_line_trailer(readingBuffer& buffer, HttpRequest& currentRequest);
 	int		_parseTrailerLine(const char *line, int len, HttpRequest& currentRequest);
 	int		_findAndParsePersistanceHeaders(HttpRequest& currentRequest, std::pair<std::string, std::string> const& header);
 	int		_emptyReadBuffers() const;

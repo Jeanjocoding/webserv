@@ -30,6 +30,7 @@ ConnectionClass::ConnectionClass(void)
 	_isPersistent = 1;
 	_hasRead = 0;
 	_isProcessingLastNL = 0;
+	_isProcessingTrailers = 0;
 	return;
 }
 
@@ -50,6 +51,7 @@ ConnectionClass::ConnectionClass(ConnectionClass const& to_copy): _socketNbr(to_
 	if (to_copy._hasRestRequest )
 		_incompleteRequest = new HttpRequest(*(to_copy._incompleteRequest));
 	_isPersistent = to_copy._isPersistent;
+	_isProcessingTrailers = to_copy._isProcessingTrailers;
 	return;	
 }
 
@@ -68,6 +70,7 @@ ConnectionClass::ConnectionClass(int socknum, serverClass* server): _socketNbr(s
 	_isPersistent = 1;
 	_isProcessingLastNL = 0;
 	_hasRead = 0;
+	_isProcessingTrailers = 0;
 	return;	
 }
 
@@ -93,6 +96,7 @@ ConnectionClass&	ConnectionClass::operator=(ConnectionClass const& to_copy)
 	_hasBegRest = to_copy._hasBegRest;
 	_hasRead = to_copy._hasRead;
 	_isProcessingLastNL = to_copy._isProcessingLastNL;
+	_isProcessingTrailers = to_copy._isProcessingTrailers;
 	if (_hasRestBuffer)
 		_restBuffer = new std::string(*(to_copy._restBuffer));
 	if (_hasRestRequest)
@@ -207,6 +211,19 @@ int		ConnectionClass::_read_buffer(readingBuffer& buffer, std::vector<HttpReques
 			_isProcessingLastNL = 0;
 //			return (1);
 		}
+		if (_isProcessingTrailers)
+		{
+			read_ret = _readTrailers(buffer, currentRequest);
+			if (read_ret == 0 || read_ret == -1 || read_ret == HTTP_ERROR)
+				return (read_ret);
+			else if (read_ret == SAVE_REQUEST)
+			{
+				_save_request_and_buffer(currentRequest, buffer);
+				return (SAVE_REQUEST);
+			}
+			_isProcessingTrailers = 0;
+			_print_content_info(currentRequest, "after trailers");
+		}
 		if (!_isHandlingBody)
 		{
 			requestPipeline.push_back(currentRequest);
@@ -218,6 +235,24 @@ int		ConnectionClass::_read_buffer(readingBuffer& buffer, std::vector<HttpReques
 			_save_only_buffer(buffer);
 		return (1); 
 		
+	}
+	if (_isProcessingTrailers)
+	{
+		read_ret = _readTrailers(buffer, currentRequest);
+		if (read_ret == 0 || read_ret == -1 || read_ret == HTTP_ERROR)
+			return (read_ret);
+		else if (read_ret == SAVE_REQUEST)
+		{
+			_save_request_and_buffer(currentRequest, buffer);
+			return (SAVE_REQUEST);
+		}
+		requestPipeline.push_back(currentRequest);
+		if (read_ret != HTTP_ERROR)	
+			requestPipeline.back().setValidity(1);
+		_isProcessingTrailers = 0;
+		if (buffer.end > buffer.deb)
+			_save_only_buffer(buffer);
+		return (1);
 	}
 	if (_isProcessingLastNL)
 	{
@@ -251,7 +286,7 @@ int		ConnectionClass::_read_buffer(readingBuffer& buffer, std::vector<HttpReques
 	while (buffer.deb < buffer.end) // je chope toutes les requêtes qui sont dans le buffer
 	{
 //		_printBufferInfo(buffer, "before gnr: ");
-		getnr_ret = _get_next_request(buffer, currentRequest, length_parsed);
+		getnr_ret = _get_next_request(buffer, currentRequest);
 		if (getnr_ret == -1)
 			return (-1);
 		else if (getnr_ret == 0)
@@ -270,28 +305,9 @@ int		ConnectionClass::_read_buffer(readingBuffer& buffer, std::vector<HttpReques
 	}
 	if (buffer.deb >= buffer.end)
 	{
-//		_save_only_buffer(buffer);
 		return (1);
 	}
 
-	/** here, I read what is left on the buffer but I don't read on the socket anymore, 
-	 * if the request is not full, i save it and take it back nect select iteration **/
-/*	getnr_ret = _get_next_request(buffer, currentRequest, length_parsed, NO_READ_MODE_ACTIVATED);
-	if (getnr_ret == -1)
-		return (-1);
-	else if (getnr_ret == 0)
-		return (0);
-	else if (getnr_ret == SAVE_REQUEST)
-		return (1);
-	requestPipeline.push_back(currentRequest);
-	if (getnr_ret == HTTP_ERROR)
-		return (HTTP_ERROR);
-	else
-		requestPipeline.back().setValidity(1);
-	if (buffer.deb < buffer.end)
-	{
-		_save_only_buffer(buffer);
-	}*/
 	return (1);
 }
 
@@ -671,65 +687,67 @@ int		ConnectionClass::_guaranteedRead(int fd, int to_read, std::string& str_buff
 	return (bytes_read);
 }
 
-/** more or less a duplication of _read_line, will maybe unify in a future but at least this saves 
- * a lot of if/else conditions and enforces the SRP principle */
-/*int		ConnectionClass::_read_chunked_line(readingBuffer& buffer, int& length_parsed, int read_size, std::string& line)
+int		ConnectionClass::_read_line_trailer(readingBuffer& buffer, HttpRequest& currentRequest)
 {
 	int		crlf_index;
-	int		read_ret;
-	int 		deb_read;
+//	int		read_ret;
 
-	deb_read = buffer.deb;
-	while ((crlf_index = _findInBuf("\r\n", buffer.buf, 2, buffer.end, deb_read)) == -1)
+//	std::cout << "in read_line" << std::endl;
+//	std::cout << "has rest buffer: " << _hasRestBuffer <<  std::endl;
+//	_printBufferInfo(buffer, "in read line");
+	int deb_read = buffer.deb;
+
+	/** A PROTEGER DES SEGFAULTS/BUGS SI JE SUIS AU BOUT DU BUFFER */
+	if (buffer.buf[buffer.deb] == '\r' && buffer.buf[buffer.deb + 1] == '\n' && !_hasRestBuffer)
 	{
-		if ((buffer.end + read_size) <  READING_BUF_SIZE) // je vérifie que j'ai de la place dans mon buffer
-		{
-			read_ret = recv(_socketNbr, &(buffer.buf[buffer.end]), read_size, 0);
-			if (read_ret == -1)
-				return (-1);
-			if (read_ret == 0)
-				return (0);
-			if (deb_read)
-				deb_read = buffer.end - 1; // j'enleve 1 au cas ou crlf est coupé en 2 ; a protéger segfault			
-			buffer.end += read_ret;
-			length_parsed += read_ret;
-		}
-		else if (buffer.deb > (READING_BUF_SIZE / 2)) // je regarde si ça vaut le coup de faire le memmove
-		{
-			std::memmove(buffer.buf, &(buffer.buf[buffer.deb]), buffer.end - buffer.deb); // le -1 sert a gérer crlf coupé en 2 encore une fois
-			buffer.end -= buffer.deb;
-			buffer.deb = 0;
-			deb_read = buffer.end - 1;
-			read_ret = recv(_socketNbr, &(buffer.buf[buffer.end]), read_size, 0);
-			if (read_ret == -1)
-				return (-1);
-			if (read_ret == 0)
-				return (0);
-			if (deb_read)
-				deb_read = buffer.end - 1; // j'enleve 1 au cas ou crlf est coupé en 2 ; a protéger segfault			
-			buffer.end += read_ret;
-			length_parsed += read_ret;
-		}
-		else
-		{
-			int		long_line_length;
-
-			line.append(buffer.buf, buffer.deb, buffer.end - buffer.deb);
-			read_ret = _read_long_line(line, buffer, length_parsed);
-			if (read_ret == -1)
-				return (-1);
-			if (read_ret == 0)
-				return (0);
-			long_line_length = line.length();
-			deb_read = 0;
-			return (1);
-		}
+		buffer.deb += 2;
+		return (2);
 	}
-	line.clear();
-	line.append(&(buffer.buf[buffer.deb]), crlf_index - buffer.deb);
+	if (_hasRestBuffer && _restBuffer->length() && (*_restBuffer)[_restBuffer->length() - 1] == '\r' 
+		&& buffer.buf[buffer.deb] == '\n')
+	{
+		if (_restBuffer->length() == 1)
+		{
+			buffer.deb += 1;
+			_hasRestBuffer = 0;
+			_restBuffer->clear();
+			delete _restBuffer;
+			return (2);
+		}
+		if (_parseTrailerLine(_restBuffer->c_str(), _restBuffer->length() - 1, currentRequest) == HTTP_ERROR)
+			return (HTTP_ERROR);
+		buffer.deb += 1;
+		_hasRestBuffer = 0;
+		_restBuffer->clear();
+		delete _restBuffer;
+		return (1);
+	}
+	if ((crlf_index = _findInBuf("\r\n", buffer.buf, 2, buffer.end, deb_read)) == -1)
+			return (SAVE_REQUEST); 
+/*	if (buffer.buf[buffer.deb] == '\r' && buffer.buf[buffer.deb + 1] == '\n')
+	{
+		buffer.deb = crlf_index + 2;
+		return (2);
+	}*/
+	if (_hasRestBuffer)
+	{
+		_restBuffer->append(&(buffer.buf[buffer.deb]), crlf_index - buffer.deb);
+		if (_parseTrailerLine(_restBuffer->c_str(), _restBuffer->length(), currentRequest) == HTTP_ERROR)
+			return (HTTP_ERROR);
+		_restBuffer->clear();
+		delete _restBuffer;
+		_restBuffer = 0;
+		_hasRestBuffer = 0;
+	}
+	else
+	{
+		if (_parseTrailerLine(&(buffer.buf[buffer.deb]), crlf_index - buffer.deb, currentRequest) == HTTP_ERROR)
+			return (HTTP_ERROR);
+	}
 	buffer.deb = crlf_index + 2;
+//	_printBufferInfo(buffer, "end read_line");
 	return (1);
-}*/
+}
 
 int		ConnectionClass::_read_chunked_line(readingBuffer& buffer, std::string& line)
 {
@@ -774,8 +792,11 @@ int		ConnectionClass::_read_chunked_line(readingBuffer& buffer, std::string& lin
 	}*/
 	if (_hasRestBuffer)
 	{
+		std::cout << "rest buffer before strategic append: " << *_restBuffer << std::endl;
 		_restBuffer->append(&(buffer.buf[buffer.deb]), crlf_index - buffer.deb);
-		line.append(_restBuffer->c_str(), _restBuffer->length() - 1);
+		std::cout << "rest buffer after strategic append: " << *_restBuffer << std::endl;
+//		line.append(_restBuffer->c_str(), _restBuffer->length() - 1);
+		line.append(_restBuffer->c_str(), _restBuffer->length());
 		_restBuffer->clear();
 		delete _restBuffer;
 		_restBuffer = 0;
@@ -962,10 +983,10 @@ int		ConnectionClass::_getChunkedData(HttpRequest& currentRequest, readingBuffer
 		{
 			read_ret = recv(_socketNbr, buffer.buf, 10, 0);
 			std::cout << "red ret after recv: " << read_ret << std::endl;
-			_printBufferInfo(buffer, "after recv");
 			if (read_ret == 0 || read_ret == -1)
 				return (read_ret);
 			buffer.end += read_ret;
+			_printBufferInfo(buffer, "after recv");
 			_hasRead = 1;
 			
 		}
@@ -988,6 +1009,8 @@ int		ConnectionClass::_getChunkedData(HttpRequest& currentRequest, readingBuffer
 			_isHandlingBody = 0;
 			if (!currentRequest.HasTrailers())
 				_isProcessingLastNL = 1;
+			else
+				_isProcessingTrailers = 1;
 			return (1);
 		}
 		_ContentLeftToRead = nbred + 2; // déduire buffer (je le fais problement déjà apres);
@@ -1017,6 +1040,8 @@ int		ConnectionClass::_getChunkedData(HttpRequest& currentRequest, readingBuffer
 			_isHandlingBody = 0;
 			if (!currentRequest.HasTrailers())
 				_isProcessingLastNL = 1;
+			else
+				_isProcessingTrailers = 1;
 			break;
 		}
 		_isReadingChunknbr = 1;
@@ -1052,6 +1077,8 @@ void		ConnectionClass::_print_content_info(readingBuffer& buffer, HttpRequest& c
 	std::cout << " ------------------ CONTENT INFO: " << message << "-------------- " << std::endl;
 	std::cout << "_hasRead: " << _hasRead << std::endl;
 	std::cout << "_hasRestBuffer: " << _hasRestBuffer << std::endl;
+	if (_hasRestBuffer)
+		std::cout << "rest buffer: " << *_restBuffer << std::endl;
 	std::cout << "_isHandlingBody: " << _isHandlingBody << std::endl;
 	std::cout << "_isParsingContent: " << _isParsingContent << std::endl;
 	std::cout << "_ContentLeftToRead: " << _ContentLeftToRead << std::endl;
@@ -1239,7 +1266,7 @@ int		ConnectionClass::_parseTrailerLine(const char *line, int len, HttpRequest& 
 }
 
 /** last duplication of _read_line, but for trailers */ 
-int		ConnectionClass::_read_line_trailer(readingBuffer& buffer, int& length_parsed, HttpRequest& currentRequest)
+/*int		ConnectionClass::_read_line_trailer(readingBuffer& buffer, int& length_parsed, HttpRequest& currentRequest)
 {
 	int		crlf_index;
 	int		read_ret;
@@ -1308,22 +1335,36 @@ int		ConnectionClass::_read_line_trailer(readingBuffer& buffer, int& length_pars
 		return (HTTP_ERROR);
 	buffer.deb = crlf_index + 2;
 	return (1);
-}
+}*/
 
 /** read and parse trailers while they exist */ 
-int		ConnectionClass::_readTrailers(readingBuffer& buffer, int& length_parsed, HttpRequest& currentRequest)
+int		ConnectionClass::_readTrailers(readingBuffer& buffer, HttpRequest& currentRequest)
 {
 	int read_ret;
 
-	read_ret = _read_line_trailer(buffer, length_parsed, currentRequest);
+	if (!_hasRead)
+	{
+		buffer.deb = 0;
+		read_ret = recv(_socketNbr, buffer.buf, SINGLE_READ_SIZE, 0);
+		_hasRead = 1;
+		if (read_ret == 0 || read_ret == -1)
+			return (read_ret);
+		buffer.end += read_ret;
+	}
+	read_ret = _read_line_trailer(buffer, currentRequest);
 	if (read_ret == 0 || read_ret == -1 || read_ret == HTTP_ERROR)
 		return (read_ret);
+	if (read_ret == SAVE_REQUEST)
+		return (SAVE_REQUEST);
 	while (read_ret == 1)
 	{
-		read_ret = _read_line_trailer(buffer, length_parsed, currentRequest);	
+		read_ret = _read_line_trailer(buffer, currentRequest);	
 		if (read_ret == 0 || read_ret == -1 || read_ret == HTTP_ERROR)
 			return (read_ret);
+		if (read_ret == SAVE_REQUEST)
+			return (SAVE_REQUEST);
 	}
+	_isProcessingTrailers = 0;
 	return (2);
 }
 
@@ -1345,7 +1386,7 @@ int		ConnectionClass::_save_only_request(HttpRequest& currentRequest)
 /** get next request in the buffer or in the socket. if no_read_mode == NO_READ_MODE_ACTIVATED, it will 
  * not read on the socket after it runs out of data in the buffer, it will save everything and come back
  * next select iteration */ 
-int		ConnectionClass::_get_next_request(readingBuffer &buffer, HttpRequest& currentRequest, int& length_parsed)
+int		ConnectionClass::_get_next_request(readingBuffer &buffer, HttpRequest& currentRequest)
 {
 	int	ret_read_line;
 	int	ret_read_content;	
@@ -1460,9 +1501,16 @@ int		ConnectionClass::_get_next_request(readingBuffer &buffer, HttpRequest& curr
 			_isChunking = 0;
 			if (currentRequest.HasTrailers())
 			{
-				chunk_ret = _readTrailers(buffer, length_parsed, currentRequest);
+				_isProcessingTrailers = 1;
+				chunk_ret = _readTrailers(buffer, currentRequest);
 				if (chunk_ret == 0 || chunk_ret == -1 || chunk_ret == HTTP_ERROR)
 					return (chunk_ret);
+				else if (chunk_ret == SAVE_REQUEST)
+				{
+					_save_request_and_buffer(currentRequest, buffer);
+					return (SAVE_REQUEST);
+				}
+				_isProcessingTrailers = 0;
 			}
 			else
 			{
