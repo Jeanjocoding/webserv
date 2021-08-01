@@ -6,7 +6,7 @@
 /*   By: asablayr <marvin@42.fr>                    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2021/06/07 10:16:05 by asablayr          #+#    #+#             */
-/*   Updated: 2021/07/04 19:48:38 by asablayr         ###   ########.fr       */
+/*   Updated: 2021/07/15 17:57:49 by asablayr         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -17,7 +17,7 @@
 #include <vector>
 #include "error_page_path.hpp"
 #include "default_server_settings.hpp"
-#include "contextClass.hpp"
+#include "LocationClass.hpp"
 
 class serverClass
 {
@@ -46,7 +46,7 @@ class serverClass
 			std::map<unsigned short, std::string>	_default_error_pages;
 			std::string								_client_body_size_max;
 			std::string								_keepalive_timeout;
-			std::map<std::string, contextClass*>	_location;
+			std::map<std::string, LocationClass*>	_location;
 
 			int										_server_socket;
 			struct addrinfo							*_addr;

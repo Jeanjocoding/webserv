@@ -3,6 +3,9 @@
 
 #include <vector>
 #include <iostream>
+#include "ConnectionClass.hpp"
+
+class ConnectionClass;
 
 void	print_vec(std::vector<std::string>& to_print);
 int	ft_strtrim(std::string& to_trim);
@@ -11,6 +14,6 @@ void	ft_strsplit(std::string to_split, std::vector<std::string>& result);
 int	upperize_string(std::string& str);
 int	caseInsensitiveComparison(std::string s1, std::string s2);
 int	find_in_vec_insensitive(std::vector<std::string>& vec, std::string to_find);
-
+void	print_pipeline(std::vector<HttpRequest>& requestPipeline, ConnectionClass& connection);
 
 #endif

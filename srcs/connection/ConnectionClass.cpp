@@ -6,7 +6,7 @@
 /*   By: asablayr <marvin@42.fr>                    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2021/07/04 17:42:52 by asablayr          #+#    #+#             */
-/*   Updated: 2021/07/05 15:10:59 by asablayr         ###   ########.fr       */
+/*   Updated: 2021/07/18 18:27:20 by asablayr         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -179,6 +179,10 @@ int		ConnectionClass::_read_buffer(readingBuffer& buffer, std::vector<HttpReques
 		delete _incompleteRequest;
 		_hasRestRequest = 0;
 	}
+
+	/** si je suis en train de gérer le body, je ne dois pas repasser par get_next_request, je reprend ici,
+	 * cette série de if/else va permettre a l'algorithme de reprendre de la ou il en était dans le parsing 
+	 */
 	if (_isHandlingBody)
 	{
 		/** ici , je n'ai pas besoin de save de buffer, car je lirais toujours au maximum ce dont j'ai besoin
@@ -197,7 +201,10 @@ int		ConnectionClass::_read_buffer(readingBuffer& buffer, std::vector<HttpReques
 		}
 		if (read_ret == -1 || read_ret == 0)
 			return (read_ret);
-		if (_isProcessingLastNL)
+		/** a partir de la, save le buffer redevient pertinenent car il ne s'agit plus de la gestion du "body" */
+
+		/** sert a lire le dernier CRLF, c'est utile si on est en chunk encoding et il n'y a pas de trailer */
+		if (_isProcessingLastNL) 
 		{
 //			std::cout << " I process last nl" << std::endl;
 			read_ret = _last_nl_procedure(buffer);
@@ -224,6 +231,8 @@ int		ConnectionClass::_read_buffer(readingBuffer& buffer, std::vector<HttpReques
 			_isProcessingTrailers = 0;
 //			_print_content_info(currentRequest, "after trailers");
 		}
+
+		/** cela signifie que la requête a été completement lue, je peux push sur le pipeline */
 		if (!_isHandlingBody)
 		{
 			requestPipeline.push_back(currentRequest);
@@ -236,6 +245,8 @@ int		ConnectionClass::_read_buffer(readingBuffer& buffer, std::vector<HttpReques
 		return (1); 
 		
 	}
+
+	/** ces deux ifs (doublon par rapport à au-dessus) permettent également de reprendre au bon en droit dans l'éxécution de l'algorithme */
 	if (_isProcessingTrailers)
 	{
 		read_ret = _readTrailers(buffer, currentRequest);
@@ -270,6 +281,11 @@ int		ConnectionClass::_read_buffer(readingBuffer& buffer, std::vector<HttpReques
 		_isProcessingLastNL = 0;
 		return (1);
 	}
+
+	/** a partir de la commence la procédure "standard", qui commence par lire les headers pour former les requêtes.
+	 * Si le read suivant lis l'ensemble du pipeline, ce qui devrait se passer la majeure partie du temps, la partie
+	 * supérieure ne devrait pas être utile
+	 */
 	read_ret = recv(_socketNbr, &(buffer.buf[buffer.end]), SINGLE_READ_SIZE, 0);
 	_hasRead = 1;
 	if (read_ret == -1)
@@ -1333,7 +1349,7 @@ int		ConnectionClass::_get_next_request(readingBuffer &buffer, HttpRequest& curr
 	{
 		if (_hasBegRest)
 		{
-//			std::cout << "IN ANNOYING PROCEDURE, NOT TESTED" << std::endl;
+			std::cout << "IN ANNOYING PROCEDURE, NOT TESTED" << std::endl;
 			int i = 0;
 //			std::cout << "has beg rest" << std::endl;
 			_beginningRestBuffer->append(&(buffer.buf[buffer.deb]), buffer.end - buffer.deb);
@@ -1349,7 +1365,7 @@ int		ConnectionClass::_get_next_request(readingBuffer &buffer, HttpRequest& curr
 		}
 		else if (buffer.deb == '\r')
 		{
-//			std::cout << "IN ANNOYING PROCEDURE, NOT TESTED" << std::endl;
+			std::cout << "IN ANNOYING PROCEDURE, NOT TESTED" << std::endl;
 			if ((buffer.end - buffer.deb) < 4)
 				return (_saveBegRestProcedure(currentRequest, buffer));
 			if (buffer.buf[buffer.deb] == '\r' && buffer.buf[buffer.deb + 1] == '\n')
@@ -1468,14 +1484,14 @@ int		ConnectionClass::_get_next_request(readingBuffer &buffer, HttpRequest& curr
 
 /** Read on the socket and fills the vector received in argument with parsed requests under the form
  * of HttpRequest objects */
-int			ConnectionClass::receiveRequest(std::vector<HttpRequest>& requestPipeline)
+int			ConnectionClass::receiveRequest(void)
 {
 	readingBuffer	buffer;
 	int		read_ret;
 
-	_initializeBuffer(buffer);
 	_hasRead = 0;
-	read_ret = _read_buffer(buffer, requestPipeline); // fonction principale
+	_initializeBuffer(buffer);
+	read_ret = _read_buffer(buffer, _request_pipeline); // fonction principale
 	if (read_ret == HTTP_ERROR)
 	{
 		std::cout << "an invalid request has been detected" << std::endl;
@@ -1488,10 +1504,11 @@ int			ConnectionClass::receiveRequest(std::vector<HttpRequest>& requestPipeline)
 	}
 	else if (read_ret == 0)
 	{
+		_status = CO_ISCLOSED;
 		std::cout << "the connection has been closed" << std::endl;
 		return (0);
 	}
-
+	_status = CO_ISREADY;
 	return (1);
 }
 
@@ -1547,9 +1564,52 @@ int				ConnectionClass::closeConnection(void)
 	return (return_value);
 }
 
-int				ConnectionClass::getStatus(void)
+void	ConnectionClass::print_pipeline()
+{
+	size_t i = 0;
+
+	std::cout << std::endl;
+	std::cout <<  " ----------------- FULL REQUEST PIPELINE -------------- " << std::endl;
+
+	std::cout << "WARNING: persistence is an attribute of the connection, not of the request, therefore if \
+the last request is not persistent, all request might be marked as non persistent, even though their \
+header should imply otherwise." << std::endl;
+	std::cout << std::endl;
+	while (i < _request_pipeline.size())
+	{	
+		std::cout << "                 REQUEST NBR:  " << i << std::endl;
+		std::cout << std::endl;
+		std::cout << "START LINE: "  << _request_pipeline[i].getStartLine() << std::endl;
+		std::cout << "URI: " << _request_pipeline[i].getRequestLineInfos().target << std::endl;
+		std::cout << std::endl;
+		std::cout << "HEADERS: " << std::endl;
+		_request_pipeline[i].printHeaders();
+		std::cout << std::endl;
+		std::cout << "ENCODINGS: " << std::endl;
+		print_vec(_request_pipeline[i].getModifyableTE());
+		std::cout << std::endl;
+		std::cout << "BODY: " << _request_pipeline[i].getContent() << std::endl;
+		std::cout << std::endl;
+		std::cout << "TRAILERS: " << std::endl;
+		_request_pipeline[i].printTrailers();
+		std::cout << std::endl;
+		std::cout << "validity: " << _request_pipeline[i].isValid() << std::endl;
+		std::cout << "persistence: " << isPersistent() << std::endl;
+		std::cout << std::endl;
+		std::cout << std::endl;
+		i++;
+	}
+	std::cout <<  "              ------------------------------              " << std::endl;
+}
+
+int				ConnectionClass::getStatus(void) const
 {
 	return (_status);
+}
+
+void			ConnectionClass::setStatus(int state)
+{
+	_status = state;
 }
 
 bool				ConnectionClass::isPersistent() const

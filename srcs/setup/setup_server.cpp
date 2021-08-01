@@ -6,7 +6,7 @@
 /*   By: asablayr <marvin@42.fr>                    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2021/06/07 19:42:54 by asablayr          #+#    #+#             */
-/*   Updated: 2021/07/05 14:40:38 by asablayr         ###   ########.fr       */
+/*   Updated: 2021/07/18 13:41:45 by asablayr         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -31,7 +31,10 @@ static void	input_context(contextClass const& context, serverClass& base_server,
 			vector_server.push_back(new_server);
 		}
 		else if ((*it)->_name == "location")
-			base_server._location[(*it)->_param] = new contextClass(**it);
+		{
+			LocationClass *i = dynamic_cast<LocationClass*>(*it);
+			base_server._location[i->_uri] = new LocationClass(*i);
+		}
 		else
 			input_context(**it, base_server, vector_server);
 	}

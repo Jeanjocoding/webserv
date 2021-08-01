@@ -44,14 +44,16 @@
 #include <vector>
 
 #define	READING_BUF_SIZE  10000
-#define	SINGLE_READ_SIZE 4000
+#define	SINGLE_READ_SIZE 4
 #define EMPTYBUF_READ_SIZE 4096
 #define MAX_READ_BEFORE_FORCE_CLOSE 25000
 #define	MAX_LINE_LENGTH 12000	// POUR SECURITY
 #define	MAX_HEAD_LINES 100	// POUR SECURITY
 #define	MAX_URI_SIZE 1000 // POUR SECURITY
 #define CO_ISOPEN 1
-#define CO_ISCLOSED 2
+#define CO_ISREADY 2
+#define CO_ISDONE 3
+#define CO_ISCLOSED 4
 #define TCP_ERROR -1
 #define HTTP_ERROR -2
 #define FORCE_CLOSE_NEEDED -3
@@ -96,14 +98,16 @@ public:
 		- return value of the last "recv" call (to see if it failed or if the connection was closed)
 		- std::string containing the request*/
 //	std::pair<int, std::string>			receiveRequest(void);
-	int						receiveRequest(std::vector<HttpRequest>& requestPipeline);
+	int				receiveRequest();
 
 	int				sendResponse(std::string response);
 	int				closeConnection(void);
 	int				_socketNbr;
 	serverClass*	_server;
-	int				getStatus();
-	bool				isPersistent(void) const;
+	int				getStatus(void) const;
+	void			setStatus(int state);
+	bool			isPersistent(void) const;
+	void		print_pipeline();
 
 	// this constructor should be private, but it doesn't work for now when it is.
 	//need to fix, probably an unwanted copy at some point.
@@ -113,6 +117,7 @@ public:
 private:
 	typedef struct readingBuffer readingBuffer;
 
+	std::vector<HttpRequest> _request_pipeline;
 	HttpRequest	*_incompleteRequest;
 	std::string	*_restBuffer;
 	std::string	*_beginningRestBuffer;

@@ -6,7 +6,7 @@
 /*   By: asablayr <marvin@42.fr>                    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2021/06/06 21:54:40 by asablayr          #+#    #+#             */
-/*   Updated: 2021/07/04 19:57:08 by asablayr         ###   ########.fr       */
+/*   Updated: 2021/07/18 18:03:50 by asablayr         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -54,14 +54,19 @@ void	print_pipeline(std::vector<HttpRequest>& requestPipeline, ConnectionClass& 
 	std::cout <<  "              ------------------------------              " << std::endl;
 }
 
+void	answer_connection(ConnectionClass& connection)
+{
+	std::cout << "answering on fd " << connection._socketNbr << std::endl;
+}
+
 void	handle_connection(ConnectionClass& connection)
 {
 	int send_ret;
-	int retVal;
+	int retVal = 0;
 	std::vector<HttpRequest>	RequestPipeline;
 
 //	std::cout << "connection server on port : " << connection._server->_port << std::endl;
-	retVal = connection.receiveRequest(RequestPipeline);
+//	retVal = connection.receiveRequest(RequestPipeline);
 	if (retVal == -1)
 	{
 		connection.closeConnection();
