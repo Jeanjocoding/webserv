@@ -6,7 +6,7 @@
 /*   By: asablayr <marvin@42.fr>                    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2021/07/15 13:31:12 by asablayr          #+#    #+#             */
-/*   Updated: 2021/07/18 13:41:25 by asablayr         ###   ########.fr       */
+/*   Updated: 2021/08/03 11:53:18 by asablayr         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -64,6 +64,37 @@ LocationClass& LocationClass::operator = (LocationClass const& copy)
 	return *this;
 }
 
+std::string	LocationClass::getUri(void) const
+{
+	return _uri;
+}
+
+std::string	LocationClass::getParam(void) const
+{
+	return _param;
+}
+
+std::string	LocationClass::getRoot(void) const
+{
+	return _root;
+}
+
+std::string	LocationClass::getAutoIndex(void) const
+{
+	//TODO
+	return std::string();
+}
+
+std::map<unsigned short, std::string>& LocationClass::getErrorMap(void)
+{
+	return _error_pages;
+}
+
+std::string	LocationClass::getErrorPage(unsigned short error_code)
+{
+	return _error_pages[error_code];
+}
+
 void	LocationClass::setMethods(void)
 {
 	std::map<std::string, std::string>::iterator it = _directives.find("limit_except");
@@ -87,6 +118,24 @@ void	LocationClass::setMethods(void)
 		else
 			continue;
 	}	
+}
+
+void	LocationClass::setErrorPages(std::map<unsigned short, std::string> const& error_map)
+{
+	_error_pages = error_map;
+}
+
+bool LocationClass::methodIsAllowed(unsigned int method) const
+{
+	if (method < 0 || method > 2)
+		return false;
+	else 
+		return _methods[method];
+}
+
+bool LocationClass::autoIndexIsOn(void) const
+{
+	return _auto_index;
 }
 
 unsigned int LocationClass::matchUri(std::string const& s) const

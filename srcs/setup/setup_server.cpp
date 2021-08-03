@@ -6,7 +6,7 @@
 /*   By: asablayr <marvin@42.fr>                    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2021/06/07 19:42:54 by asablayr          #+#    #+#             */
-/*   Updated: 2021/07/18 13:41:45 by asablayr         ###   ########.fr       */
+/*   Updated: 2021/08/02 16:17:31 by asablayr         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -33,7 +33,7 @@ static void	input_context(contextClass const& context, serverClass& base_server,
 		else if ((*it)->_name == "location")
 		{
 			LocationClass *i = dynamic_cast<LocationClass*>(*it);
-			base_server._location[i->_uri] = new LocationClass(*i);
+			base_server._location[i->getUri()] = new LocationClass(*i);
 		}
 		else
 			input_context(**it, base_server, vector_server);
@@ -44,8 +44,7 @@ std::vector<serverClass*>	setup_server(std::string conf_file)
 {
 	serverClass*				base_serv;
 	std::vector<serverClass*>	server_map;
-
-	std::string								buff;
+	std::string					buff;
 
 	buff = read_file(conf_file);
 	base_serv = new serverClass();
@@ -59,7 +58,11 @@ std::vector<serverClass*>	setup_server(std::string conf_file)
 	else
 	{
 		std::cerr << "error in " << conf_file << " configuration file\n";
+		delete base_serv;
 		exit(EXIT_FAILURE);
 	}
+	for (std::vector<serverClass*>::iterator it = server_map.begin(); it != server_map.end(); it++)
+		if ((*it)->_location.empty())
+			(*it)->_location["/"] = new LocationClass();
 	return (server_map);
 }

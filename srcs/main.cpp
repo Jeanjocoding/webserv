@@ -6,7 +6,7 @@
 /*   By: asablayr <marvin@42.fr>                    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2021/06/06 15:27:02 by asablayr          #+#    #+#             */
-/*   Updated: 2021/07/18 18:34:02 by asablayr         ###   ########.fr       */
+/*   Updated: 2021/07/22 21:38:12 by asablayr         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -89,7 +89,7 @@ int main(int ac, char** av)
 //				handle_connection(connection_map[i]);
 				if (connection_map[i].receiveRequest() <= 0) // close connection if error while receiving paquets
 					connection_map[i].closeConnection();
-				if (connection_map[i].getStatus() == CO_ISCLOSED) // erases if connection is not persistent
+				if (connection_map[i].getStatus() == CO_ISCLOSED) // erases if connection has encoutered an error
 				{
 					FD_CLR(i, &rfds);
 					connection_map.erase(i);
@@ -102,18 +102,14 @@ int main(int ac, char** av)
 			}
 			else if (FD_ISSET(i, &wfds_copy))
 			{
-//				answer_connection(connection_map[i]);
-				if (connection_map[i].sendResponse("HTTP/1.1 200 OK\r\nContent-length: 52\r\n\r\n<html><body><h1>Welcome to Webser</h1></body></html>") == -1)
-					std::perror("send");
-				else
-					connection_map[i].setStatus(CO_ISDONE);
-				if (connection_map[i].getStatus() == CO_ISCLOSED) // erases if connection is not persistent
+				answer_connection(connection_map[i]);
+				if (connection_map[i].getStatus() == CO_ISCLOSED) // erase if connection is not persistent or respond has encountered an error
 				{
 					connection_map[i].closeConnection();
 					FD_CLR(i, &wfds);
 					connection_map.erase(i);
 				}
-				else if (connection_map[i].getStatus() == CO_ISDONE) // all request have been answered
+				else if (connection_map[i].getStatus() == CO_ISDONE) // all requests have been answered
 				{
 					FD_CLR(i, &wfds);
 					FD_SET(i, &rfds);
