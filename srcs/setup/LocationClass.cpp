@@ -6,7 +6,7 @@
 /*   By: asablayr <marvin@42.fr>                    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2021/07/15 13:31:12 by asablayr          #+#    #+#             */
-/*   Updated: 2021/08/03 11:53:18 by asablayr         ###   ########.fr       */
+/*   Updated: 2021/08/03 16:20:14 by asablayr         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -110,11 +110,11 @@ void	LocationClass::setMethods(void)
 	for (std::vector<std::string>::iterator i = vect.begin(); i != vect.end(); i++)
 	{
 		if (*i == "GET")
-				_methods[GET_RANK] = true;
+			_methods[GET_RANK] = true;
 		else if (*i == "POST")
-				_methods[POST_RANK] = true;
+			_methods[POST_RANK] = true;
 		else if (*i == "DELETE")
-				_methods[DELETE_RANK] = true;
+			_methods[DELETE_RANK] = true;
 		else
 			continue;
 	}	

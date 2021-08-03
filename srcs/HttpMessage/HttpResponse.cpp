@@ -6,7 +6,7 @@
 /*   By: asablayr <marvin@42.fr>                    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2021/08/02 16:27:33 by asablayr          #+#    #+#             */
-/*   Updated: 2021/08/02 18:38:50 by asablayr         ###   ########.fr       */
+/*   Updated: 2021/08/03 14:27:20 by asablayr         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -18,6 +18,8 @@
 HttpResponse::HttpResponse(void): HttpMessage()
 {
 	//TODO
+	_contentLength = 0;
+	_lineCount = 0;
 }
 
 HttpResponse::HttpResponse(HttpResponse const& to_copy) : HttpMessage(to_copy)
@@ -28,6 +30,12 @@ HttpResponse::HttpResponse(HttpResponse const& to_copy) : HttpMessage(to_copy)
 HttpResponse::~HttpResponse(void)
 {
 	//TODO
+}
+
+HttpResponse::HttpResponse(unsigned short status_code, std::string body_path)
+{
+	setHeader(status_code);
+	setBody(body_path);
 }
 
 HttpResponse&	HttpResponse::operator=(HttpResponse const& to_copy)

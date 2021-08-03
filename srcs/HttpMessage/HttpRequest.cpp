@@ -146,6 +146,11 @@ std::string const& HttpRequest::getStartLine(void) const
 	return (_startLine);
 }
 
+int			HttpRequest::getMethod(void) const
+{
+	return (_requestLine.int_method);//why request line ?
+}
+
 void		HttpRequest::setContentLength(long content_length)
 {
 	_contentLength = content_length;
@@ -214,6 +219,11 @@ bool			HttpRequest::isValid(void) const
 void			HttpRequest::appendToContent(std::string& to_append)
 {
 	_content.append(to_append);
+}
+
+void			HttpRequest::appendToContent(char *str, int len)
+{
+	_content.append(str, len);
 }
 
 void			HttpRequest::setHasTrailer(bool value)

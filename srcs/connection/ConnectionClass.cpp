@@ -18,39 +18,70 @@
 
 ConnectionClass::ConnectionClass(void)
 {
-	_hasRest = 0;
+	_hasRestBuffer = 0;
+	_hasRestRequest = 0;
+	_hasBegRest = 0;
+	_isHandlingBody = 0;
+	_isParsingContent = 0;
+	_ContentLeftToRead = 0;
+	_isChunking = 0;
+	_isReadingChunknbr = 0;
+	_leftChunkedToRead = 0;
 	_isPersistent = 1;
+	_hasRead = 0;
+	_isProcessingLastNL = 0;
+	_isProcessingTrailers = 0;
 	return;
 }
 
-ConnectionClass::ConnectionClass(ConnectionClass const& to_copy): _socketNbr(to_copy._socketNbr), _server(to_copy._server), _status(to_copy._status), _isPersistent(to_copy._isPersistent), _hasRest(to_copy._hasRest)
+ConnectionClass::ConnectionClass(ConnectionClass const& to_copy): _socketNbr(to_copy._socketNbr), _server(to_copy._server), _status(to_copy._status), _isPersistent(to_copy._isPersistent), _hasRestRequest(to_copy._hasRestRequest), _hasRestBuffer(to_copy._hasRestBuffer), _hasBegRest(to_copy._hasBegRest)
 {
-	if (to_copy._hasRest)
-	{
+	_isHandlingBody = to_copy._isHandlingBody;
+	_isParsingContent = to_copy._isParsingContent;
+	_ContentLeftToRead = to_copy._ContentLeftToRead;
+	_isChunking = to_copy._isChunking;
+	_isReadingChunknbr = to_copy._isReadingChunknbr;
+	_leftChunkedToRead = to_copy._leftChunkedToRead;
+	_hasRead = to_copy._hasRead;
+	_isProcessingLastNL = to_copy._isProcessingLastNL;
+	if (to_copy._hasRestBuffer)
 		_restBuffer = new std::string(*(to_copy._restBuffer));
-		if (to_copy._hasRest == REQUEST_AND_BUFF_REST)
-			_incompleteRequest = new HttpRequest(*(to_copy._incompleteRequest));
-	}
+	if (to_copy._hasBegRest)
+		_beginningRestBuffer = new std::string(*(to_copy._beginningRestBuffer));
+	if (to_copy._hasRestRequest )
+		_incompleteRequest = new HttpRequest(*(to_copy._incompleteRequest));
 	_isPersistent = to_copy._isPersistent;
+	_isProcessingTrailers = to_copy._isProcessingTrailers;
 	return;	
 }
 
 ConnectionClass::ConnectionClass(int socknum, serverClass* server): _socketNbr(socknum), _server(server)
 {
 	_status = CO_ISOPEN;
-	_hasRest = 0;
+	_hasRestBuffer = 0;
+	_hasRestRequest = 0;
+	_hasBegRest = 0;
+	_isHandlingBody = 0;
+	_isParsingContent = 0;
+	_ContentLeftToRead = 0;
+	_isChunking = 0;
+	_isReadingChunknbr = 0;
+	_leftChunkedToRead = 0;
 	_isPersistent = 1;
+	_isProcessingLastNL = 0;
+	_hasRead = 0;
+	_isProcessingTrailers = 0;
 	return;	
 }
 
 ConnectionClass::~ConnectionClass(void)
 {
-	if (_hasRest)
-	{
+	if (_hasRestBuffer)
 		delete _restBuffer;
-		if (_hasRest == REQUEST_AND_BUFF_REST)
-			delete _incompleteRequest;
-	}
+	if (_hasRestRequest)
+		delete _incompleteRequest;
+	if (_hasBegRest)
+		delete _beginningRestBuffer;
 	return;
 }
 
@@ -60,13 +91,18 @@ ConnectionClass&	ConnectionClass::operator=(ConnectionClass const& to_copy)
 	_status = to_copy._status;
 	_server = to_copy._server;
 	_isPersistent = to_copy._isPersistent;
-	_hasRest = to_copy._hasRest;
-	if (_hasRest)
-	{
+	_hasRestBuffer = to_copy._hasRestBuffer;
+	_hasRestRequest = to_copy._hasRestRequest;
+	_hasBegRest = to_copy._hasBegRest;
+	_hasRead = to_copy._hasRead;
+	_isProcessingLastNL = to_copy._isProcessingLastNL;
+	_isProcessingTrailers = to_copy._isProcessingTrailers;
+	if (_hasRestBuffer)
 		_restBuffer = new std::string(*(to_copy._restBuffer));
-		if (_hasRest == REQUEST_AND_BUFF_REST)
-			_incompleteRequest = new HttpRequest(*(to_copy._incompleteRequest));
-	}
+	if (_hasRestRequest)
+		_incompleteRequest = new HttpRequest(*(to_copy._incompleteRequest));
+	if (to_copy._hasBegRest)
+		_beginningRestBuffer = new std::string(*(to_copy._beginningRestBuffer));
 	return (*this);
 }
 
@@ -136,21 +172,122 @@ int		ConnectionClass::_read_buffer(readingBuffer& buffer, std::vector<HttpReques
 
 	HttpRequest	currentRequest;
 
-	if (_hasRest) // select the saved request as the current request and add the saved buffer to the current buffer
+//	std::cout << "in read buffer" << std::endl;
+	if (_hasRestRequest) // select the saved request as the current request and add the saved buffer to the current buffer
 	{
-		std::memmove(buffer.buf, _restBuffer->c_str(), _restBuffer->length());
-		buffer.end = _restBuffer->length();
-		length_parsed += _restBuffer->length();
-		delete _restBuffer;
-		if (_hasRest == REQUEST_AND_BUFF_REST)
-		{
-			currentRequest = *_incompleteRequest;
-			delete _incompleteRequest;
-		}
-		_hasRest = 0;
+		currentRequest = *_incompleteRequest;
+		delete _incompleteRequest;
+		_hasRestRequest = 0;
 	}
 
+	/** si je suis en train de gérer le body, je ne dois pas repasser par get_next_request, je reprend ici,
+	 * cette série de if/else va permettre a l'algorithme de reprendre de la ou il en était dans le parsing 
+	 */
+	if (_isHandlingBody)
+	{
+		/** ici , je n'ai pas besoin de save de buffer, car je lirais toujours au maximum ce dont j'ai besoin
+		 * car si je suis ici c'est que la elcture s'est interrompue au moment de lire le body */ 
+//		_print_content_info(buffer, currentRequest, "in read buffer, beg isHandling");
+		if (_isParsingContent)
+		{
+			read_ret = _read_request_content(currentRequest, buffer);
+		}
+		else
+		{
+			read_ret = _getChunkedData(currentRequest, buffer);
+//			std::cout << "read_ret: " << read_ret << std::endl;
+//			std::cout << "NEED TO HANDLE TRAILERS" << std::endl;
+
+		}
+		if (read_ret == -1 || read_ret == 0)
+			return (read_ret);
+		/** a partir de la, save le buffer redevient pertinenent car il ne s'agit plus de la gestion du "body" */
+
+		/** sert a lire le dernier CRLF, c'est utile si on est en chunk encoding et il n'y a pas de trailer */
+		if (_isProcessingLastNL) 
+		{
+//			std::cout << " I process last nl" << std::endl;
+			read_ret = _last_nl_procedure(buffer);
+			if (read_ret == 0 || read_ret == -1)
+				return (read_ret);
+			else if (read_ret == SAVE_REQUEST)
+			{
+				_save_request_and_buffer(currentRequest, buffer);
+				return (1);
+			}
+			_isProcessingLastNL = 0;
+//			return (1);
+		}
+		if (_isProcessingTrailers)
+		{
+			read_ret = _readTrailers(buffer, currentRequest);
+			if (read_ret == 0 || read_ret == -1 || read_ret == HTTP_ERROR)
+				return (read_ret);
+			else if (read_ret == SAVE_REQUEST)
+			{
+				_save_request_and_buffer(currentRequest, buffer);
+				return (SAVE_REQUEST);
+			}
+			_isProcessingTrailers = 0;
+//			_print_content_info(currentRequest, "after trailers");
+		}
+
+		/** cela signifie que la requête a été completement lue, je peux push sur le pipeline */
+		if (!_isHandlingBody)
+		{
+			requestPipeline.push_back(currentRequest);
+			if (read_ret != HTTP_ERROR)	
+				requestPipeline.back().setValidity(1);
+		}
+//		_print_content_info(buffer, currentRequest, "in read buffer, after isHandling");
+		if (!_hasRestBuffer && buffer.end > buffer.deb) // si j'ai lu tout le content mais qu'il reste du buffer
+			_save_only_buffer(buffer);
+		return (1); 
+		
+	}
+
+	/** ces deux ifs (doublon par rapport à au-dessus) permettent également de reprendre au bon en droit dans l'éxécution de l'algorithme */
+	if (_isProcessingTrailers)
+	{
+		read_ret = _readTrailers(buffer, currentRequest);
+		if (read_ret == 0 || read_ret == -1 || read_ret == HTTP_ERROR)
+			return (read_ret);
+		else if (read_ret == SAVE_REQUEST)
+		{
+			_save_request_and_buffer(currentRequest, buffer);
+			return (SAVE_REQUEST);
+		}
+		requestPipeline.push_back(currentRequest);
+		if (read_ret != HTTP_ERROR)	
+			requestPipeline.back().setValidity(1);
+		_isProcessingTrailers = 0;
+		if (buffer.end > buffer.deb)
+			_save_only_buffer(buffer);
+		return (1);
+	}
+	if (_isProcessingLastNL)
+	{
+		read_ret = _last_nl_procedure(buffer);
+		if (read_ret == 0 || read_ret == -1)
+			return (read_ret);
+		else if (read_ret == SAVE_REQUEST)
+		{
+			_save_request_and_buffer(currentRequest, buffer);
+			return (1);
+		}
+		requestPipeline.push_back(currentRequest);
+		if (read_ret != HTTP_ERROR)	
+			requestPipeline.back().setValidity(1);
+		_isProcessingLastNL = 0;
+		return (1);
+	}
+
+	/** a partir de la commence la procédure "standard", qui commence par lire les headers pour former les requêtes.
+	 * Si le read suivant lis l'ensemble du pipeline, ce qui devrait se passer la majeure partie du temps, la partie
+	 * supérieure ne devrait pas être utile
+	 */
 	read_ret = recv(_socketNbr, &(buffer.buf[buffer.end]), SINGLE_READ_SIZE, 0);
+	_hasRead = 1;
 	if (read_ret == -1)
 	{	
 		perror("read"); // a faire partout pour le debugging?
@@ -161,16 +298,17 @@ int		ConnectionClass::_read_buffer(readingBuffer& buffer, std::vector<HttpReques
 	buffer.end += read_ret;
 	length_parsed += read_ret;
 	buffer.buf[buffer.end] = '\0';
-
 	/* parsing all the requests contained in one single read **/
-	while ((length_parsed < SINGLE_READ_SIZE && buffer.deb < buffer.end) || req_count == 0) // je chope toutes les requêtes qui sont dans le buffer
+	while (buffer.deb < buffer.end) // je chope toutes les requêtes qui sont dans le buffer
 	{
 //		_printBufferInfo(buffer, "before gnr: ");
-		getnr_ret = _get_next_request(buffer, currentRequest, length_parsed, NO_READ_MODE_DISABLED);
+		getnr_ret = _get_next_request(buffer, currentRequest);
 		if (getnr_ret == -1)
 			return (-1);
-		if (getnr_ret == 0)
+		else if (getnr_ret == 0)
 			return (0);
+		else if (getnr_ret == SAVE_REQUEST)
+			return (1); // EN SUIS-JE SUR ?
 		requestPipeline.push_back(currentRequest);
 		if (getnr_ret == HTTP_ERROR)
 			return (HTTP_ERROR);
@@ -185,24 +323,7 @@ int		ConnectionClass::_read_buffer(readingBuffer& buffer, std::vector<HttpReques
 	{
 		return (1);
 	}
-	/** here, I read what is left on the buffer but I don't read on the socket anymore, 
-	 * if the request is not full, i save it and take it back nect select iteration **/
-	getnr_ret = _get_next_request(buffer, currentRequest, length_parsed, NO_READ_MODE_ACTIVATED);
-	if (getnr_ret == -1)
-		return (-1);
-	else if (getnr_ret == 0)
-		return (0);
-	else if (getnr_ret == SAVE_REQUEST)
-		return (1);
-	requestPipeline.push_back(currentRequest);
-	if (getnr_ret == HTTP_ERROR)
-		return (HTTP_ERROR);
-	else
-		requestPipeline.back().setValidity(1);
-	if (buffer.deb < buffer.end)
-	{
-		_save_only_buffer(buffer);
-	}
+
 	return (1);
 }
 
@@ -210,7 +331,7 @@ int		ConnectionClass::_read_buffer(readingBuffer& buffer, std::vector<HttpReques
 ***	socket and append buffers to a std::string object until crlf is found. after, it moves
 ***	the rest of the string (after the crlf)	in the readingBuffer. buf and set buffer.deb and buffer.end
 ***	accordingly */
-int		ConnectionClass::_read_long_line(std::string& str, readingBuffer& buffer, int& length_parsed)
+/*int		ConnectionClass::_read_long_line(std::string& str, readingBuffer& buffer, int& length_parsed)
 {
 	char buf[SINGLE_READ_SIZE + 1];
 	int read_ret;
@@ -241,7 +362,7 @@ int		ConnectionClass::_read_long_line(std::string& str, readingBuffer& buffer, i
 		return (0);
 	std::cout << "unpredicted return in _read_long_line" << std::endl;
 	return (1);
-}
+}*/
 
 int		ConnectionClass::_invalidRequestProcedure(HttpRequest& currentRequest, int errorCode)
 {
@@ -478,6 +599,7 @@ int		ConnectionClass::_parse_line(const char *line, int len, HttpRequest &curren
 {
 	std::string	test_string(line, len);
 
+//	std::cout << "string passed to _parse_line: " << test_string << std::endl;
 	if (currentRequest.getLineCount() == 0)
 		return (_parse_first_line(line, len, currentRequest));
 	else
@@ -491,77 +613,65 @@ int		ConnectionClass::_parse_line(const char *line, int len, HttpRequest &curren
  * sent to the parser and is not returned. Downside of these optilizations is more
  * reading/debugging complexity and less modularity. This code is more or less duplicated three times,
  * there are 3 different read_line. */
-int		ConnectionClass::_read_line(readingBuffer& buffer, int& length_parsed, HttpRequest& currentRequest, bool no_read_mode)
+int		ConnectionClass::_read_line(readingBuffer& buffer, HttpRequest& currentRequest)
 {
 	int		crlf_index;
-	int		read_ret;
+//	int		read_ret;
 
+//	std::cout << "in read_line" << std::endl;
+//	std::cout << "has rest buffer: " << _hasRestBuffer <<  std::endl;
+//	_printBufferInfo(buffer, "in read line");
 	int deb_read = buffer.deb;
-	if (buffer.buf[buffer.deb] == '\r' && buffer.buf[buffer.deb + 1] == '\n')
+
+	/** A PROTEGER DES SEGFAULTS/BUGS SI JE SUIS AU BOUT DU BUFFER */
+	if (buffer.buf[buffer.deb] == '\r' && buffer.buf[buffer.deb + 1] == '\n' && !_hasRestBuffer)
 	{
 		buffer.deb += 2;
 		return (2);
 	}
-	while ((crlf_index = _findInBuf("\r\n", buffer.buf, 2, buffer.end, deb_read)) == -1)
+	if (_hasRestBuffer && _restBuffer->length() && (*_restBuffer)[_restBuffer->length() - 1] == '\r' 
+		&& buffer.buf[buffer.deb] == '\n')
 	{
-		if (no_read_mode == NO_READ_MODE_ACTIVATED)
+		if (_restBuffer->length() == 1)
 		{
-			return (SAVE_REQUEST); // j'interrompt le processus de lecture pour empêcher un client pipeliner de monopoliser le serveur.
+			buffer.deb += 1;
+			_hasRestBuffer = 0;
+			_restBuffer->clear();
+			delete _restBuffer;
+			return (2);
 		}
-		if ((buffer.end + SINGLE_READ_SIZE) <  READING_BUF_SIZE) // je vérifie que j'ai de la place dans mon buffer
-		{
-			read_ret = recv(_socketNbr, &(buffer.buf[buffer.end]), SINGLE_READ_SIZE, 0);
-			if (read_ret == -1)
-				return (-1);
-			if (read_ret == 0)
-				return (0);
-			if (deb_read)
-				deb_read = buffer.end - 1; // j'enleve 1 au cas ou crlf est coupé en 2 ; a protéger segfault			
-			buffer.end += read_ret;
-			length_parsed += read_ret;
-		}
-		else if (buffer.deb > (READING_BUF_SIZE / 2)) // je regarde si ça vaut le coup de faire le memmove
-		{
-			std::memmove(buffer.buf, &(buffer.buf[buffer.deb]), buffer.end - buffer.deb); // le -1 sert a gérer crlf coupé en 2 encore une fois
-			buffer.end -= buffer.deb;
-			buffer.deb = 0;
-			deb_read = buffer.end - 1;
-			read_ret = recv(_socketNbr, &(buffer.buf[buffer.end]), SINGLE_READ_SIZE, 0);
-			if (read_ret == -1)
-				return (-1);
-			if (read_ret == 0)
-				return (0);
-			if (deb_read)
-				deb_read = buffer.end - 1; // j'enleve 1 au cas ou crlf est coupé en 2 ; a protéger segfault			
-			buffer.end += read_ret;
-			length_parsed += read_ret;
-		}
-		else
-		{
-			std::string	long_request_string;
-			int		long_line_length;
-
-			long_request_string.append(buffer.buf, buffer.deb, buffer.end - buffer.deb);
-			read_ret = _read_long_line(long_request_string, buffer, length_parsed);
-			if (read_ret == -1)
-				return (-1);
-			if (read_ret == 0)
-				return (0);
-			long_line_length = long_request_string.length();
-			if (_parse_line(long_request_string.c_str(), long_line_length, currentRequest) == HTTP_ERROR)
-				return (HTTP_ERROR);
-			deb_read = 0;
-			return (1);
-		}
+		if (_parse_line(_restBuffer->c_str(), _restBuffer->length() - 1, currentRequest) == HTTP_ERROR)
+			return (HTTP_ERROR);
+		buffer.deb += 1;
+		_hasRestBuffer = 0;
+		_restBuffer->clear();
+		delete _restBuffer;
+		return (1);
 	}
-	if (buffer.buf[buffer.deb] == '\r' && buffer.buf[buffer.deb + 1] == '\n')
+	if ((crlf_index = _findInBuf("\r\n", buffer.buf, 2, buffer.end, deb_read)) == -1)
+			return (SAVE_REQUEST); 
+/*	if (buffer.buf[buffer.deb] == '\r' && buffer.buf[buffer.deb + 1] == '\n')
 	{
 		buffer.deb = crlf_index + 2;
 		return (2);
+	}*/
+	if (_hasRestBuffer)
+	{
+		_restBuffer->append(&(buffer.buf[buffer.deb]), crlf_index - buffer.deb);
+		if (_parse_line(_restBuffer->c_str(), _restBuffer->length(), currentRequest) == HTTP_ERROR)
+			return (HTTP_ERROR);
+		_restBuffer->clear();
+		delete _restBuffer;
+		_restBuffer = 0;
+		_hasRestBuffer = 0;
 	}
-	if (_parse_line(&(buffer.buf[buffer.deb]), crlf_index - buffer.deb, currentRequest) == HTTP_ERROR)
-		return (HTTP_ERROR);
+	else
+	{
+		if (_parse_line(&(buffer.buf[buffer.deb]), crlf_index - buffer.deb, currentRequest) == HTTP_ERROR)
+			return (HTTP_ERROR);
+	}
 	buffer.deb = crlf_index + 2;
+//	_printBufferInfo(buffer, "end read_line");
 	return (1);
 }
 
@@ -593,129 +703,229 @@ int		ConnectionClass::_guaranteedRead(int fd, int to_read, std::string& str_buff
 	return (bytes_read);
 }
 
-/** more or less a duplication of _read_line, will maybe unify in a future but at least this saves 
- * a lot of if/else conditions and enforces the SRP principle */
-int		ConnectionClass::_read_chunked_line(readingBuffer& buffer, int& length_parsed, int read_size, std::string& line)
+int		ConnectionClass::_read_line_trailer(readingBuffer& buffer, HttpRequest& currentRequest)
 {
 	int		crlf_index;
-	int		read_ret;
-	int 		deb_read;
+//	int		read_ret;
 
-	deb_read = buffer.deb;
-	while ((crlf_index = _findInBuf("\r\n", buffer.buf, 2, buffer.end, deb_read)) == -1)
+//	std::cout << "in read_line" << std::endl;
+//	std::cout << "has rest buffer: " << _hasRestBuffer <<  std::endl;
+//	_printBufferInfo(buffer, "in read line");
+	int deb_read = buffer.deb;
+
+	/** A PROTEGER DES SEGFAULTS/BUGS SI JE SUIS AU BOUT DU BUFFER */
+	if (buffer.buf[buffer.deb] == '\r' && buffer.buf[buffer.deb + 1] == '\n' && !_hasRestBuffer)
 	{
-		if ((buffer.end + read_size) <  READING_BUF_SIZE) // je vérifie que j'ai de la place dans mon buffer
-		{
-			read_ret = recv(_socketNbr, &(buffer.buf[buffer.end]), read_size, 0);
-			if (read_ret == -1)
-				return (-1);
-			if (read_ret == 0)
-				return (0);
-			if (deb_read)
-				deb_read = buffer.end - 1; // j'enleve 1 au cas ou crlf est coupé en 2 ; a protéger segfault			
-			buffer.end += read_ret;
-			length_parsed += read_ret;
-		}
-		else if (buffer.deb > (READING_BUF_SIZE / 2)) // je regarde si ça vaut le coup de faire le memmove
-		{
-			std::memmove(buffer.buf, &(buffer.buf[buffer.deb]), buffer.end - buffer.deb); // le -1 sert a gérer crlf coupé en 2 encore une fois
-			buffer.end -= buffer.deb;
-			buffer.deb = 0;
-			deb_read = buffer.end - 1;
-			read_ret = recv(_socketNbr, &(buffer.buf[buffer.end]), read_size, 0);
-			if (read_ret == -1)
-				return (-1);
-			if (read_ret == 0)
-				return (0);
-			if (deb_read)
-				deb_read = buffer.end - 1; // j'enleve 1 au cas ou crlf est coupé en 2 ; a protéger segfault			
-			buffer.end += read_ret;
-			length_parsed += read_ret;
-		}
-		else
-		{
-			int		long_line_length;
-
-			line.append(buffer.buf, buffer.deb, buffer.end - buffer.deb);
-			read_ret = _read_long_line(line, buffer, length_parsed);
-			if (read_ret == -1)
-				return (-1);
-			if (read_ret == 0)
-				return (0);
-			long_line_length = line.length();
-			deb_read = 0;
-			return (1);
-		}
+		buffer.deb += 2;
+		return (2);
 	}
-	line.clear();
-	line.append(&(buffer.buf[buffer.deb]), crlf_index - buffer.deb);
+	if (_hasRestBuffer && _restBuffer->length() && (*_restBuffer)[_restBuffer->length() - 1] == '\r' 
+		&& buffer.buf[buffer.deb] == '\n')
+	{
+		if (_restBuffer->length() == 1)
+		{
+			buffer.deb += 1;
+			_hasRestBuffer = 0;
+			_restBuffer->clear();
+			delete _restBuffer;
+			return (2);
+		}
+		if (_parseTrailerLine(_restBuffer->c_str(), _restBuffer->length() - 1, currentRequest) == HTTP_ERROR)
+			return (HTTP_ERROR);
+		buffer.deb += 1;
+		_hasRestBuffer = 0;
+		_restBuffer->clear();
+		delete _restBuffer;
+		return (1);
+	}
+	if ((crlf_index = _findInBuf("\r\n", buffer.buf, 2, buffer.end, deb_read)) == -1)
+			return (SAVE_REQUEST); 
+/*	if (buffer.buf[buffer.deb] == '\r' && buffer.buf[buffer.deb + 1] == '\n')
+	{
+		buffer.deb = crlf_index + 2;
+		return (2);
+	}*/
+	if (_hasRestBuffer)
+	{
+		_restBuffer->append(&(buffer.buf[buffer.deb]), crlf_index - buffer.deb);
+		if (_parseTrailerLine(_restBuffer->c_str(), _restBuffer->length(), currentRequest) == HTTP_ERROR)
+			return (HTTP_ERROR);
+		_restBuffer->clear();
+		delete _restBuffer;
+		_restBuffer = 0;
+		_hasRestBuffer = 0;
+	}
+	else
+	{
+		if (_parseTrailerLine(&(buffer.buf[buffer.deb]), crlf_index - buffer.deb, currentRequest) == HTTP_ERROR)
+			return (HTTP_ERROR);
+	}
+	buffer.deb = crlf_index + 2;
+//	_printBufferInfo(buffer, "end read_line");
+	return (1);
+}
+
+int		ConnectionClass::_read_chunked_line(readingBuffer& buffer, std::string& line)
+{
+	int		crlf_index;
+//	int		read_ret;
+
+//	std::cout << "in read_chunked line" << std::endl;
+//	std::cout << "has rest buffer: " << _hasRestBuffer <<  std::endl;
+//	_printBufferInfo(buffer, "in read chunked line");
+	int deb_read = buffer.deb;
+
+	/** A PROTEGER DES SEGFAULTS/BUGS SI JE SUIS AU BOUT DU BUFFER */
+	if (buffer.buf[buffer.deb] == '\r' && buffer.buf[buffer.deb + 1] == '\n' && !_hasRestBuffer)
+	{
+		buffer.deb += 2;
+		return (2);
+	}
+	if (_hasRestBuffer && _restBuffer->length() && (*_restBuffer)[_restBuffer->length() - 1] == '\r' 
+		&& buffer.buf[buffer.deb] == '\n')
+	{
+		if (_restBuffer->length() == 1)
+		{
+			buffer.deb += 1;
+			_hasRestBuffer = 0;
+			_restBuffer->clear();
+			delete _restBuffer;
+			return (2);
+		}
+		line.append(_restBuffer->c_str(), _restBuffer->length() - 1);
+		buffer.deb += 1;
+		_hasRestBuffer = 0;
+		_restBuffer->clear();
+		delete _restBuffer;
+		return (1);
+	}
+	if ((crlf_index = _findInBuf("\r\n", buffer.buf, 2, buffer.end, deb_read)) == -1)
+			return (SAVE_REQUEST); 
+/*	if (buffer.buf[buffer.deb] == '\r' && buffer.buf[buffer.deb + 1] == '\n')
+	{
+		buffer.deb = crlf_index + 2;
+		return (2);
+	}*/
+	if (_hasRestBuffer)
+	{
+//		std::cout << "rest buffer before strategic append: " << *_restBuffer << std::endl;
+		_restBuffer->append(&(buffer.buf[buffer.deb]), crlf_index - buffer.deb);
+//		std::cout << "rest buffer after strategic append: " << *_restBuffer << std::endl;
+//		line.append(_restBuffer->c_str(), _restBuffer->length() - 1);
+		line.append(_restBuffer->c_str(), _restBuffer->length());
+		_restBuffer->clear();
+		delete _restBuffer;
+		_restBuffer = 0;
+		_hasRestBuffer = 0;
+	}
+	else
+		line.append(&(buffer.buf[buffer.deb]), crlf_index - buffer.deb);
 	buffer.deb = crlf_index + 2;
 	return (1);
 }
 
 /** rather explicit title, the code is more or less duplicated with read_content but having one function 
  * for both would have also been a pain with if/elses, and less efficient */
-int		ConnectionClass::_readAndAppendChunkBlock(HttpRequest& currentRequest, readingBuffer& buffer, int& length_parsed, int block_length)
+int		ConnectionClass::_readAndAppendChunkBlock(HttpRequest& currentRequest, readingBuffer& buffer)
 {
 	std::string	request_content;
-	int		to_read;
+//	int		to_read;
 	int 		read_ret;
-	int		block_length_w_crlf = block_length + 2;
+	int		size_append;
+
+// pb: ne finis pas mais ne retourne pas save request visiblement
 
 	/** PAS OUBLIER DE GERER BUF.DEB ET BUF.END **/
+//	_print_content_info(buffer, currentRequest, "in read and append");
 	if (buffer.end > buffer.deb)  // determin if there is unporocessed data remaining in the buffer
 	{
 		int diff = buffer.end - buffer.deb; 
-		if (diff >= block_length_w_crlf) // determins if the whole chunk is in the buffer
+		if (diff >= _ContentLeftToRead) // determins if the whole chunk is in the buffer
 		{
-			request_content.append(&(buffer.buf[buffer.deb]), block_length);
-			currentRequest.appendToContent(request_content);
-			buffer.deb += block_length_w_crlf;
-			return (request_content.length());
+			if (_ContentLeftToRead - 2)
+			{
+				currentRequest.appendToContent(&(buffer.buf[buffer.deb]), _ContentLeftToRead - 2);
+			}
+			buffer.deb += _ContentLeftToRead;
+			_ContentLeftToRead = 0;
+			return (1);
 		}
 		else
 		{
-			if (diff <= block_length)  // ne prend pas en compte le crlf, cst la diff avec au dessus
-				request_content.append(&(buffer.buf[buffer.deb]), diff);
-			else
-				request_content.append(&(buffer.buf[buffer.deb]), block_length);
-			buffer.deb += diff; // allows not adding twice the same data (is it really relevant? because buffer not used by guar_Read)
-			to_read = block_length_w_crlf - diff; 
-			read_ret = _guaranteedRead(_socketNbr, to_read, request_content);
-			buffer.deb = buffer.end;  // PERMET DE MONTRER QUE TOUT A ETE PROCESS
-			if (read_ret == 0 || read_ret == -1)
-				return (read_ret);
+			if (diff <= (_ContentLeftToRead - 2))  // ne prend pas en compte le crlf, cst la diff avec au dessus
+			{
+//				std::cout << "diff: " << diff << std::endl;
+//				std::cout << "content before appending: " << currentRequest.getContent() << std::endl;
+				currentRequest.appendToContent(&(buffer.buf[buffer.deb]), diff);
+//				std::cout << "content after appending: " << currentRequest.getContent() << std::endl;
+				_ContentLeftToRead -= diff;
+//				buffer.deb += diff;
+			}
 			else
 			{
-				length_parsed += read_ret;
-				if (request_content.length() > 2)
-				{
-					request_content.resize(request_content.length() - 2); // je n'ajoute pas les crlfs
-					currentRequest.appendToContent(request_content);
-				}
-				return (request_content.length());
+				currentRequest.appendToContent(&(buffer.buf[buffer.deb]), _ContentLeftToRead - 2);
+				_ContentLeftToRead = 1;
+			}
+			buffer.deb += diff; // allows not adding twice the same data (is it really relevant? because buffer not used by guar_Read)
+//			buffer.deb = buffer.end;  // PERMET DE MONTRER QUE TOUT A ETE PROCESS
+			if (!_hasRead)
+			{
+				if (_ContentLeftToRead < SINGLE_READ_SIZE)
+					read_ret = recv(_socketNbr, &(buffer.buf[buffer.deb]), _ContentLeftToRead, 0);
+				else
+					read_ret = recv(_socketNbr, &(buffer.buf[buffer.deb]), SINGLE_READ_SIZE, 0);
+				if (read_ret == 0 || read_ret == -1)
+					return (read_ret);
+				buffer.end += read_ret;
+				_ContentLeftToRead -= read_ret;
+				_hasRead = 1;
+				int size_append = (buffer.end - buffer.deb -2);
+				if (size_append > 0)
+					currentRequest.appendToContent(&(buffer.buf[buffer.deb]), size_append);
+				buffer.deb = buffer.end;  // PERMET DE MONTRER QUE TOUT A ETE PROCESS
+				return (1);
+			}
+			else
+			{
+				return (_save_only_request(currentRequest));
 			}
 		}
 	}
 	else 
 	{
-		read_ret = _guaranteedRead(_socketNbr, block_length_w_crlf, request_content);
-		buffer.deb = buffer.end;  // PERMET DE MONTRER QUE TOUT A ETE PROCESS
-		if (read_ret == 0 || read_ret == -1)
-			return (read_ret);
+		if (!_hasRead)
+		{
+			if (_ContentLeftToRead < SINGLE_READ_SIZE)
+				read_ret = recv(_socketNbr, &(buffer.buf[buffer.deb]), _ContentLeftToRead, 0);
+			else
+				read_ret = recv(_socketNbr, &(buffer.buf[buffer.deb]), SINGLE_READ_SIZE, 0);
+			if (read_ret == 0 || read_ret == -1)
+				return (read_ret);
+			buffer.end += read_ret;
+			_hasRead = 1;
+			if (read_ret == _ContentLeftToRead || read_ret == _ContentLeftToRead - 1)
+				size_append = _ContentLeftToRead - 2;
+			else
+				size_append = read_ret;
+			_ContentLeftToRead -= read_ret;
+//			size_append = buffer.end - buffer.deb - 2;
+			if (size_append > 0)
+				currentRequest.appendToContent(&(buffer.buf[buffer.deb]), size_append);
+			buffer.deb = buffer.end; //sur de sur?
+			if (_ContentLeftToRead)
+				return (_save_only_request(currentRequest));
+
+		}
 		else
 		{
-			length_parsed += read_ret;
-			request_content.resize(request_content.length() - 4); // je n'ajoute pas les crlfs
-			currentRequest.appendToContent(request_content);
-			return (request_content.length());
+			return (_save_only_request(currentRequest)); // only request car normalement tout est aved dans request
 		}
 	}
 	return (1);
 }
 
 /** sert a vider le buffer du dernier crlf et/ ou le lire sur le socket */
-int		ConnectionClass::_processRemainingCrlf(readingBuffer& buffer)
+/*int		ConnectionClass::_processRemainingCrlf(readingBuffer& buffer)
 {
 	std::string	trash;
 	int		left_inbuf = buffer.end - buffer.deb;
@@ -730,89 +940,253 @@ int		ConnectionClass::_processRemainingCrlf(readingBuffer& buffer)
 	buffer.deb = buffer.end;
 	return (1);
 	
+}*/
+
+int		ConnectionClass::_last_nl_procedure(readingBuffer& buffer)
+{
+	int		left_inbuf = buffer.end - buffer.deb;
+	int ret_read;
+
+//	std::cout << "processing last nl" << std::endl;
+	if (_hasRestBuffer)
+	{
+		std::memmove(buffer.buf, _restBuffer->c_str(), _restBuffer->length());
+		left_inbuf = buffer.end - buffer.deb;
+		delete _restBuffer;
+		_restBuffer = 0;
+	}
+//	_printBufferInfo(buffer, "in last nl deb");
+	if (left_inbuf < 2)
+	{
+		if (!_hasRead)
+		{
+			//besoin de protection?
+			ret_read = recv(_socketNbr, &(buffer.buf[buffer.deb]), 2 - left_inbuf, 0);
+			buffer.end += ret_read;
+			if (ret_read == 0 || ret_read == -1)
+				return (ret_read);
+			if (buffer.end - buffer.deb < 2)
+				return (SAVE_REQUEST);
+		}
+		else
+			return (SAVE_REQUEST);
+	}
+	if (buffer.buf[buffer.deb] != '\r' || buffer.buf[buffer.deb + 1] != '\n')
+		return (HTTP_ERROR);
+	buffer.deb += 2;
+	_isProcessingLastNL = 0;
+	return (1);	
 }
 
 /** this is the main for getting chunk sizes, reading on buffer or socket accordingly, and adding
  * it all to the content of the HttpRequest */
-int		ConnectionClass::_getChunkedData(HttpRequest& currentRequest, readingBuffer& buffer, int& length_parsed)
+int		ConnectionClass::_getChunkedData(HttpRequest& currentRequest, readingBuffer& buffer)
 {
 
 	std::string	line_hex;
 	int	read_ret;
 	int 	ret_chunked;
+	long	nbred;
+	int 	last_reached = 0;
+//	int	diff;
 
-	read_ret = _read_chunked_line(buffer, length_parsed, 10, line_hex);
-	if (read_ret == -1)
-		return (-1);
-	else if (read_ret == 0)
-		return (0);
-
-
-	if (line_hex.find_first_not_of("0123456789ABCDEFabcdef") != line_hex.npos)
-		return (_invalidRequestProcedure(currentRequest, 400));
-	long nbred = strtol(line_hex.c_str(), NULL, 16);
-
-	while (nbred > 0)
+//	std::cout << "is in _getChunked" << std::endl;
+//	_print_content_info(buffer, currentRequest, "in get chunked");
+	if (!_ContentLeftToRead)
 	{
-		ret_chunked = _readAndAppendChunkBlock(currentRequest, buffer, length_parsed, nbred);
-		if (ret_chunked == 0 || ret_chunked == -1)
-			return (ret_chunked);
-		read_ret = _read_chunked_line(buffer, length_parsed, 10, line_hex);
-		if (read_ret == -1)
-			return (-1);
-		else if (read_ret == 0)
-			return (0);
+		_isReadingChunknbr = 1;
+		if (_hasRestBuffer || _hasRead == 0) // signifie que j'ai pas encore lu sur cette itération
+		{
+			read_ret = recv(_socketNbr, buffer.buf, 10, 0);
+//			std::cout << "red ret after recv: " << read_ret << std::endl;
+			if (read_ret == 0 || read_ret == -1)
+				return (read_ret);
+			buffer.end += read_ret;
+//			_printBufferInfo(buffer, "after recv");
+			_hasRead = 1;
+			
+		}
+//		std::cout << "calling read cunk line here" << std::endl;
+		read_ret = _read_chunked_line(buffer, line_hex);
+//		std::cout << "line hex: " << line_hex << std::endl;
+		if (read_ret == SAVE_REQUEST)
+			return (_save_request_and_buffer(currentRequest, buffer));
+		_isReadingChunknbr = 0;
 		if (line_hex.find_first_not_of("0123456789ABCDEFabcdef") != line_hex.npos)
 			return (_invalidRequestProcedure(currentRequest, 400));
 		nbred = strtol(line_hex.c_str(), NULL, 16);
+		line_hex.clear();
+//		std::cout << "nbred not in loop" << nbred << std::endl;
+		if (!nbred)
+		{
+			last_reached = 1;
+			_ContentLeftToRead = 0;
+			_isChunking = 0;
+			_isHandlingBody = 0;
+			if (!currentRequest.HasTrailers())
+				_isProcessingLastNL = 1;
+			else
+				_isProcessingTrailers = 1;
+			return (1);
+		}
+		_ContentLeftToRead = nbred + 2; // déduire buffer (je le fais problement déjà apres);
+/*		if (nbred == 0)
+			return (currentRequest.getContent().length());
+		diff = buffer.end - buffer.deb;
+		if (diff)
+		{
+			if (diff >= nbred)
+
+		}*/
+	}
+	while (_ContentLeftToRead > 0) // boucle nécessaire car il faut que ça marche quand je parcours un long buffer
+	{
+//		_print_content_info(buffer, currentRequest, "in read and append");
+		ret_chunked = _readAndAppendChunkBlock(currentRequest, buffer);
+//		_print_content_info(buffer, currentRequest, "out of read and append");
+//		std::cout << "ret reand and append: " << ret_chunked << std::endl;
+		if (ret_chunked == 0 || ret_chunked == -1)
+			return (ret_chunked);
+		if (ret_chunked == SAVE_REQUEST)
+			return (SAVE_REQUEST);
+		if (last_reached == 1)
+		{
+			_ContentLeftToRead = 0;
+			_isChunking = 0;
+			_isHandlingBody = 0;
+			if (!currentRequest.HasTrailers())
+				_isProcessingLastNL = 1;
+			else
+				_isProcessingTrailers = 1;
+			break;
+		}
+		_isReadingChunknbr = 1;
+		read_ret = _read_chunked_line(buffer, line_hex);
+		if (read_ret == SAVE_REQUEST)
+			return (_save_request_and_buffer(currentRequest, buffer)); // ici, je dois sauvegarder requête car ça n'est pas fait dans la fonction
+		_isReadingChunknbr = 0;
+		if (line_hex.find_first_not_of("0123456789ABCDEFabcdef") != line_hex.npos)
+			return (_invalidRequestProcedure(currentRequest, 400));
+//		std::cout << "line_hexin loop: " << line_hex << std::endl;
+		nbred = strtol(line_hex.c_str(), NULL, 16);
+//		std::cout << "nbred in loop: " << nbred << std::endl;
+		line_hex.clear();
+		if (!nbred)
+		{
+			last_reached = 1;
+			_ContentLeftToRead = 0;
+			_isChunking = 0;
+			_isHandlingBody = 0;
+			if (!currentRequest.HasTrailers())
+				_isProcessingLastNL = 1;
+			return (1);
+//			last_reached = 1;
+//			break;
+		}
+		_ContentLeftToRead = nbred + 2;
 	}
 	return (currentRequest.getContent().length());
 }
 
-int		ConnectionClass::_read_request_content(HttpRequest& CurrentRequest, readingBuffer& buffer ,int& length_parsed)
+void		ConnectionClass::_print_content_info(readingBuffer& buffer, HttpRequest& currentRequest, std::string message)
+{
+	std::cout << " ------------------ CONTENT INFO: " << message << "-------------- " << std::endl;
+	std::cout << "_hasRead: " << _hasRead << std::endl;
+	std::cout << "_hasRestBuffer: " << _hasRestBuffer << std::endl;
+	if (_hasRestBuffer)
+		std::cout << "rest buffer: " << *_restBuffer << std::endl;
+	std::cout << "_isHandlingBody: " << _isHandlingBody << std::endl;
+	std::cout << "_isParsingContent: " << _isParsingContent << std::endl;
+	std::cout << "_ContentLeftToRead: " << _ContentLeftToRead << std::endl;
+	std::cout << "_isChunking: " << _isChunking << std::endl;
+	std::cout << "_isReadingChunkNbr: " << _isReadingChunknbr << std::endl;
+//:w
+	std::cout << "_isParsingContent: " << _isParsingContent << std::endl;
+	std::cout << "content in request: " << currentRequest.getContent() << std::endl;
+	std::cout << "content length in request: " << currentRequest.getContent().length() << std::endl;
+	std::cout << "buffer.deb: " << buffer.deb << ", buffer.end: " << buffer.end << std::endl;
+	std::string str_buffer(&(buffer.buf[buffer.deb]), buffer.end - buffer.deb);
+	std::cout << "buffer from buf.deb to buf.end: " << str_buffer << std::endl;;
+	std::cout << "end content info -"<< std::endl << std::endl;
+
+}
+
+void		ConnectionClass::_print_content_info(HttpRequest& currentRequest, std::string message)
+{
+	std::cout << " ------------------ CONTENT INFO: " << message << "-------------- " << std::endl;
+	std::cout << "_hasRead: " << _hasRead << std::endl;
+	std::cout << "_isHandlingBody: " << _isHandlingBody << std::endl;
+	std::cout << "_isParsingContent: " << _isParsingContent << std::endl;
+	std::cout << "_ContentLeftToRead: " << _ContentLeftToRead << std::endl;
+	std::cout << "_isChunking: " << _isChunking << std::endl;
+	std::cout << "_isReadingChunkNbr: " << _isReadingChunknbr << std::endl;
+//	std::cout << "_isParsingContent: " << _isParsingContent << std::endl;
+	std::cout << "content in request: " << currentRequest.getContent() << std::endl;
+	std::cout << "content length in request: " << currentRequest.getContent().length() << std::endl;
+	std::cout << "end content info -"<< std::endl << std::endl;
+
+}
+
+int		ConnectionClass::_read_request_content(HttpRequest& CurrentRequest, readingBuffer& buffer)
 {
 
 	std::string	request_content;
-	int		to_read;
+//	int		to_read;
 	int 		read_ret;
+	int 		diff = buffer.end - buffer.deb;
 
-	if (buffer.end > buffer.deb) // if part of the content is already in the buffer
+//	std::cout << "in read_Request_Content" << std::endl;
+//	_print_content_info(buffer, CurrentRequest, "deb read request");
+	if (diff) // if part of the content is already in the buffer
 	{
-		int diff = buffer.end - buffer.deb;
-		if (diff >= CurrentRequest.getContentLength()) // if all the content is already in the buffer, no need to read on the socket
+//		int diff = buffer.end - buffer.deb;
+		if (diff >= _ContentLeftToRead) // if all the content is already in the buffer, no need to read on the socket
 		{
-			request_content.append(&(buffer.buf[buffer.deb]), CurrentRequest.getContentLength());
-			CurrentRequest.setContent(request_content);
-			buffer.deb += CurrentRequest.getContentLength();
-			return (request_content.length());
+			CurrentRequest.appendToContent(&(buffer.buf[buffer.deb]), CurrentRequest.getContentLength());
+			buffer.deb += _ContentLeftToRead;
+			_isParsingContent = 0;
+			_isHandlingBody = 0;
+			_ContentLeftToRead = 0;
+//			if (buffer)
+//			_save_only_buffer(buffer);
+			return (1);
 		}
-		else // need to read on the socket, data missing
+		else // need to save, data missing
 		{
-			request_content.append(&(buffer.buf[buffer.deb]), diff);
+			CurrentRequest.appendToContent(&(buffer.buf[buffer.deb]), diff);
 			buffer.deb += diff;
-			to_read = CurrentRequest.getContentLength() - diff;
-			read_ret = _guaranteedRead(_socketNbr, to_read, request_content);
-			length_parsed += read_ret;
-			if (read_ret == 0 || read_ret == 1)
-				return (read_ret);
-			else
-			{
-				CurrentRequest.setContent(request_content);
-				return (request_content.length());
-			}
+			_ContentLeftToRead -= diff;
+			return (_save_only_request(CurrentRequest));
 		}
 	}
 	else // all the content must be read from the socket
 	{
-		read_ret = _guaranteedRead(_socketNbr, CurrentRequest.getContentLength(), request_content);
-		length_parsed += read_ret;
-		if (read_ret == 0 || read_ret == 1)
-			return (read_ret);
-		else
+		if (!_hasRead)
 		{
-			CurrentRequest.setContent(request_content);
-			return (request_content.length());
+			if (_ContentLeftToRead < SINGLE_READ_SIZE)
+				read_ret = recv(_socketNbr, &(buffer.buf[buffer.deb]), _ContentLeftToRead, 0);
+			else
+				read_ret = recv(_socketNbr, &(buffer.buf[buffer.deb]), SINGLE_READ_SIZE, 0);
+			if (read_ret == 0 || read_ret == -1)
+				return (read_ret);
+			buffer.end += read_ret;
+			_hasRead = 1;
+//			_print_content_info(buffer, CurrentRequest, "before appending");
+			CurrentRequest.appendToContent(&(buffer.buf[buffer.deb]), read_ret);
+//			std::cout << "content: " << CurrentRequest.getContent() << std::endl;
+			_ContentLeftToRead -= read_ret;
+			buffer.deb = buffer.end;
+			if (_ContentLeftToRead)
+				return (_save_only_request(CurrentRequest));
+			else
+			{
+				_isHandlingBody = 0;
+				_isParsingContent = 0;
+				return (CurrentRequest.getContentLength());
+			}
 		}
+		else
+			return (_save_only_request(CurrentRequest));
 	}
 	return (1);
 
@@ -823,17 +1197,31 @@ int		ConnectionClass::_read_request_content(HttpRequest& CurrentRequest, reading
 void		ConnectionClass::_save_only_buffer(readingBuffer& buffer)
 {
 	_restBuffer = new std::string(&(buffer.buf[buffer.deb]), buffer.end - buffer.deb);
-	_hasRest = BUFF_REST;
+	_hasRestBuffer = 1;
 }
 
 /** when we run out of data while we were constructing an HttpRequest object, and we don't want 
  * to keep reading to avoid monopolizing cpu for only one connection, we save the request and 
  * the buffer and go back at processing them at next iteration */
-void		ConnectionClass::_save_request_and_buffer(HttpRequest& currentRequest, readingBuffer& buffer)
+int		ConnectionClass::_save_request_and_buffer(HttpRequest& currentRequest, readingBuffer& buffer)
 {
 	_incompleteRequest = new HttpRequest(currentRequest);
-	_restBuffer = new std::string(&(buffer.buf[buffer.deb]), buffer.end - buffer.deb);
-	_hasRest = REQUEST_AND_BUFF_REST;
+	_hasRestRequest = 1;
+	if (_hasRestBuffer)
+	{
+		_restBuffer->append(&(buffer.buf[buffer.deb]), buffer.end - buffer.deb);
+		_hasRestBuffer = 1;
+	}
+	else if (buffer.end > buffer.deb)
+	{
+		_restBuffer = new std::string(&(buffer.buf[buffer.deb]), buffer.end - buffer.deb);
+		_hasRestBuffer = 1;
+	}
+	else
+		_hasRestBuffer = 0;
+//	if (_hasRestBuffer)
+//		std::cout << "rest buffer: " << *_restBuffer << std::endl;
+	return (SAVE_REQUEST);
 }
 
 int		ConnectionClass::_findInTrailers(std::string& to_find, HttpRequest& currentRequest)
@@ -893,121 +1281,111 @@ int		ConnectionClass::_parseTrailerLine(const char *line, int len, HttpRequest& 
 	return (1);
 }
 
-/** last duplication of _read_line, but for trailers */ 
-int		ConnectionClass::_read_line_trailer(readingBuffer& buffer, int& length_parsed, HttpRequest& currentRequest)
-{
-	int		crlf_index;
-	int		read_ret;
-
-	int deb_read = buffer.deb;
-	if (buffer.buf[buffer.deb] == '\r' && buffer.buf[buffer.deb + 1] == '\n')
-	{
-		buffer.deb += 2;
-		return (2);
-	}
-	while ((crlf_index = _findInBuf("\r\n", buffer.buf, 2, buffer.end, deb_read)) == -1)
-	{
-		if ((buffer.end + SINGLE_READ_SIZE) <  READING_BUF_SIZE) // je vérifie que j'ai de la place dans mon buffer
-		{
-			read_ret = recv(_socketNbr, &(buffer.buf[buffer.end]), SINGLE_READ_SIZE, 0);
-			if (read_ret == -1)
-				return (-1);
-			if (read_ret == 0)
-				return (0);
-			if (deb_read)
-				deb_read = buffer.end - 1; // j'enleve 1 au cas ou crlf est coupé en 2 ; a protéger segfault			
-			buffer.end += read_ret;
-			length_parsed += read_ret;
-		}
-		else if (buffer.deb > (READING_BUF_SIZE / 2)) // je regarde si ça vaut le coup de faire le memmove
-		{
-			std::memmove(buffer.buf, &(buffer.buf[buffer.deb]), buffer.end - buffer.deb); // le -1 sert a gérer crlf coupé en 2 encore une fois
-			buffer.end -= buffer.deb;
-			buffer.deb = 0;
-			deb_read = buffer.end - 1;
-
-			read_ret = recv(_socketNbr, &(buffer.buf[buffer.end]), SINGLE_READ_SIZE, 0);
-			if (read_ret == -1)
-				return (-1);
-			if (read_ret == 0)
-				return (0);
-			if (deb_read)
-				deb_read = buffer.end - 1; // j'enleve 1 au cas ou crlf est coupé en 2 ; a protéger segfault			
-			buffer.end += read_ret;
-			length_parsed += read_ret;
-		}
-		else
-		{
-			std::string	long_request_string;
-			int		long_line_length;
-
-			long_request_string.append(buffer.buf, buffer.deb, buffer.end - buffer.deb);
-			read_ret = _read_long_line(long_request_string, buffer, length_parsed);
-			if (read_ret == -1)
-				return (-1);
-			if (read_ret == 0)
-				return (0);
-			long_line_length = long_request_string.length();
-			if (_parseTrailerLine(long_request_string.c_str(), long_line_length, currentRequest) == HTTP_ERROR)
-				return (HTTP_ERROR);
-			deb_read = 0;
-			return (1);
-		}
-	}
-	if (buffer.buf[buffer.deb] == '\r' && buffer.buf[buffer.deb + 1] == '\n')
-	{
-		buffer.deb = crlf_index + 2;
-		return (2);
-	}
-	if (_parseTrailerLine(&(buffer.buf[buffer.deb]), crlf_index - buffer.deb, currentRequest) == HTTP_ERROR)
-		return (HTTP_ERROR);
-	buffer.deb = crlf_index + 2;
-	return (1);
-}
-
 /** read and parse trailers while they exist */ 
-int		ConnectionClass::_readTrailers(readingBuffer& buffer, int& length_parsed, HttpRequest& currentRequest)
+int		ConnectionClass::_readTrailers(readingBuffer& buffer, HttpRequest& currentRequest)
 {
 	int read_ret;
 
-	read_ret = _read_line_trailer(buffer, length_parsed, currentRequest);
+	if (!_hasRead)
+	{
+		buffer.deb = 0;
+		read_ret = recv(_socketNbr, buffer.buf, SINGLE_READ_SIZE, 0);
+		_hasRead = 1;
+		if (read_ret == 0 || read_ret == -1)
+			return (read_ret);
+		buffer.end += read_ret;
+	}
+	read_ret = _read_line_trailer(buffer, currentRequest);
 	if (read_ret == 0 || read_ret == -1 || read_ret == HTTP_ERROR)
 		return (read_ret);
+	if (read_ret == SAVE_REQUEST)
+		return (SAVE_REQUEST);
 	while (read_ret == 1)
 	{
-		read_ret = _read_line_trailer(buffer, length_parsed, currentRequest);	
+		read_ret = _read_line_trailer(buffer, currentRequest);	
 		if (read_ret == 0 || read_ret == -1 || read_ret == HTTP_ERROR)
 			return (read_ret);
+		if (read_ret == SAVE_REQUEST)
+			return (SAVE_REQUEST);
 	}
+	_isProcessingTrailers = 0;
 	return (2);
+}
+
+int		ConnectionClass::_saveBegRestProcedure(HttpRequest& currentRequest, readingBuffer& buffer)
+{
+	_incompleteRequest = new HttpRequest(currentRequest);
+	_hasRestRequest = 1;
+	_beginningRestBuffer = new std::string(&(buffer.buf[buffer.deb]), buffer.end - buffer.deb);
+	return (SAVE_REQUEST);
+}
+
+int		ConnectionClass::_save_only_request(HttpRequest& currentRequest)
+{
+	_hasRestRequest = 1;
+	_incompleteRequest = new HttpRequest(currentRequest);	
+	return (SAVE_REQUEST);
 }
 
 /** get next request in the buffer or in the socket. if no_read_mode == NO_READ_MODE_ACTIVATED, it will 
  * not read on the socket after it runs out of data in the buffer, it will save everything and come back
  * next select iteration */ 
-int		ConnectionClass::_get_next_request(readingBuffer &buffer, HttpRequest& currentRequest, int& length_parsed, bool no_read_mode)
+int		ConnectionClass::_get_next_request(readingBuffer &buffer, HttpRequest& currentRequest)
 {
 	int	ret_read_line;
 	int	ret_read_content;	
 
-	if (buffer.buf[buffer.deb] == '\r' && buffer.buf[buffer.deb + 1] == '\n')
-	{
-		buffer.deb += 2;
-//		buffer.deb += 2;
-//		length_parsed += 2;
-	}
+// il faut mobiliser le reste ici!
+// si il y a du reste qui n'est pas contenu, c'est forcément plus petit qu'une ligne
 
-	if (buffer.buf[buffer.deb] == '\r' && buffer.buf[buffer.deb + 1] == '\n')
+//	_printBufferInfo(buffer, "gnr");
+
+	/** Tout ce 'if' sert uniquement au cas ou je commence à lire une requete et il me reste juste un bout de CRLF dans le buffer.
+	 * il est recommandé par la RFC de tolérer un crlf perdu en debut de requête, donc ça sert à ça
+	*/
+
+//	if (_isHandlingBody)
+	if (!(currentRequest.getLineCount()) && !_hasRestBuffer) // si c'est le tout debut de la requete et que j'ai toujours pas eu de caractere autre que CRLF
 	{
-		return (_invalidRequestProcedure(currentRequest, 400));
+		if (_hasBegRest)
+		{
+			std::cout << "IN ANNOYING PROCEDURE, NOT TESTED" << std::endl;
+			int i = 0;
+//			std::cout << "has beg rest" << std::endl;
+			_beginningRestBuffer->append(&(buffer.buf[buffer.deb]), buffer.end - buffer.deb);
+			if ((*_beginningRestBuffer)[i] == '\r' && (*_beginningRestBuffer)[i + 1] == '\n')
+				i += 2;
+			if ((*_beginningRestBuffer)[i] == '\r' && (*_beginningRestBuffer)[i + 1] == '\n')
+				return (_invalidRequestProcedure(currentRequest, 400));
+			std::memmove(buffer.buf, &(_beginningRestBuffer[i]), _beginningRestBuffer->length() - i);
+			buffer.deb = 0;
+			buffer.end = _beginningRestBuffer->length() - i;
+			delete _beginningRestBuffer;
+			_hasBegRest = 0;
+		}
+		else if (buffer.deb == '\r')
+		{
+			std::cout << "IN ANNOYING PROCEDURE, NOT TESTED" << std::endl;
+			if ((buffer.end - buffer.deb) < 4)
+				return (_saveBegRestProcedure(currentRequest, buffer));
+			if (buffer.buf[buffer.deb] == '\r' && buffer.buf[buffer.deb + 1] == '\n')
+			{
+				buffer.deb += 2;
+			}
+			if (buffer.buf[buffer.deb] == '\r' && buffer.buf[buffer.deb + 1] == '\n') // c'est la
+			{
+				if (!(currentRequest.getLineCount()))
+					return (_invalidRequestProcedure(currentRequest, 400));
+			}
+		}
 	}
-	while ((ret_read_line = _read_line(buffer, length_parsed, currentRequest, no_read_mode)) == 1)
+	while ((ret_read_line = _read_line(buffer, currentRequest)) == 1)
 	{
 		currentRequest.incrementLineCount();
 		if (currentRequest.getLineCount() > MAX_HEAD_LINES)
 		{
-			std::cout << "Too many header lines, need to send a bad request. for now, _get_next_request returns -1" 
-				<< std::endl;
+//			std::cout << "Too many header lines, need to send a bad request. for now, _get_next_request returns -1" 
+//				<< std::endl;
 			return (_invalidRequestProcedure(currentRequest, 400));
 		}
 	}
@@ -1030,29 +1408,73 @@ int		ConnectionClass::_get_next_request(readingBuffer &buffer, HttpRequest& curr
 	{
 		if (currentRequest.getContentLength())
 		{
-			ret_read_content = _read_request_content(currentRequest, buffer, length_parsed);
+			_isHandlingBody = 1;
+			_isParsingContent = 1;
+			_ContentLeftToRead = currentRequest.getContentLength();
+			ret_read_content = _read_request_content(currentRequest, buffer);
 			if (ret_read_content == -1 || ret_read_content == 0)
 			{
+				_isHandlingBody = 0;
+				_isParsingContent = 0;
 				std::cout << "ret_read_content returned -1 OR 0, meaning an error occured. For now, get_next_request forwards this ret_value" << std::endl;
 				return (ret_read_content);
 			}
+			else if (ret_read_content == SAVE_REQUEST)
+			{
+				return (SAVE_REQUEST); //PROCÉDURE SAVE SE FAIT DANS LA FUNC
+			}
+			_isHandlingBody = 0;
+			_isParsingContent = 0;
 		}
 		else if (currentRequest.isChunked())
 		{
-			int chunk_ret = _getChunkedData(currentRequest, buffer, length_parsed);
+			_isHandlingBody = 1;
+			_isChunking = 1;
+			int chunk_ret = _getChunkedData(currentRequest, buffer);
 			if (chunk_ret == 0 || chunk_ret == -1 || chunk_ret == HTTP_ERROR)
+			{
+				_isHandlingBody = 0;
+				_isChunking = 0;
 				return (chunk_ret);
+			}
+			else if (chunk_ret == SAVE_REQUEST)
+			{
+				return (_save_only_request(currentRequest));
+			}
+			_isHandlingBody = 0;
+			_isChunking = 0;
 			if (currentRequest.HasTrailers())
 			{
-				chunk_ret = _readTrailers(buffer, length_parsed, currentRequest);
-			if (chunk_ret == 0 || chunk_ret == -1 || chunk_ret == HTTP_ERROR)
-				return (chunk_ret);
+				_isProcessingTrailers = 1;
+				chunk_ret = _readTrailers(buffer, currentRequest);
+				if (chunk_ret == 0 || chunk_ret == -1 || chunk_ret == HTTP_ERROR)
+					return (chunk_ret);
+				else if (chunk_ret == SAVE_REQUEST)
+				{
+					_save_request_and_buffer(currentRequest, buffer);
+					return (SAVE_REQUEST);
+				}
+				_isProcessingTrailers = 0;
+			}
+			else
+			{
+				_isProcessingLastNL = 1;
+				chunk_ret = _last_nl_procedure(buffer);
+				if (chunk_ret == 0 || chunk_ret == -1 || chunk_ret == HTTP_ERROR)
+					return (chunk_ret);
+				else if (chunk_ret == SAVE_REQUEST)
+				{
+					_save_request_and_buffer(currentRequest, buffer);
+					return (SAVE_REQUEST);
+				}
+				_isProcessingLastNL = 0;
 			}
 		}
 		return (1);
 	}
 	if (ret_read_line == SAVE_REQUEST)
 	{
+//		std::cout << "save request returned by read_line" << std::endl;
 		_save_request_and_buffer(currentRequest, buffer);
 		return (SAVE_REQUEST);
 	}
@@ -1067,6 +1489,7 @@ int			ConnectionClass::receiveRequest(void)
 	readingBuffer	buffer;
 	int		read_ret;
 
+	_hasRead = 0;
 	_initializeBuffer(buffer);
 	read_ret = _read_buffer(buffer, _request_pipeline); // fonction principale
 	if (read_ret == HTTP_ERROR)
@@ -1139,6 +1562,44 @@ int				ConnectionClass::closeConnection(void)
 	else
 		perror("close");
 	return (return_value);
+}
+
+void	ConnectionClass::print_pipeline()
+{
+	size_t i = 0;
+
+	std::cout << std::endl;
+	std::cout <<  " ----------------- FULL REQUEST PIPELINE -------------- " << std::endl;
+
+	std::cout << "WARNING: persistence is an attribute of the connection, not of the request, therefore if \
+the last request is not persistent, all request might be marked as non persistent, even though their \
+header should imply otherwise." << std::endl;
+	std::cout << std::endl;
+	while (i < _request_pipeline.size())
+	{	
+		std::cout << "                 REQUEST NBR:  " << i << std::endl;
+		std::cout << std::endl;
+		std::cout << "START LINE: "  << _request_pipeline[i].getStartLine() << std::endl;
+		std::cout << "URI: " << _request_pipeline[i].getRequestLineInfos().target << std::endl;
+		std::cout << std::endl;
+		std::cout << "HEADERS: " << std::endl;
+		_request_pipeline[i].printHeaders();
+		std::cout << std::endl;
+		std::cout << "ENCODINGS: " << std::endl;
+		print_vec(_request_pipeline[i].getModifyableTE());
+		std::cout << std::endl;
+		std::cout << "BODY: " << _request_pipeline[i].getContent() << std::endl;
+		std::cout << std::endl;
+		std::cout << "TRAILERS: " << std::endl;
+		_request_pipeline[i].printTrailers();
+		std::cout << std::endl;
+		std::cout << "validity: " << _request_pipeline[i].isValid() << std::endl;
+		std::cout << "persistence: " << isPersistent() << std::endl;
+		std::cout << std::endl;
+		std::cout << std::endl;
+		i++;
+	}
+	std::cout <<  "              ------------------------------              " << std::endl;
 }
 
 int				ConnectionClass::getStatus(void) const

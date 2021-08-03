@@ -6,7 +6,7 @@
 /*   By: asablayr <marvin@42.fr>                    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2021/06/06 21:54:40 by asablayr          #+#    #+#             */
-/*   Updated: 2021/08/03 12:12:15 by asablayr         ###   ########.fr       */
+/*   Updated: 2021/08/03 16:26:16 by asablayr         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -160,28 +160,30 @@ void	answer_connection(ConnectionClass& connection)
 		connection.setStatus(CO_ISDONE);
 		return ;
 	}
-	HttpRequest request = connection._request_pipeline[0];
+	HttpRequest& request = connection._request_pipeline[0];
 	HttpResponse response;
 	if (!request.isValid())
-	{
 		return send_error(400, server._default_error_pages, connection);
-	}
-	LocationClass location = server.getLocation(request.getRequestLineInfos().target);
+	LocationClass location = server.getLocation(request.getRequestLineInfos().target);//TODO
 	std::cout << "answering on fd " << connection._socketNbr << std::endl;
 	print_request(request);
 	if (!location.methodIsAllowed(request.getMethod()))
 	{
-//		send_error(405, location.getErrorMap(), connection);
-		return send_error(405, location.getErrorMap(), connection);
+		std::cerr << "forbiden Http request method on location " << location.getUri() << std::endl;
+		return send_error(405, location.getErrorMap(), connection);//TODO
 	}
+	std::cout << "method : " << request.getMethod() << std::endl;
 	switch (request.getMethod())
 	{
 		case GET_METHOD :
 			response = answer_get(request, location);
+			break;
 		case POST_METHOD :
 			response = answer_post(request, location);
+			break;
 		case DELETE_METHOD :
 			response = answer_delete(request, location);
+			break;
 		default :
 			return send_error(501, location.getErrorMap(), connection);
 	}
@@ -221,7 +223,7 @@ void	handle_connection(ConnectionClass& connection)
 		connection.closeConnection();
 		return;
 	}
-//	print_pipeline(RequestPipeline, connection);
+	print_pipeline(RequestPipeline, connection);
 	send_ret = connection.sendResponse("HTTP/1.1 200 OK\r\nContent-length: 52\r\n\r\n<html><body><h1>Welcome to Webser</h1></body></html>");
 	if (send_ret == -1)
 		std::perror("send");

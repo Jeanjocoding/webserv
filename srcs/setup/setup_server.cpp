@@ -6,7 +6,7 @@
 /*   By: asablayr <marvin@42.fr>                    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2021/06/07 19:42:54 by asablayr          #+#    #+#             */
-/*   Updated: 2021/08/02 16:17:31 by asablayr         ###   ########.fr       */
+/*   Updated: 2021/08/03 16:18:32 by asablayr         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -33,7 +33,7 @@ static void	input_context(contextClass const& context, serverClass& base_server,
 		else if ((*it)->_name == "location")
 		{
 			LocationClass *i = dynamic_cast<LocationClass*>(*it);
-			base_server._location[i->getUri()] = new LocationClass(*i);
+			base_server._location.push_back(new LocationClass(*i));
 		}
 		else
 			input_context(**it, base_server, vector_server);
@@ -63,6 +63,6 @@ std::vector<serverClass*>	setup_server(std::string conf_file)
 	}
 	for (std::vector<serverClass*>::iterator it = server_map.begin(); it != server_map.end(); it++)
 		if ((*it)->_location.empty())
-			(*it)->_location["/"] = new LocationClass();
+			(*it)->_location.push_back(new LocationClass());
 	return (server_map);
 }

@@ -6,7 +6,7 @@
 /*   By: asablayr <marvin@42.fr>                    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2021/06/06 15:27:02 by asablayr          #+#    #+#             */
-/*   Updated: 2021/07/22 21:38:12 by asablayr         ###   ########.fr       */
+/*   Updated: 2021/08/03 14:30:28 by asablayr         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -86,7 +86,6 @@ int main(int ac, char** av)
 				}
 				if (check)
 					continue;
-//				handle_connection(connection_map[i]);
 				if (connection_map[i].receiveRequest() <= 0) // close connection if error while receiving paquets
 					connection_map[i].closeConnection();
 				if (connection_map[i].getStatus() == CO_ISCLOSED) // erases if connection has encoutered an error
@@ -103,7 +102,8 @@ int main(int ac, char** av)
 			else if (FD_ISSET(i, &wfds_copy))
 			{
 				answer_connection(connection_map[i]);
-				if (connection_map[i].getStatus() == CO_ISCLOSED) // erase if connection is not persistent or respond has encountered an error
+				connection_map[i].setStatus(CO_ISDONE);
+				if (connection_map[i].getStatus() == CO_ISCLOSED || !connection_map[i].isPersistent()) // erase if connection is not persistent or respond has encountered an error
 				{
 					connection_map[i].closeConnection();
 					FD_CLR(i, &wfds);

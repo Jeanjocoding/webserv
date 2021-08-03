@@ -144,6 +144,40 @@ int	find_in_vec_insensitive(std::vector<std::string>& vec, std::string to_find)
 	return (0);
 }
 
+/*void	print_pipeline(std::vector<HttpRequest>& requestPipeline, ConnectionClass& connection)
+{
+	size_t i = 0;
+
+	std::cout << std::endl;
+	std::cout <<  " ----------------- FULL REQUEST PIPELINE -------------- " << std::endl;
+	std::cout << std::endl;
+	while (i < requestPipeline.size())
+	{	
+		std::cout << "                 REQUEST NBR:  " << i << std::endl;
+		std::cout << std::endl;
+		std::cout << "START LINE: "  << requestPipeline[i].getStartLine() << std::endl;
+		std::cout << "URI: " << requestPipeline[i].getRequestLineInfos().target << std::endl;
+		std::cout << std::endl;
+		std::cout << "HEADERS: " << std::endl;
+		requestPipeline[i].printHeaders();
+		std::cout << std::endl;
+		std::cout << "ENCODINGS: " << std::endl;
+		print_vec(requestPipeline[i].getModifyableTE());
+		std::cout << std::endl;
+		std::cout << "BODY: " << requestPipeline[i].getContent() << std::endl;
+		std::cout << std::endl;
+		std::cout << "TRAILERS: " << std::endl;
+		requestPipeline[i].printTrailers();
+		std::cout << std::endl;
+		std::cout << "validity: " << requestPipeline[i].isValid() << std::endl;
+		std::cout << "persistence: " << connection.isPersistent() << std::endl;
+		std::cout << std::endl;
+		std::cout << std::endl;
+		i++;
+	}
+	std::cout <<  "              ------------------------------              " << std::endl;
+}*/
+
 /*int main(void)
 {
 	std::vector<std::string> result;

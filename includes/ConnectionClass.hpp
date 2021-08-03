@@ -43,8 +43,8 @@
 #include "ConnectionUtils.hpp"
 #include <vector>
 
-#define	READING_BUF_SIZE  600
-#define	SINGLE_READ_SIZE 200
+#define	READING_BUF_SIZE  10000
+#define	SINGLE_READ_SIZE 4
 #define EMPTYBUF_READ_SIZE 4096
 #define MAX_READ_BEFORE_FORCE_CLOSE 25000
 #define	MAX_LINE_LENGTH 12000	// POUR SECURITY
@@ -60,7 +60,7 @@
 #define CONNECTION_CLOSED 0
 #define NO_READ_MODE_DISABLED 0
 #define NO_READ_MODE_ACTIVATED 1
-#define	SAVE_REQUEST 3
+#define	SAVE_REQUEST -4
 #define BUFF_REST 1
 #define REQUEST_AND_BUFF_REST 2
 
@@ -108,6 +108,7 @@ public:
 	int				getStatus(void) const;
 	void			setStatus(int state);
 	bool			isPersistent(void) const;
+	void		print_pipeline();
 
 	// this constructor should be private, but it doesn't work for now when it is.
 	//need to fix, probably an unwanted copy at some point.
@@ -124,18 +125,36 @@ private:
 //	std::vector<HttpRequest> _request_pipeline;
 	HttpRequest	*_incompleteRequest;
 	std::string	*_restBuffer;
+	std::string	*_beginningRestBuffer;
+	std::string	_currentLine;
 
 //	readingBuffer			_buffer;
 
 	/* connection status, we'll see if we really need it */
 	int				_status;
 	bool				_isPersistent;
-	int				_hasRest;
+	int				_hasRestRequest;
+	int				_hasRestBuffer;
+	int				_hasBegRest;
+
+	int				_hasRead;
+	int				_isHandlingBody;
+
+	int				_isParsingContent;
+	int				_ContentLeftToRead;
+
+
+	int				_isChunking;
+	int				_isReadingChunknbr;
+	int				_leftChunkedToRead;
+
+	int				_isProcessingLastNL;
+	int				_isProcessingTrailers;
 
 	int		_read_long_line(std::string& str, readingBuffer& buffer, int& length_parsed);
 	int		_read_buffer(readingBuffer& buffer, std::vector<HttpRequest>& requestPipeline);
-	int		_read_line(readingBuffer& buffer, int& length_parsed, HttpRequest& currentRequest, bool no_read_mode);
-	int		_get_next_request(readingBuffer &buffer, HttpRequest& currentRequest, int& length_parsed, bool no_read_mode);
+	int		_read_line(readingBuffer& buffer, HttpRequest& currentRequest);
+	int		_get_next_request(readingBuffer &buffer, HttpRequest& currentRequest);
 	void		_initializeBuffer(readingBuffer& buffer);
 	int		_read_first_line(readingBuffer& buffer, int& length_parsed, HttpRequest& currentRequest);
 	int		_parse_line(const char *line, int len, HttpRequest& currentRequest);
@@ -143,25 +162,31 @@ private:
 	int		_parseHeaderLine(const char *line, int len, HttpRequest& currentRequest);
 	int		_check_header_compliancy(HttpRequest& CurrentRequest);
 	int		_parseProtocol(HttpRequest& currentRequest, std::string& protocol);
-	int		_read_request_content(HttpRequest& CurrentRequest, readingBuffer& buffer, int&	length_parsed);
+	int		_read_request_content(HttpRequest& CurrentRequest, readingBuffer& buffer);
 	void				_printBufferInfo(readingBuffer& buffer, std::string msg);
 	int		_invalidRequestProcedure(HttpRequest& currentRequest, int errorCode);
 	int				_findInBuf(std::string to_find,char *buf, int findlen, int buflen, int begsearch);
-	void		_save_request_and_buffer(HttpRequest& currentRequest, readingBuffer& readingBuffer);
+	int		_save_request_and_buffer(HttpRequest& currentRequest, readingBuffer& readingBuffer);
 	void		_save_only_buffer(readingBuffer& readingBuffer);
 	int		_caseInsensitiveComparison(std::string s1, std::string s2) const;
 	int		_guaranteedRead(int fd, int to_read, std::string& str_buffer);
-	int		_getChunkedData(HttpRequest& currentRequest, readingBuffer& buffer, int& length_parsed);
-	int		_read_chunked_line(readingBuffer& buffer, int& length_parsed, int read_size, std::string& line);
+	int		_getChunkedData(HttpRequest& currentRequest, readingBuffer& buffer);
+	int		_read_chunked_line(readingBuffer& buffer, std::string& line);
 		int				_findAndParseContentHeaders(HttpRequest& currentRequest, std::pair<std::string, std::string> const& header);
-	int		_readAndAppendChunkBlock(HttpRequest& currentRequest, readingBuffer& buffer, int& length_parsed, int block_length);
+	int		_readAndAppendChunkBlock(HttpRequest& currentRequest, readingBuffer& buffer);
 	int		_processRemainingCrlf(readingBuffer& buffer);
-	int		_readTrailers(readingBuffer& buffer, int& length_parsed, HttpRequest& currentRequest);
+	int		_readTrailers(readingBuffer& buffer, HttpRequest& currentRequest);
 	int		_findInTrailers(std::string& to_find, HttpRequest& currentRequest);
-	int		_read_line_trailer(readingBuffer& buffer, int& length_parsed, HttpRequest& currentRequest);
+	int		_read_line_trailer(readingBuffer& buffer, HttpRequest& currentRequest);
 	int		_parseTrailerLine(const char *line, int len, HttpRequest& currentRequest);
 	int		_findAndParsePersistanceHeaders(HttpRequest& currentRequest, std::pair<std::string, std::string> const& header);
 	int		_emptyReadBuffers() const;
+	int		_saveBegRestProcedure(HttpRequest& currentRequest, readingBuffer& buffer);
+	int		_keepReadingContent(HttpRequest& currentRequest, readingBuffer& buffer);
+	int		_save_only_request(HttpRequest& currentRequest);
+	void		_print_content_info(readingBuffer& buffer, HttpRequest& currentRequest, std::string message);
+	void		_print_content_info(HttpRequest& currentRequest, std::string message);
+	int		_last_nl_procedure(readingBuffer& buffer);
 };
 
 #endif

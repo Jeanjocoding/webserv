@@ -6,7 +6,7 @@
 /*   By: asablayr <marvin@42.fr>                    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2021/06/07 18:49:16 by asablayr          #+#    #+#             */
-/*   Updated: 2021/07/15 18:00:59 by asablayr         ###   ########.fr       */
+/*   Updated: 2021/08/03 16:17:29 by asablayr         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -64,8 +64,8 @@ serverClass::serverClass(serverClass const& to_copy)
 serverClass::~serverClass()
 {
 	close(_server_socket);
-	for (std::map<std::string, LocationClass*>::iterator it = _location.begin(); it != _location.end(); it++)
-		delete it->second;
+	for (std::vector<LocationClass*>::iterator it = _location.begin(); it != _location.end(); it++)
+		delete *it;
 	if (_addr)
 		freeaddrinfo(_addr);
 }
@@ -92,7 +92,7 @@ serverClass& serverClass::operator = (serverClass const& to_copy)
 
 std::string*	serverClass::operator [] (std::string setting_name)
 {
-	if (setting_name == "listen")
+	if (setting_name == "listen")//change for switch
 		return &_listen;
 	else if (setting_name == "port")
 		return &_port;
@@ -120,6 +120,13 @@ std::string*	serverClass::operator [] (std::string setting_name)
 		return &_keepalive_timeout;
 	else
 		return NULL;
+}
+
+LocationClass&	serverClass::getLocation(std::string const& uri) const
+{
+	//TODO
+	std::string tmp = uri;// for compiling
+	return *_location[0];
 }
 
 void serverClass::startServer()

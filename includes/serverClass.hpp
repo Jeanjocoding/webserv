@@ -6,7 +6,7 @@
 /*   By: asablayr <marvin@42.fr>                    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2021/06/07 10:16:05 by asablayr          #+#    #+#             */
-/*   Updated: 2021/08/02 16:08:00 by asablayr         ###   ########.fr       */
+/*   Updated: 2021/08/03 16:13:01 by asablayr         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -32,7 +32,7 @@ class serverClass
 			std::string* operator [] (std::string setting_name);
 
 			void			startServer(void);
-			LocationClass&	getLocation(std::string const& uri) const;
+			LocationClass&	getLocation(std::string const& uri) const;//TODO
 
 			bool									_default_server;
 			std::string								_listen;
@@ -47,7 +47,7 @@ class serverClass
 			std::map<unsigned short, std::string>	_default_error_pages;
 			std::string								_client_body_size_max;
 			std::string								_keepalive_timeout;
-			std::map<std::string, LocationClass*>	_location;
+			std::vector<LocationClass*>				_location;
 
 			int										_server_socket;
 			struct addrinfo							*_addr;
