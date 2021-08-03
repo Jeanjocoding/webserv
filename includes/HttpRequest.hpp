@@ -40,6 +40,7 @@ public:
 	void				incrementLineCount();
 	void				setStartLine(std::string const& line);
 	std::string const&		getStartLine(void) const;
+	int					getMethod(void) const;// TODO
 	long				getContentLength(void) const;
 	void				setContentLength(long length);
 	void				setContent(std::string const& req_content);

@@ -98,12 +98,13 @@ public:
 		- return value of the last "recv" call (to see if it failed or if the connection was closed)
 		- std::string containing the request*/
 //	std::pair<int, std::string>			receiveRequest(void);
-	int				receiveRequest();
+	int				receiveRequest(void);
+//	int				answerRequest(void);
+//	int				answerRequest(HttpRequest& request);//might be const
 
-	int				sendResponse(std::string response);
+	int				sendResponse(std::string response);//move to private
 	int				closeConnection(void);
-	int				_socketNbr;
-	serverClass*	_server;
+	HttpRequest const&	getRequest(unsigned int request_number = 0) const;
 	int				getStatus(void) const;
 	void			setStatus(int state);
 	bool			isPersistent(void) const;
@@ -112,11 +113,15 @@ public:
 	//need to fix, probably an unwanted copy at some point.
 	ConnectionClass(void); 
 
+	std::vector<HttpRequest> _request_pipeline;//might try to switch back to private
+	int				_socketNbr;
+	serverClass*	_server;
+
 
 private:
 	typedef struct readingBuffer readingBuffer;
 
-	std::vector<HttpRequest> _request_pipeline;
+//	std::vector<HttpRequest> _request_pipeline;
 	HttpRequest	*_incompleteRequest;
 	std::string	*_restBuffer;
 

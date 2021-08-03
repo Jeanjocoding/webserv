@@ -6,7 +6,7 @@
 /*   By: asablayr <marvin@42.fr>                    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2021/07/04 17:42:52 by asablayr          #+#    #+#             */
-/*   Updated: 2021/07/18 18:27:20 by asablayr         ###   ########.fr       */
+/*   Updated: 2021/08/02 16:22:23 by asablayr         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -1154,4 +1154,11 @@ void			ConnectionClass::setStatus(int state)
 bool				ConnectionClass::isPersistent() const
 {
 	return (_isPersistent);
+}
+
+HttpRequest const&	ConnectionClass::getRequest(unsigned int request_number) const
+{
+	if (request_number >= _request_pipeline.size())
+		request_number = _request_pipeline.size() - 1;
+	return (_request_pipeline[request_number]);
 }
