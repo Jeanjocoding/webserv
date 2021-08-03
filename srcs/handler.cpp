@@ -6,7 +6,7 @@
 /*   By: asablayr <marvin@42.fr>                    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2021/06/06 21:54:40 by asablayr          #+#    #+#             */
-/*   Updated: 2021/08/03 16:26:16 by asablayr         ###   ########.fr       */
+/*   Updated: 2021/08/03 16:39:19 by asablayr         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -96,6 +96,8 @@ static HttpResponse	answer_get(HttpRequest const& request, LocationClass const& 
 {
 	HttpResponse	response;
 	std::string		tmp = location.getRoot();
+
+	//TODO
 	
 	tmp += request.getRequestLineInfos().target;
 
@@ -137,6 +139,8 @@ static HttpResponse	answer_post(HttpRequest const& request, LocationClass const&
 	HttpResponse	response;
 	std::string		tmp = location.getRoot();
 
+	//TODO
+
 	tmp += request.getRequestLineInfos().target;
 	std::cout << "answering post request\n";
 	return response;
@@ -147,6 +151,7 @@ static HttpResponse	answer_delete(HttpRequest const& request, LocationClass cons
 	HttpResponse	response;
 	std::string		tmp = location.getRoot();
 
+	//TODO
 	tmp += request.getRequestLineInfos().target;
 	std::cout << "answering delete request\n";
 	return response;
@@ -165,29 +170,27 @@ void	answer_connection(ConnectionClass& connection)
 	if (!request.isValid())
 		return send_error(400, server._default_error_pages, connection);
 	LocationClass location = server.getLocation(request.getRequestLineInfos().target);//TODO
-	std::cout << "answering on fd " << connection._socketNbr << std::endl;
 	print_request(request);
 	if (!location.methodIsAllowed(request.getMethod()))
 	{
 		std::cerr << "forbiden Http request method on location " << location.getUri() << std::endl;
 		return send_error(405, location.getErrorMap(), connection);//TODO
 	}
-	std::cout << "method : " << request.getMethod() << std::endl;
 	switch (request.getMethod())
 	{
 		case GET_METHOD :
-			response = answer_get(request, location);
+			response = answer_get(request, location);//TODO
 			break;
 		case POST_METHOD :
-			response = answer_post(request, location);
+			response = answer_post(request, location);//TODO
 			break;
 		case DELETE_METHOD :
-			response = answer_delete(request, location);
+			response = answer_delete(request, location);//TODO
 			break;
 		default :
 			return send_error(501, location.getErrorMap(), connection);
 	}
-	if (connection.sendResponse("HTTP/1.1 200 OK\r\nContent-length: 52\r\n\r\n<html><body><h1>Welcome to Webser</h1></body></html>") == -1)
+	if (connection.sendResponse("HTTP/1.1 200 OK\r\nContent-length: 52\r\n\r\n<html><body><h1>Welcome to Webser</h1></body></html>") == -1)// for testing
 //	if (connection.sendResponse(response.toString) == -1)
 	{
 		std::perror("send");
