@@ -1,12 +1,8 @@
 #ifndef HTTPREQUEST_H
 # define HTTPREQUEST_H
 
-#include "HttpMessage.hpp"
 #include <vector>
-
-#define GET_METHOD 1
-#define POST_METHOD 2
-#define DELETE_METHOD 3
+#include "HttpMessage.hpp"
 
 typedef struct s_requestLineInfos
 {
@@ -40,7 +36,7 @@ public:
 	void				incrementLineCount();
 	void				setStartLine(std::string const& line);
 	std::string const&		getStartLine(void) const;
-	int					getMethod(void) const;// TODO
+	int					getMethod(void) const;
 	long				getContentLength(void) const;
 	void				setContentLength(long length);
 	void				setContent(std::string const& req_content);

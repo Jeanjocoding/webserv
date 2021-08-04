@@ -3,6 +3,8 @@
 
 #include <iostream>
 #include <map>
+#include "http_method.hpp"
+
 
 class HttpMessage {
 

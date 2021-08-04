@@ -6,7 +6,7 @@
 /*   By: asablayr <marvin@42.fr>                    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2021/06/06 21:54:40 by asablayr          #+#    #+#             */
-/*   Updated: 2021/08/03 16:39:19 by asablayr         ###   ########.fr       */
+/*   Updated: 2021/08/04 12:16:58 by asablayr         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -83,7 +83,7 @@ void	print_request(HttpRequest& request)
 
 static void	send_error(unsigned short error_nb, std::map<unsigned short, std::string> const& error_map, ConnectionClass& connection)
 {
-	HttpResponse response = HttpResponse(error_nb, error_map.find(error_nb)->second);
+	HttpResponse response = HttpResponse(error_nb, error_map.find(error_nb)->second);//TODO
 	if (connection.sendResponse(response.toString()) == -1)
 	{
 		std::perror("send");
