@@ -6,12 +6,13 @@
 /*   By: asablayr <marvin@42.fr>                    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2021/06/06 21:54:40 by asablayr          #+#    #+#             */
-/*   Updated: 2021/08/04 12:16:58 by asablayr         ###   ########.fr       */
+/*   Updated: 2021/08/04 21:36:47 by asablayr         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include <utility>
 #include <iostream>
+#include <fstream>
 #include <vector>
 #include <cstdio>
 #include <vector>
@@ -89,6 +90,14 @@ static void	send_error(unsigned short error_nb, std::map<unsigned short, std::st
 		std::perror("send");
 		connection.closeConnection();
 	}
+	connection._request_pipeline.erase(connection._request_pipeline.begin());//might put this part in a connection method
+	if (connection._request_pipeline.empty())
+	{
+		if (connection.isPersistent())
+			connection.setStatus(CO_ISDONE);
+		else
+			connection.closeConnection();
+	}
 	return ;
 }
 
@@ -99,39 +108,36 @@ static HttpResponse	answer_get(HttpRequest const& request, LocationClass const& 
 
 	//TODO
 	
-	tmp += request.getRequestLineInfos().target;
-
-	std::cout << "answering get request\n";
+	std::cout << "root : " << location.getRoot() << std::endl;
+	tmp.append(request.getRequestLineInfos().target);
+	std::cout << "answering get request\ntrying to get file : " << tmp << std::endl;
 /*
-	if (request.uriIsFile())
+//	if (request.uriIsFile())//TODO
+	if (request.getRequestLineInfos().target.end()-- != '/')
 	{
-		tmp += request.getRquestLine().taget;
-		ifstream body(tmp);
+		tmp = location.getRoot();
+		tmp += request.getRequestLineInfos().target;
+		std::ifstream body;
+		body.open(tmp.c_str());
 		if (!body.is_open())
-			send_error(404, location.getErrorMap(), connection);
+			response = HttpResponse(404, location.getErrorMap().find(404)->second);
 		else
-		{
 			response = HttpResponse(200, tmp);
-			connection.sendResponse(resesponse.toString());
-		}
 	}
 	else
 	{
-		tmp = location.getIndex()
-		if ( && location.autoIndexIsOn())// to code
-			return answer_auto_index();// to code
+		tmp = location.getIndex();//TODO
+		if (tmp.empty() && location.autoIndexIsOn())
+			response.setBody(location.getAutoIndex());// to code
 		tmp += location.getIndex();// to code
-		ifstream body(tmp);
+		std::ifstream body;
+		body.open(tmp.c_str());
 		if (!body.is_open())
-			send_error(404, location.getErrorMap(), connection);
+			response = HttpResponse(404, location.getErrorMap().find(404)->second);
 		else
-		{
-			response = HttpResponse(200, getRequestLine().target);
-			connection.sendResponse(resesponse.toString());
-		}
+			response = HttpResponse(200, request.getRequestLineInfos().target);
 	}
 */	return response;
-		
 }
 
 static HttpResponse	answer_post(HttpRequest const& request, LocationClass const& location)
@@ -141,7 +147,7 @@ static HttpResponse	answer_post(HttpRequest const& request, LocationClass const&
 
 	//TODO
 
-	tmp += request.getRequestLineInfos().target;
+	tmp.append(request.getRequestLineInfos().target);
 	std::cout << "answering post request\n";
 	return response;
 }
@@ -152,7 +158,7 @@ static HttpResponse	answer_delete(HttpRequest const& request, LocationClass cons
 	std::string		tmp = location.getRoot();
 
 	//TODO
-	tmp += request.getRequestLineInfos().target;
+	tmp.append(request.getRequestLineInfos().target);
 	std::cout << "answering delete request\n";
 	return response;
 }
@@ -160,13 +166,13 @@ static HttpResponse	answer_delete(HttpRequest const& request, LocationClass cons
 void	answer_connection(ConnectionClass& connection)
 {
 	serverClass& server = *connection._server;
+	HttpResponse response;
 	if (connection._request_pipeline.empty())
 	{
 		connection.setStatus(CO_ISDONE);
 		return ;
 	}
 	HttpRequest& request = connection._request_pipeline[0];
-	HttpResponse response;
 	if (!request.isValid())
 		return send_error(400, server._default_error_pages, connection);
 	LocationClass location = server.getLocation(request.getRequestLineInfos().target);//TODO
@@ -197,7 +203,7 @@ void	answer_connection(ConnectionClass& connection)
 		connection.closeConnection();
 		return ;
 	}
-	connection._request_pipeline.erase(connection._request_pipeline.begin());
+	connection._request_pipeline.erase(connection._request_pipeline.begin());//might put this part in a connection method
 	if (connection._request_pipeline.empty())
 	{
 		if (connection.isPersistent())

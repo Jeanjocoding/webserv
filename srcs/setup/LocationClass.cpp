@@ -6,7 +6,7 @@
 /*   By: asablayr <marvin@42.fr>                    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2021/07/15 13:31:12 by asablayr          #+#    #+#             */
-/*   Updated: 2021/08/03 16:20:14 by asablayr         ###   ########.fr       */
+/*   Updated: 2021/08/04 21:31:59 by asablayr         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -14,13 +14,11 @@
 #include <sstream>
 #include "LocationClass.hpp"
 
-LocationClass::LocationClass()
+LocationClass::LocationClass(): _uri("/"), _param(""), _root("."), _index("index.html"), _auto_index(false)
 {
-	_uri = "/";
-	_param = "";
-	_methods[GET_RANK] = true;
-	_methods[POST_RANK] = true;
-	_methods[DELETE_RANK] = true;
+	_methods[GET_METHOD] = true;
+	_methods[POST_METHOD] = true;
+	_methods[DELETE_METHOD] = true;
 }
 
 LocationClass::LocationClass(std::string const& params, std::string const& buff)
@@ -33,20 +31,18 @@ LocationClass::LocationClass(std::string const& params, std::string const& buff)
 		_param = _uri;
 		_uri = tmp;
 	}
-	_methods[GET_RANK] = true;
-	_methods[POST_RANK] = true;
-	_methods[DELETE_RANK] = true;
+	_methods[GET_METHOD] = true;
+	_methods[POST_METHOD] = true;
+	_methods[DELETE_METHOD] = true;
 	setContext("location", buff);
 	setMethods();
 }
 
-LocationClass::LocationClass(LocationClass const& copy)
+LocationClass::LocationClass(LocationClass const& copy): _uri(copy._uri), _param(copy._param), _root(copy._root), _index(copy._index), _auto_index(copy._auto_index)
 {
-	_uri = copy._uri;
-	_param = copy._param;
-	_methods[GET_RANK] = copy._methods[GET_RANK];
-	_methods[POST_RANK] = copy._methods[POST_RANK];
-	_methods[DELETE_RANK] = copy._methods[DELETE_RANK];
+	_methods[GET_METHOD] = copy._methods[GET_METHOD];
+	_methods[POST_METHOD] = copy._methods[POST_METHOD];
+	_methods[DELETE_METHOD] = copy._methods[DELETE_METHOD];
 }
 
 LocationClass::~LocationClass()
@@ -58,9 +54,12 @@ LocationClass& LocationClass::operator = (LocationClass const& copy)
 {
 	_uri = copy._uri;
 	_param = copy._param;
-	_methods[GET_RANK] = copy._methods[GET_RANK];
-	_methods[POST_RANK] = copy._methods[POST_RANK];
-	_methods[DELETE_RANK] = copy._methods[DELETE_RANK];
+	_root = copy._root;
+	_index = copy._index;
+	_methods[GET_METHOD] = copy._methods[GET_METHOD];
+	_methods[POST_METHOD] = copy._methods[POST_METHOD];
+	_methods[DELETE_METHOD] = copy._methods[DELETE_METHOD];
+	_auto_index = copy._auto_index;
 	return *this;
 }
 
@@ -79,6 +78,11 @@ std::string	LocationClass::getRoot(void) const
 	return _root;
 }
 
+std::string	LocationClass::getIndex(void) const
+{
+	return _index;
+}
+
 std::string	LocationClass::getAutoIndex(void) const
 {
 	//TODO
@@ -95,6 +99,11 @@ std::string	LocationClass::getErrorPage(unsigned short error_code)
 	return _error_pages[error_code];
 }
 
+std::string	LocationClass::getErrorPage(unsigned short error_code) const
+{
+	return _error_pages.find(error_code)->second;
+}
+
 void	LocationClass::setMethods(void)
 {
 	std::map<std::string, std::string>::iterator it = _directives.find("limit_except");
@@ -104,17 +113,17 @@ void	LocationClass::setMethods(void)
 	std::vector<std::string> vect;
 	for (std::string tmp; iss >> tmp;)
 		vect.push_back(tmp);
-	_methods[GET_RANK] = false;
-	_methods[POST_RANK] = false;
-	_methods[DELETE_RANK] = false;
+	_methods[GET_METHOD] = false;
+	_methods[POST_METHOD] = false;
+	_methods[DELETE_METHOD] = false;
 	for (std::vector<std::string>::iterator i = vect.begin(); i != vect.end(); i++)
 	{
 		if (*i == "GET")
-			_methods[GET_RANK] = true;
+			_methods[GET_METHOD] = true;
 		else if (*i == "POST")
-			_methods[POST_RANK] = true;
+			_methods[POST_METHOD] = true;
 		else if (*i == "DELETE")
-			_methods[DELETE_RANK] = true;
+			_methods[DELETE_METHOD] = true;
 		else
 			continue;
 	}	

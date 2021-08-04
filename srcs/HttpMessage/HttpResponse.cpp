@@ -6,7 +6,7 @@
 /*   By: asablayr <marvin@42.fr>                    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2021/08/02 16:27:33 by asablayr          #+#    #+#             */
-/*   Updated: 2021/08/04 19:09:28 by asablayr         ###   ########.fr       */
+/*   Updated: 2021/08/04 19:30:10 by asablayr         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -48,14 +48,9 @@ HttpResponse&	HttpResponse::operator=(HttpResponse const& to_copy)
 
 std::string		HttpResponse::toString(void) const
 {
-	std::string res = headerToString();
-	res += _body;
+	std::string res = _header;
+	res.append(_body);
 	return res;
-}
-
-std::string		HttpResponse::headerToString(void) const
-{
-	return _header;
 }
 
 void	HttpResponse::setStatusCode(std::string const& status_str)
@@ -82,25 +77,25 @@ void	HttpResponse::setHeader(void)
 	setLength();
 	setConnectionStatus();//TODO
 	_header = "HTTP/1.1 ";
-	_header += _status_code;
-	_header += " ";
-	_header += _status_message;
-	_header += "\r\n";
-	_header += "Date: ";
-	_header += _date;
-	_header += "\r\n";
-	_header += "Server: ";
-	_header += _server_name;//TODO get server_name from server
-	_header += "\r\n";
-	_header += "Content-Length: ";
-	_header += _content_length;
-	_header += "\r\n";
-	_header += "Content-Type: ";
-	_header += "text/html; charset=iso-8859-1";
-	_header += "\r\n";
-	_header += "Connection: ";
-	_header += _connection;
-	_header += "\r\n";
+	_header.append(_status_code);
+	_header.append(" ");
+	_header.append(_status_message);
+	_header.append("\r\n");
+	_header.append("Date: ");
+	_header.append(_date);
+	_header.append("\r\n");
+	_header.append("Server: ");
+	_header.append(_server_name);//TODO get server_name from server
+	_header.append("\r\n");
+	_header.append("Content-Length: ");
+	_header.append(_content_length);
+	_header.append("\r\n");
+	_header.append("Content-Type: ");
+	_header.append("text/html; charset=iso-8859-1");
+	_header.append("\r\n");
+	_header.append("Connection: ");
+	_header.append(_connection);
+	_header.append("\r\n");
 }
 
 bool	HttpResponse::setBody(std::string const& body_path)
