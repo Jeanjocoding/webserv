@@ -6,13 +6,14 @@
 /*   By: asablayr <marvin@42.fr>                    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2021/06/21 17:42:15 by asablayr          #+#    #+#             */
-/*   Updated: 2021/07/18 12:16:41 by asablayr         ###   ########.fr       */
+/*   Updated: 2021/08/08 18:05:24 by asablayr         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include <iostream>
 #include <fstream>
 #include <sstream>
+#include <sys/stat.h>
 #include "directiveClass.hpp"
 
 directiveClass::directiveClass()
@@ -47,37 +48,16 @@ bool	directiveClass::isInContext(std::string const& context_name) const
 
 static bool	onOffParse(std::string const& arg)
 {
-	for (std::size_t i = 0; arg[i]; i++)
-	{
-		if (arg[i] == ' ')
-			continue;
-		else if (arg[i] == 'o')
-		{
-			if (i + 1 < arg.size() && arg[i + 1] == 'n')
-			{
-				i += 2;
-				while (arg[i] && arg[i] == ' ')
-					i++;
-				if (arg[i] != ';')
-					return false;
-				else
-					return true;
-			}
-			else if (i + 2 < arg.size() && arg[i + 1] == 'f' && arg[i + 2] == 'f')
-			{
-				i += 3;
-				while (arg[i] && arg[i] == ' ')
-					i++;
-				if (arg[i] != ';')
-					return false;
-				else
-					return true;
-			}
-		}
-		else
-			return false;
-	}
-	return false;
+	std::istringstream iss(arg);
+	std::vector<std::string> vect;
+	std::string tmp;
+	while (iss >> tmp)
+		vect.push_back(tmp);
+	if (vect.size() != 1)
+		return false;
+	if (vect[0] != "on" && vect[0] != "off")
+		return false;
+	return true;
 }
 
 static bool	stringParse(void)
@@ -87,30 +67,26 @@ static bool	stringParse(void)
 
 static bool	fileParse(std::string const& arg)
 {
-	std::string::const_iterator	it = arg.begin();
-	std::string::const_iterator	ite = arg.begin();
-	int							i = 0;
-	std::string					tmp;
 	std::ofstream				file;
+	std::istringstream			iss(arg);
+	std::vector<std::string>	vect;
+	std::string					tmp;
 
-	while (it != arg.end() && *it == ' ')
-	{
-		it++;
-		i++;
-	}
-	if (it == arg.end())
+	while (iss >> tmp)
+		vect.push_back(tmp);
+	if (vect.size() != 1)
 		return false;
-	if (arg.find(' ', it - arg.begin()) < arg.find(';', it - arg.begin()))
-		ite += arg.find(' ', it - arg.begin());
-	else if (arg.find(' ', it - arg.begin()) == std::string::npos)
-		ite = arg.end();
-	else
-		ite = arg.begin() + arg.find(';', it - arg.begin());
-	tmp = std::string(it ,ite);
-	file.open(tmp.c_str());
+	file.open(vect[0].c_str());
 	if (!file.is_open())
 		return false;
 	file.close();
+	return true;
+}
+
+static bool	inputFileParse(std::string const& arg)
+{
+	if (arg.empty())
+		return false;
 	return true;
 }
 
@@ -203,19 +179,14 @@ static bool	timeParse(std::string& arg)
 
 static bool	pathParse(std::string& arg)
 {
-	std::size_t	i = 0;
+	struct stat info;
 
-	while (arg[i] && arg[i] == ' ')
-		i++;
-	if (!arg[i] || (arg[i] != '/' && arg[i] != '.'))
+	if (stat(arg.c_str(), &info) != 0)
 		return false;
-	while (arg[i] && arg[i] != ' ')
-		i++;
-	while (arg[i] && arg[i] == ' ')
-		i++;
-	if (arg[i])
+	else if (info.st_mode & S_IFDIR)
+		return true;
+	else
 		return false;
-	return true;
 }
 
 static bool	allAnyParse(std::string& arg)
@@ -383,7 +354,25 @@ static bool	codeUriParse(std::string arg)
 	arg.erase(0, i);
 	if (arg.empty())
 		return true;
-	return (pathParse(arg));
+	if (pathParse(arg) || inputFileParse(arg))//might change inputFileParse by fileParse
+		return true;
+	return false;
+}
+
+static bool	codeFileParse(std::string arg)
+{
+	std::size_t	i = 0;
+
+	while (arg[i] && arg[i] == ' ')
+		i++;
+	for (short it = 0; arg[i] && arg[i] >= '0' && arg[i] <= '9' && it < 3; it++)
+		i++;
+	while (arg[i] && arg[i] == ' ')
+		i++;
+	arg.erase(0, i);
+	if (arg.empty())
+		return true;
+	return (inputFileParse(arg));
 }
 
 static bool methodParse(std::string arg)
@@ -433,6 +422,8 @@ bool	directiveClass::parse(std::string arg)
 			return (stringParse());
 		case SYNTAX_FILE:
 			return (fileParse(arg));
+		case SYNTAX_INPUT_FILE:
+			return (inputFileParse(arg));
 		case SYNTAX_PATH:
 			return (pathParse(arg));
 		case SYNTAX_SIZE:
@@ -453,6 +444,8 @@ bool	directiveClass::parse(std::string arg)
 			return (rateParse(arg));
 		case SYNTAX_CODE_URI:
 			return (codeUriParse(arg));
+		case SYNTAX_CODE_FILE:
+			return (codeFileParse(arg));
 		case SYNTAX_METHOD:
 			return (methodParse(arg));
 		default:

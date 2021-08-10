@@ -6,22 +6,23 @@
 /*   By: asablayr <marvin@42.fr>                    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2021/07/15 13:31:12 by asablayr          #+#    #+#             */
-/*   Updated: 2021/08/04 21:31:59 by asablayr         ###   ########.fr       */
+/*   Updated: 2021/08/10 18:31:26 by asablayr         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include <iostream>
 #include <sstream>
+#include <cstdlib>
 #include "LocationClass.hpp"
 
-LocationClass::LocationClass(): _uri("/"), _param(""), _root("."), _index("index.html"), _auto_index(false)
+LocationClass::LocationClass(): _uri("/"), _param(""), _root("."), _index("index.html"), _autoindex(false)
 {
 	_methods[GET_METHOD] = true;
 	_methods[POST_METHOD] = true;
 	_methods[DELETE_METHOD] = true;
 }
 
-LocationClass::LocationClass(std::string const& params, std::string const& buff)
+LocationClass::LocationClass(std::string const& params, std::string const& buff) : contextClass("location", buff), _uri("/"), _param(""), _root("."), _index("index.html"), _autoindex(false)
 {
 	std::istringstream iss(params);
 	std::string tmp;
@@ -34,11 +35,15 @@ LocationClass::LocationClass(std::string const& params, std::string const& buff)
 	_methods[GET_METHOD] = true;
 	_methods[POST_METHOD] = true;
 	_methods[DELETE_METHOD] = true;
-	setContext("location", buff);
+	setRoot();
+	setIndex();
+	setAutoindex();
+	setErrorPages();
+	setRedirect();
 	setMethods();
 }
 
-LocationClass::LocationClass(LocationClass const& copy): _uri(copy._uri), _param(copy._param), _root(copy._root), _index(copy._index), _auto_index(copy._auto_index)
+LocationClass::LocationClass(LocationClass const& copy): contextClass(copy), _uri(copy._uri), _param(copy._param), _root(copy._root), _index(copy._index), _autoindex(copy._autoindex)
 {
 	_methods[GET_METHOD] = copy._methods[GET_METHOD];
 	_methods[POST_METHOD] = copy._methods[POST_METHOD];
@@ -52,6 +57,7 @@ LocationClass::~LocationClass()
 
 LocationClass& LocationClass::operator = (LocationClass const& copy)
 {
+	contextClass::operator = (copy);
 	_uri = copy._uri;
 	_param = copy._param;
 	_root = copy._root;
@@ -59,7 +65,7 @@ LocationClass& LocationClass::operator = (LocationClass const& copy)
 	_methods[GET_METHOD] = copy._methods[GET_METHOD];
 	_methods[POST_METHOD] = copy._methods[POST_METHOD];
 	_methods[DELETE_METHOD] = copy._methods[DELETE_METHOD];
-	_auto_index = copy._auto_index;
+	_autoindex = copy._autoindex;
 	return *this;
 }
 
@@ -94,14 +100,92 @@ std::map<unsigned short, std::string>& LocationClass::getErrorMap(void)
 	return _error_pages;
 }
 
-std::string	LocationClass::getErrorPage(unsigned short error_code)
+std::string&	LocationClass::getErrorPage(unsigned short error_code)
 {
 	return _error_pages[error_code];
 }
 
-std::string	LocationClass::getErrorPage(unsigned short error_code) const
+std::string		LocationClass::getErrorPage(unsigned short error_code) const
 {
 	return _error_pages.find(error_code)->second;
+}
+
+void	LocationClass::setErrorPages(std::map<unsigned short, std::string> const& error_map)
+{
+	_error_pages = error_map;
+}
+
+bool LocationClass::methodIsAllowed(unsigned int method) const
+{
+	if (method < 0 || method > 2)
+		return false;
+	else 
+		return _methods[method];
+}
+
+bool LocationClass::autoIndexIsOn(void) const
+{
+	return _autoindex;
+}
+
+unsigned int LocationClass::matchUri(std::string const& s) const
+{
+	int res = 0;
+	for (std::string::const_iterator it = _uri.begin(), i = s.begin(); i != s.end() && it != _uri.end(); i++, it++, res++)
+		if (*i != *it)
+			return res;
+	return res;
+}
+
+void	LocationClass::setRoot(void)
+{
+	std::map<std::string, std::string>::const_iterator it = _directives.find("root");
+	if (it == _directives.end())
+		return ;
+	_root = it->second;
+}
+
+void	LocationClass::setRoot(std::string root)
+{
+	_root = root;
+}
+
+void	LocationClass::setIndex(void)
+{
+	std::map<std::string, std::string>::const_iterator it = _directives.find("index");
+	if (it == _directives.end())
+		return ;
+	_index = it->second;
+}
+
+void	LocationClass::setIndex(std::string index)
+{
+	_index = index;
+}
+
+void	LocationClass::setAutoindex(void)
+{
+	std::map<std::string, std::string>::const_iterator it = _directives.find("autoindex");
+	if (it == _directives.end())
+		return ;
+	if (it->second == "on")
+		_autoindex = true;
+	else
+		_autoindex = false;
+}
+
+void	LocationClass::setRedirect(void)
+{
+	std::map<std::string, std::string>::const_iterator it = _directives.find("redirect");
+	if (it == _directives.end())
+		return ;
+	std::istringstream ss(it->second);
+	std::string tmp;
+	_redirect_bool = true;
+	ss >> tmp;
+	_redirect_code = std::atoi(tmp.c_str());
+	ss >> tmp;
+	_redirect_uri = tmp; 
 }
 
 void	LocationClass::setMethods(void)
@@ -129,29 +213,48 @@ void	LocationClass::setMethods(void)
 	}	
 }
 
-void	LocationClass::setErrorPages(std::map<unsigned short, std::string> const& error_map)
+void	LocationClass::setErrorPages(void)
 {
-	_error_pages = error_map;
+	std::pair<std::multimap<std::string, std::string>::iterator, std::multimap<std::string, std::string>::iterator> p = _directives.equal_range("error_page");
+	if (p.first == _directives.end())
+		return ;
+	while (p.first != p.second)
+	{
+		std::istringstream iss(p.first->second);
+		std::vector<std::string> vect;
+		for (std::string tmp; iss >> tmp;)
+			vect.push_back(tmp);
+		_error_pages[std::atoi(vect[0].c_str())] = vect[1];
+		p.first++;
+	}
 }
 
-bool LocationClass::methodIsAllowed(unsigned int method) const
+/***********************************************************************************/
+/*							TESTING												   */
+/***********************************************************************************/
+
+void	LocationClass::printLocation(void) const
 {
-	if (method < 0 || method > 2)
-		return false;
-	else 
-		return _methods[method];
+	std::cout << "_uri : " << _uri << std::endl;
+	std::cout << "_param : " << _param << std::endl;
+	std::cout << "_root : " << _root << std::endl;
+	std::cout << "_index : " << _index << std::endl;
+	std::cout << "GET : " << _methods[GET_METHOD] << std::endl;
+	std::cout << "DELETE : " << _methods[DELETE_METHOD] << std::endl;
+	std::cout << "POST : " << _methods[POST_METHOD] << std::endl;
+	std::cout << "autoindex : " << _autoindex << std::endl;
+	for (std::map<unsigned short, std::string>::const_iterator it = _error_pages.begin(); it != _error_pages.end(); it++)
+		std::cout << "_error_pages : " << it->second << std::endl;
 }
 
-bool LocationClass::autoIndexIsOn(void) const
+void	LocationClass::printDirectives(void) const
 {
-	return _auto_index;
-}
-
-unsigned int LocationClass::matchUri(std::string const& s) const
-{
-	int res = 0;
-	for (std::string::const_iterator it = _uri.begin(), i = s.begin(); i != s.end() && it != _uri.end(); i++, it++, res++)
-		if (*i != *it)
-			return res;
-	return res;
+	if (_directives.empty())
+	{
+		std::cout << "empty directives\n";
+		return;
+	}
+	std::cout << "directives : " << _directives.size() << "\n";
+	for (std::multimap<std::string, std::string>::const_iterator it = _directives.begin(); it != _directives.end(); it++)
+		std::cout << "_directive " << it->first << " : " << it->second << std::endl;
 }

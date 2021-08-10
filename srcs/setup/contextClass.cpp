@@ -6,7 +6,7 @@
 /*   By: asablayr <marvin@42.fr>                    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2021/06/12 15:24:19 by asablayr          #+#    #+#             */
-/*   Updated: 2021/07/17 17:14:29 by asablayr         ###   ########.fr       */
+/*   Updated: 2021/08/08 18:44:06 by asablayr         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -133,9 +133,10 @@ void contextClass::setDirectives(void)
 {
     if (_name == "http")
 	{
-       _directive_set.push_back(_accepted_directive_set["access_log"]);
-       _directive_set.push_back(_accepted_directive_set["error_log"]);
-       _directive_set.push_back(_accepted_directive_set["index"]);
+		_directive_set.push_back(_accepted_directive_set["access_log"]);
+		_directive_set.push_back(_accepted_directive_set["error_log"]);
+		_directive_set.push_back(_accepted_directive_set["index"]);
+		_directive_set.push_back(_accepted_directive_set["error_page"]);
 	}
 	else if (_name == "events")
 	{
@@ -144,21 +145,27 @@ void contextClass::setDirectives(void)
 	}
     else if (_name == "server")
 	{
-       _directive_set.push_back(_accepted_directive_set["listen"]);
-       _directive_set.push_back(_accepted_directive_set["server_name"]);
-       _directive_set.push_back(_accepted_directive_set["access_log"]);
-       _directive_set.push_back(_accepted_directive_set["error_log"]);
-       _directive_set.push_back(_accepted_directive_set["root"]);
-       _directive_set.push_back(_accepted_directive_set["return"]);
+		_directive_set.push_back(_accepted_directive_set["listen"]);
+		_directive_set.push_back(_accepted_directive_set["server_name"]);
+		_directive_set.push_back(_accepted_directive_set["access_log"]);
+		_directive_set.push_back(_accepted_directive_set["error_log"]);
+		_directive_set.push_back(_accepted_directive_set["root"]);
+		_directive_set.push_back(_accepted_directive_set["return"]);
+		_directive_set.push_back(_accepted_directive_set["error_page"]);
+		_directive_set.push_back(_accepted_directive_set["index"]);
 	}
     else if (_name == "location")
 	{
-       _directive_set.push_back(_accepted_directive_set["fastcgi_pass"]);
-       _directive_set.push_back(_accepted_directive_set["access_log"]);
-       _directive_set.push_back(_accepted_directive_set["error_log"]);
-       _directive_set.push_back(_accepted_directive_set["root"]);
-       _directive_set.push_back(_accepted_directive_set["return"]);
-       _directive_set.push_back(_accepted_directive_set["limit_except"]);
+		_directive_set.push_back(_accepted_directive_set["fastcgi_pass"]);
+		_directive_set.push_back(_accepted_directive_set["access_log"]);
+		_directive_set.push_back(_accepted_directive_set["error_log"]);
+		_directive_set.push_back(_accepted_directive_set["root"]);
+		_directive_set.push_back(_accepted_directive_set["return"]);
+		_directive_set.push_back(_accepted_directive_set["limit_except"]);
+		_directive_set.push_back(_accepted_directive_set["error_page"]);
+		_directive_set.push_back(_accepted_directive_set["index"]);
+		_directive_set.push_back(_accepted_directive_set["autoindex"]);
+		
 	}
     else
 	{
@@ -359,7 +366,33 @@ void	contextClass::getDirectivesInContext(void)
 {
 	for (std::vector<directiveClass>::iterator it = _directive_set.begin(); it != _directive_set.end(); it++)
 	{
-		std::pair<bool, std::string>check = getSingleDirective(it->_name, _block_content);//get directive and erase it from buffer
+		std::pair<bool, std::string> check = getSingleDirective(it->_name, _block_content);//get directive and erase it from buffer
+		if (it->_name == "error_page")// if directive is error_page, run through all possible errors
+		{
+			while (check.first)
+			{
+				_block_content.erase(_block_content.find(check.second), check.second.size() + 1);
+				check.second.erase(check.second.find(it->_name), (it->_name).size());
+				while (check.second[0] == ' ')
+					check.second.erase(0, 1);
+				while (check.second.size() && check.second[check.second.size() - 1] == ' ')
+					check.second.erase(check.second.size() - 1, 1);
+				if (check.second.empty())
+				{
+					std::cerr << "empty directive " << it->_name << std::endl;
+					exit(EXIT_FAILURE);
+				}
+				if (it->parse(check.second))
+					_directives.insert(std::pair<std::string, std::string>(it->_name, check.second));
+				else
+				{
+					std::cerr << "wrong " << it->_name << " directive argument : " << check.second << " in context " << _name << std::endl;
+					exit(EXIT_FAILURE);
+				}
+				check = getSingleDirective(it->_name, _block_content);//get directive and erase it from buffer
+			}
+			continue;
+		}
 		if (check.first)
 		{
 			_block_content.erase(_block_content.find(check.second), check.second.size() + 1);
@@ -374,17 +407,17 @@ void	contextClass::getDirectivesInContext(void)
 				exit(EXIT_FAILURE);
 			}
 			if (it->parse(check.second))
-				_directives[it->_name] = check.second;
+				_directives.insert(std::pair<std::string, std::string>(it->_name, check.second));
 			else
 			{
 				std::cerr << "wrong " << it->_name << " directive argument : " << check.second << " in context " << _name << std::endl;
 				exit(EXIT_FAILURE);
 			}
-		}
-		if (getSingleDirective(it->_name, _block_content).first)//check for same directive
-		{
-			std::cerr << "error configuration file : directive " << it->_name << " found twice in same context" << std::endl;//switch to define
-			exit(EXIT_FAILURE);
+			if (getSingleDirective(it->_name, _block_content).first)//check for same directive
+			{
+				std::cerr << "error configuration file : directive " << it->_name << " found twice in same context" << std::endl;//switch to define
+				exit(EXIT_FAILURE);
+			}
 		}
 	}
 }
@@ -444,6 +477,7 @@ void contextClass::setAcceptedDirectives(void)
 	_accepted_directive_set["aio_write"]._name = "aio_write";
 	_accepted_directive_set["alias"]._name = "alias";
 	_accepted_directive_set["auth_delay"]._name = "auth_delay";
+	_accepted_directive_set["autoindex"]._name = "autoindex";
 	_accepted_directive_set["chunked_transfer_encoding"]._name = "chunked_transfer_encoding";
 	_accepted_directive_set["client_body_buffer_size"]._name = "client_body_buffer_size";
 	_accepted_directive_set["client_body_in_file_only"]._name = "client_body_in_file_only";
@@ -538,6 +572,7 @@ void contextClass::setAcceptedDirectives(void)
 	_accepted_directive_set["aio_write"]._contexts = setAcceptedDirectiveContext("http server location");
 	_accepted_directive_set["alias"]._contexts = setAcceptedDirectiveContext("location");
 	_accepted_directive_set["auth_delay"]._contexts = setAcceptedDirectiveContext("http server location");
+	_accepted_directive_set["autoindex"]._contexts = setAcceptedDirectiveContext("location");
 	_accepted_directive_set["chunked_transfer_encoding"]._contexts = setAcceptedDirectiveContext("http server location");
 	_accepted_directive_set["client_body_buffer_size"]._contexts = setAcceptedDirectiveContext("http server location");
 	_accepted_directive_set["client_body_in_file_only"]._contexts = setAcceptedDirectiveContext("http server location");
@@ -632,6 +667,7 @@ void contextClass::setAcceptedDirectives(void)
 	_accepted_directive_set["aio_write"]._syntax = SYNTAX_ON_OFF;
 	_accepted_directive_set["alias"]._syntax = SYNTAX_PATH;
 	_accepted_directive_set["auth_delay"]._syntax = SYNTAX_TIME;
+	_accepted_directive_set["autoindex"]._syntax = SYNTAX_ON_OFF;
 	_accepted_directive_set["chunked_transfer_encoding"]._syntax = SYNTAX_ON_OFF;
 	_accepted_directive_set["client_body_buffer_size"]._syntax = SYNTAX_SIZE;
 	_accepted_directive_set["client_body_in_file_only"]._syntax = SYNTAX_ON_OFF;
@@ -647,14 +683,14 @@ void contextClass::setAcceptedDirectives(void)
 	_accepted_directive_set["directio_alignment"]._syntax = SYNTAX_SIZE;
 	_accepted_directive_set["disable_symlinks"]._syntax = SYNTAX_ON_OFF;
 	_accepted_directive_set["error_log"]._syntax = SYNTAX_FILE;
-	_accepted_directive_set["error_page"]._syntax = SYNTAX_CODE_URI;
+	_accepted_directive_set["error_page"]._syntax = SYNTAX_CODE_FILE;
 	_accepted_directive_set["etag"]._syntax = SYNTAX_ON_OFF;
 	_accepted_directive_set["fastcgi_pass"]._syntax = SYNTAX_ADDRESS;
 	_accepted_directive_set["gzip"]._syntax = SYNTAX_ON_OFF;
 	_accepted_directive_set["http"]._syntax = SYNTAX_BLOCK;
 	_accepted_directive_set["if_modified_since"]._syntax = SYNTAX_STRING;//to define
 	_accepted_directive_set["ignore_invalid_headers"]._syntax = SYNTAX_ON_OFF;
-	_accepted_directive_set["index"]._syntax = SYNTAX_FILE;
+	_accepted_directive_set["index"]._syntax = SYNTAX_INPUT_FILE;
 	_accepted_directive_set["include"]._syntax = SYNTAX_STRING;
 	_accepted_directive_set["internal"]._syntax = 0;
 	_accepted_directive_set["keepalive_disable"]._syntax = SYNTAX_STRING;//to define
@@ -704,7 +740,7 @@ void contextClass::setAcceptedDirectives(void)
 	_accepted_directive_set["server_names_hash_max_size"]._syntax = SYNTAX_SIZE;
 	_accepted_directive_set["server_tokens"]._syntax = SYNTAX_ON_OFF;
 	_accepted_directive_set["ssl_prefer_server_ciphers"]._syntax = SYNTAX_ON_OFF;
-	_accepted_directive_set["ssl_protocols"]._syntax = SYNTAX_STRING;
+	_accepted_directive_set["ssl_protocols"]._syntax = SYNTAX_STRING;//to define
 	_accepted_directive_set["subrequest_output_buffer_size"]._syntax = SYNTAX_SIZE;
 	_accepted_directive_set["tcp_nodelay"]._syntax = SYNTAX_ON_OFF;
 	_accepted_directive_set["tcp_nopush"]._syntax = SYNTAX_ON_OFF;

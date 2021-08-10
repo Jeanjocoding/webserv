@@ -6,7 +6,7 @@
 /*   By: asablayr <marvin@42.fr>                    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2021/06/12 14:11:07 by asablayr          #+#    #+#             */
-/*   Updated: 2021/07/17 11:17:08 by asablayr         ###   ########.fr       */
+/*   Updated: 2021/08/06 18:49:54 by asablayr         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -20,18 +20,20 @@
 #define	SYNTAX_ON_OFF		1
 #define	SYNTAX_STRING		2
 #define	SYNTAX_FILE			3
-#define	SYNTAX_BLOCK		4
-#define	SYNTAX_SIZE			5
-#define	SYNTAX_NUMBER		6
-#define	SYNTAX_NUMBER_SIZE	7
-#define	SYNTAX_TIME			8
-#define	SYNTAX_PATH			9
-#define	SYNTAX_ALL_ANY		10
-#define	SYNTAX_NAME			11
-#define	SYNTAX_ADDRESS		12
-#define	SYNTAX_RATE			13
-#define	SYNTAX_CODE_URI		14
-#define	SYNTAX_METHOD		15
+#define	SYNTAX_INPUT_FILE	4
+#define	SYNTAX_BLOCK		5
+#define	SYNTAX_SIZE			6
+#define	SYNTAX_NUMBER		7
+#define	SYNTAX_NUMBER_SIZE	8
+#define	SYNTAX_TIME			9
+#define	SYNTAX_PATH			10
+#define	SYNTAX_ALL_ANY		11
+#define	SYNTAX_NAME			12
+#define	SYNTAX_ADDRESS		13
+#define	SYNTAX_RATE			14
+#define	SYNTAX_CODE_URI		15
+#define	SYNTAX_CODE_FILE	16
+#define	SYNTAX_METHOD		17
 
 class directiveClass
 {

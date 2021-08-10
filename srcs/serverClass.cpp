@@ -6,7 +6,7 @@
 /*   By: asablayr <marvin@42.fr>                    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2021/06/07 18:49:16 by asablayr          #+#    #+#             */
-/*   Updated: 2021/08/03 16:17:29 by asablayr         ###   ########.fr       */
+/*   Updated: 2021/08/10 16:16:02 by asablayr         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -110,7 +110,7 @@ std::string*	serverClass::operator [] (std::string setting_name)
 		return &_access_log;
 	else if (setting_name == "fastcgi_pass")
 		return &_fastcgi_pass;
-	else if (setting_name == "404")
+	else if (setting_name == "404")//TODO change this
 		return &_default_error_pages[404];
 	else if (setting_name == "400")
 		return &_default_error_pages[400];
@@ -128,6 +128,18 @@ LocationClass&	serverClass::getLocation(std::string const& uri) const
 	std::string tmp = uri;// for compiling
 	return *_location[0];
 }
+
+void			serverClass::setLocation(LocationClass& location) const
+{
+	if (location._directives.find("root") == location._directives.end())
+		location.setRoot(_root);
+	if (location._directives.find("index") == location._directives.end())
+		location.setIndex(_root);
+/*	if (location._directives.find("error_log") == location._directives.end())
+		location.setErrorLog(_root);
+	if (location._directives.find("access_log") == location._directives.end())
+		location.setAccessLog(_root);
+*/}
 
 void serverClass::startServer()
 {

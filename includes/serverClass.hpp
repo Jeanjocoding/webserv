@@ -6,7 +6,7 @@
 /*   By: asablayr <marvin@42.fr>                    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2021/06/07 10:16:05 by asablayr          #+#    #+#             */
-/*   Updated: 2021/08/03 16:13:01 by asablayr         ###   ########.fr       */
+/*   Updated: 2021/08/09 12:19:25 by asablayr         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -31,6 +31,7 @@ class serverClass
 			serverClass& operator = (serverClass const& to_copy);
 			std::string* operator [] (std::string setting_name);
 
+			void			setLocation(LocationClass& location) const;
 			void			startServer(void);
 			LocationClass&	getLocation(std::string const& uri) const;//TODO
 

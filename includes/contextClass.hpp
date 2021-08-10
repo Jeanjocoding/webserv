@@ -6,7 +6,7 @@
 /*   By: asablayr <marvin@42.fr>                    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2021/06/12 14:11:07 by asablayr          #+#    #+#             */
-/*   Updated: 2021/07/16 18:42:37 by asablayr         ###   ########.fr       */
+/*   Updated: 2021/08/06 12:56:27 by asablayr         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -36,7 +36,7 @@ class contextClass
 			void	getAcceptedDirectivesInContext(void);
 
 			std::string								_name;
-			std::map<std::string, std::string>		_directives;
+			std::multimap<std::string, std::string>		_directives;
 			std::vector<contextClass*>				_blocks;
 
 	protected:

@@ -6,7 +6,7 @@
 /*   By: asablayr <marvin@42.fr>                    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2021/06/07 19:42:54 by asablayr          #+#    #+#             */
-/*   Updated: 2021/08/03 16:18:32 by asablayr         ###   ########.fr       */
+/*   Updated: 2021/08/10 18:59:53 by asablayr         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -64,5 +64,8 @@ std::vector<serverClass*>	setup_server(std::string conf_file)
 	for (std::vector<serverClass*>::iterator it = server_map.begin(); it != server_map.end(); it++)
 		if ((*it)->_location.empty())
 			(*it)->_location.push_back(new LocationClass());
+	for (std::vector<serverClass*>::iterator it = server_map.begin(); it != server_map.end(); it++)
+		for (std::vector<LocationClass*>::iterator i = (*it)->_location.begin(); i != (*it)->_location.end(); i++)
+			(*it)->setLocation(**i);
 	return (server_map);
 }
