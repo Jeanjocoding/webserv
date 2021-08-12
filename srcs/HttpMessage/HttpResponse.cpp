@@ -6,7 +6,7 @@
 /*   By: asablayr <marvin@42.fr>                    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2021/08/02 16:27:33 by asablayr          #+#    #+#             */
-/*   Updated: 2021/08/04 19:30:10 by asablayr         ###   ########.fr       */
+/*   Updated: 2021/08/11 15:14:53 by asablayr         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -39,9 +39,9 @@ HttpResponse::HttpResponse(unsigned short status_code, std::string body_path)
 		setHeader(status_code);
 }
 
-HttpResponse&	HttpResponse::operator=(HttpResponse const& to_copy)
+HttpResponse&	HttpResponse::operator = (HttpResponse const& to_copy)
 {
-	HttpMessage::operator=(to_copy)	;
+	HttpMessage::operator = (to_copy);
 	//TODO
 	return (*this);
 }
@@ -55,29 +55,33 @@ std::string		HttpResponse::toString(void) const
 
 void	HttpResponse::setStatusCode(std::string const& status_str)
 {
-	std::stringstream ss(status_str);
-	ss << status_str;
-	ss >> _status_code;
+	_status_code = status_str;
 }
 
 void	HttpResponse::setStatusCode(unsigned short status_nbr)
 {
-	_status_code = status_nbr;
+	std::stringstream ss;
+	ss << status_nbr;
+	ss >> _status_code;
 }
 
 void	HttpResponse::setHeader(unsigned short code)
 {
-	_status_code = code;
+	setStatusCode(code);
 	setHeader();
 }
 
 void	HttpResponse::setHeader(void)
 {
+	std::stringstream ss;
+
 	setDateTime();
 	setLength();
+	setServerName();//might put it in calling "parent" function
 	setConnectionStatus();//TODO
 	_header = "HTTP/1.1 ";
-	_header.append(_status_code);
+	ss << _status_code;
+	_header.append(ss.str());
 	_header.append(" ");
 	_header.append(_status_message);
 	_header.append("\r\n");
@@ -85,17 +89,20 @@ void	HttpResponse::setHeader(void)
 	_header.append(_date);
 	_header.append("\r\n");
 	_header.append("Server: ");
-	_header.append(_server_name);//TODO get server_name from server
+	_header.append(_server_name);
 	_header.append("\r\n");
 	_header.append("Content-Length: ");
-	_header.append(_content_length);
+	ss.str("");
+	ss << _content_length;
+	_header.append(ss.str());
 	_header.append("\r\n");
 	_header.append("Content-Type: ");
-	_header.append("text/html; charset=iso-8859-1");
+	_header.append("text/html; charset=iso-8859-1");//TODO write it dynamically
 	_header.append("\r\n");
 	_header.append("Connection: ");
 	_header.append(_connection);
 	_header.append("\r\n");
+
 }
 
 bool	HttpResponse::setBody(std::string const& body_path)
@@ -106,16 +113,17 @@ bool	HttpResponse::setBody(std::string const& body_path)
 	if (!file.is_open())
 	{
 		_body = DEFAULT_ERROR_BODY;
-		return false; //TODO error handling
+		return false;
 	}
 	_body = std::string(std::istreambuf_iterator<char>(file), std::istreambuf_iterator<char>());
+	setLength();
 	return true;
 }
 
 void	HttpResponse::setBody(std::string::iterator start, std::string::iterator end)
 {
 	_body = std::string(start, end);
-	_content_length = _body.size();
+	setLength();
 }
 
 void	HttpResponse::setDateTime(void)
@@ -129,12 +137,31 @@ void	HttpResponse::setDateTime(void)
 
 void	HttpResponse::setLength(void)
 {
-	_content_length = _body.size();
+	std::stringstream ss;
+	ss << _body.size();
+	ss >> _content_length;
 }
 
 void	HttpResponse::setLength(unsigned long length)
 {
-	_content_length = length;
+	std::stringstream ss;
+	ss << length;
+	ss >> _content_length;
+}
+
+void	HttpResponse::setServerName(std::string const& name)
+{
+	_server_name = name;
+}
+
+void	HttpResponse::setServerName()//TODO test against nginx server_name directive
+{
+	_server_name = SERVER_NAME;
+	_server_name.append("/");
+	_server_name.append(VERSION);
+	_server_name.append(" (");
+	_server_name.append(OS);
+	_server_name.append(")");
 }
 
 void	HttpResponse::setConnectionStatus()

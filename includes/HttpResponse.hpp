@@ -6,15 +6,22 @@
 /*   By: asablayr <marvin@42.fr>                    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2021/07/02 15:07:21 by asablayr          #+#    #+#             */
-/*   Updated: 2021/08/04 18:43:29 by asablayr         ###   ########.fr       */
+/*   Updated: 2021/08/11 15:12:05 by asablayr         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #ifndef HTTPRESPONSE_HPP
 # define HTTPRESPONSE_HPP
 
-#define HTTP_VERSION "HTTP/1.1"
-#define DEFAULT_ERROR_BODY "<html><body><h1>Error</h1></body></html>"
+# define HTTP_VERSION "HTTP/1.1"
+# define DEFAULT_ERROR_BODY "<html><body><h1>Error</h1></body></html>"
+# define SERVER_NAME "webserv"
+# define VERSION "0.1"
+# ifdef __APPLE__
+#  define OS "MacOS"
+# else
+#  define OS "Ubuntu"//TODO check for real nginx value
+# endif
 
 #include "HttpMessage.hpp"
 
@@ -39,6 +46,8 @@ public:
 	void						setLength(void);
 	void						setLength(unsigned long length);
 	void						setDateTime(void);
+	void						setServerName(void);
+	void						setServerName(std::string const& name);
 	void						setConnectionStatus(void);//TODO
 
 private:

@@ -6,7 +6,7 @@
 /*   By: asablayr <marvin@42.fr>                    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2021/07/15 13:31:12 by asablayr          #+#    #+#             */
-/*   Updated: 2021/08/10 18:31:26 by asablayr         ###   ########.fr       */
+/*   Updated: 2021/08/11 20:07:42 by asablayr         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -96,6 +96,11 @@ std::string	LocationClass::getAutoIndex(void) const
 }
 
 std::map<unsigned short, std::string>& LocationClass::getErrorMap(void)
+{
+	return _error_pages;
+}
+
+std::map<unsigned short, std::string> LocationClass::getErrorMap(void) const
 {
 	return _error_pages;
 }
@@ -244,7 +249,7 @@ void	LocationClass::printLocation(void) const
 	std::cout << "POST : " << _methods[POST_METHOD] << std::endl;
 	std::cout << "autoindex : " << _autoindex << std::endl;
 	for (std::map<unsigned short, std::string>::const_iterator it = _error_pages.begin(); it != _error_pages.end(); it++)
-		std::cout << "_error_pages : " << it->second << std::endl;
+		std::cout << "_error_pages " << it->first << " : " << it->second << std::endl;
 }
 
 void	LocationClass::printDirectives(void) const

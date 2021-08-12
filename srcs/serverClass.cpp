@@ -6,7 +6,7 @@
 /*   By: asablayr <marvin@42.fr>                    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2021/06/07 18:49:16 by asablayr          #+#    #+#             */
-/*   Updated: 2021/08/10 16:16:02 by asablayr         ###   ########.fr       */
+/*   Updated: 2021/08/11 20:02:00 by asablayr         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -135,6 +135,7 @@ void			serverClass::setLocation(LocationClass& location) const
 		location.setRoot(_root);
 	if (location._directives.find("index") == location._directives.end())
 		location.setIndex(_root);
+	location.setErrorPages(_default_error_pages);
 /*	if (location._directives.find("error_log") == location._directives.end())
 		location.setErrorLog(_root);
 	if (location._directives.find("access_log") == location._directives.end())

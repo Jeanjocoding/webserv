@@ -6,7 +6,7 @@
 /*   By: asablayr <marvin@42.fr>                    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2021/06/12 14:11:07 by asablayr          #+#    #+#             */
-/*   Updated: 2021/08/10 18:28:44 by asablayr         ###   ########.fr       */
+/*   Updated: 2021/08/10 19:23:45 by asablayr         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -39,6 +39,7 @@ class LocationClass : public contextClass
 			void									setIndex(std::string index);
 			std::string								getAutoIndex(void) const;// generate and returns the auto index page as string
 			std::map<unsigned short, std::string>&	getErrorMap(void);// get the _error_pages attribute
+			std::map<unsigned short, std::string>	getErrorMap(void) const;// get the _error_pages attribute
 			std::string&							getErrorPage(unsigned short error_code);// get single error_page
 			std::string								getErrorPage(unsigned short error_code) const;// get single error_page
 			void									setErrorPages(std::map<unsigned short, std::string> const& error_map);// set the _error_pages attribute
