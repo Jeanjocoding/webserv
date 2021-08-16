@@ -3,6 +3,7 @@
 
 # include <iostream>
 # include <unistd.h>
+# include <cstdlib>
 
 /** cette structure contient les paramètres nécessaire au lancement de scripts CGI. elle est
  * passée en paramètre de la fonction de lancement.
@@ -10,7 +11,7 @@
 typedef struct s_CgiParams
 {
 
-	int			redirectStatus;
+	std::string		redirectStatus;
 
 	/**	"The SCRIPT_NAME variable MUST be set to a URI path (not URL-encoded)
 	*	which could identify the CGI script (rather than the script's
@@ -97,11 +98,9 @@ typedef struct s_CgiParams
 	*	Syntax: GATEWAY_INTERFACE = "CGI" "/" 1*digit "." 1*digit    " */
 	std::string gatewayInterface;
 
-
-
-
-
-
 }				t_CgiParams;
+
+int		setCgiParamsAsEnvironmentVariables(t_CgiParams& params);
+int		launchCgiScript(t_CgiParams& params, char **output);
 
 #endif
