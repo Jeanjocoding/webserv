@@ -6,7 +6,7 @@
 /*   By: asablayr <marvin@42.fr>                    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2021/07/02 15:07:21 by asablayr          #+#    #+#             */
-/*   Updated: 2021/08/11 15:12:05 by asablayr         ###   ########.fr       */
+/*   Updated: 2021/08/12 16:57:25 by asablayr         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -39,6 +39,7 @@ public:
 	std::string					toString() const;
 	void						setStatusCode(std::string const& status_str);
 	void						setStatusCode(unsigned short status_str);
+	void						setStatusMessage(void);
 	void						setHeader(unsigned short code);
 	void						setHeader(void);
 	bool						setBody(std::string const& body_path);
@@ -48,7 +49,7 @@ public:
 	void						setDateTime(void);
 	void						setServerName(void);
 	void						setServerName(std::string const& name);
-	void						setConnectionStatus(void);//TODO
+	void						setConnectionStatus(void);
 
 private:
 

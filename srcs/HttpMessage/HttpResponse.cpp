@@ -6,7 +6,7 @@
 /*   By: asablayr <marvin@42.fr>                    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2021/08/02 16:27:33 by asablayr          #+#    #+#             */
-/*   Updated: 2021/08/11 15:14:53 by asablayr         ###   ########.fr       */
+/*   Updated: 2021/08/16 16:50:02 by asablayr         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -21,8 +21,9 @@ HttpResponse::HttpResponse(void): HttpMessage()
 	_contentLength = 0;
 }
 
-HttpResponse::HttpResponse(HttpResponse const& to_copy) : HttpMessage(to_copy)
+HttpResponse::HttpResponse(HttpResponse const& copy) : HttpMessage(copy)
 {
+	_header = copy._header;
 	//TODO
 }
 
@@ -39,9 +40,10 @@ HttpResponse::HttpResponse(unsigned short status_code, std::string body_path)
 		setHeader(status_code);
 }
 
-HttpResponse&	HttpResponse::operator = (HttpResponse const& to_copy)
+HttpResponse&	HttpResponse::operator = (HttpResponse const& copy)
 {
-	HttpMessage::operator = (to_copy);
+	HttpMessage::operator = (copy);
+	_header = copy._header;
 	//TODO
 	return (*this);
 }
@@ -56,6 +58,7 @@ std::string		HttpResponse::toString(void) const
 void	HttpResponse::setStatusCode(std::string const& status_str)
 {
 	_status_code = status_str;
+	setStatusMessage();
 }
 
 void	HttpResponse::setStatusCode(unsigned short status_nbr)
@@ -63,6 +66,21 @@ void	HttpResponse::setStatusCode(unsigned short status_nbr)
 	std::stringstream ss;
 	ss << status_nbr;
 	ss >> _status_code;
+	setStatusMessage();
+}
+
+void	HttpResponse::setStatusMessage(void)
+{//TODO handle all the Status numbers
+	if (_status_code == "200")
+		_status_message = "OK";
+	else if (_status_code == "400")
+		_status_message = "Invalid Request";
+	else if (_status_code == "404")
+		_status_message = "Not Found";
+	else if (_status_code == "500")
+		_status_message = "Internal Error";
+	else 
+		_status_message = "";
 }
 
 void	HttpResponse::setHeader(unsigned short code)
@@ -102,13 +120,14 @@ void	HttpResponse::setHeader(void)
 	_header.append("Connection: ");
 	_header.append(_connection);
 	_header.append("\r\n");
-
+	_header.append("\r\n");
 }
 
 bool	HttpResponse::setBody(std::string const& body_path)
 {
 	std::ifstream	file;
 
+	std::cout << "trying to respond file : " << body_path << std::endl;
 	file.open(body_path.c_str());
 	if (!file.is_open())
 	{
@@ -133,6 +152,8 @@ void	HttpResponse::setDateTime(void)
 	time (&t);
 	tt = localtime(&t);
 	_date = asctime(tt);
+	if (*(--_date.end()) == '\n')
+		_date.erase(--_date.end());
 }
 
 void	HttpResponse::setLength(void)
@@ -166,5 +187,5 @@ void	HttpResponse::setServerName()//TODO test against nginx server_name directiv
 
 void	HttpResponse::setConnectionStatus()
 {
-	_connection = "CLOSED";//TODO
+	_connection = "CLOSE";//TODO
 }

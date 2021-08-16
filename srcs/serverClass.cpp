@@ -6,7 +6,7 @@
 /*   By: asablayr <marvin@42.fr>                    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2021/06/07 18:49:16 by asablayr          #+#    #+#             */
-/*   Updated: 2021/08/11 20:02:00 by asablayr         ###   ########.fr       */
+/*   Updated: 2021/08/16 16:35:42 by asablayr         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -134,7 +134,7 @@ void			serverClass::setLocation(LocationClass& location) const
 	if (location._directives.find("root") == location._directives.end())
 		location.setRoot(_root);
 	if (location._directives.find("index") == location._directives.end())
-		location.setIndex(_root);
+		location.setIndex(_index);
 	location.setErrorPages(_default_error_pages);
 /*	if (location._directives.find("error_log") == location._directives.end())
 		location.setErrorLog(_root);
@@ -198,6 +198,6 @@ std::map<unsigned short, std::string>	serverClass::baseErrorPages(void)
 	std::map<unsigned short, std::string>	res;
 
 	res[400] = ERR_400_PATH;
-	res[404] = ERR_404_PATH;
+	res[404] = ERR_404_PATH;//TODO complete error map
 	return res;
 }
