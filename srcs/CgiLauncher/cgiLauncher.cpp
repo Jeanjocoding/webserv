@@ -1,5 +1,8 @@
 #include "cgiLauncher.h"
 
+/** recupere l'environnement global, peut-être serait-il mieux de faire un environnement custom? */
+extern char **environ;
+
 /** a lancer à l'intérieur du processus fils pour que les changements d'env ne durent que
  * le temps de son éxécution */
 
@@ -28,9 +31,15 @@ int		setCgiParamsAsEnvironmentVariables(t_CgiParams& params)
 
 int		launchCgiScript(t_CgiParams& params, char **output)
 {
-	int		pipefd[2];
-	int 	pid;
-	char
+	int			pipefd[2];
+	int 		pid;
+	std::string	output_str;
+	int			read_ret;
+	int			wait_ret;
+	int			wait_status;
+	char		read_buffer[4096];
+
+	char	args[] = "usr/bin/php-cgi";
 
 	if (pipe(pipefd) < 0)
 	{
@@ -48,10 +57,47 @@ int		launchCgiScript(t_CgiParams& params, char **output)
 		dup2(pipefd[1], 1);
 		close (pipefd[1]);
 		setCgiParamsAsEnvironmentVariables(params);
+		execve(args, &args, environ);
+		std::cout << "execve failed" << std::endl;
 	}
+	else
+	{
+		close(pipefd[1]);
+		dup2(pipefd[0], 0);
+		close (pipefd[0]);
+		while ((read_ret = read(pipefd[0], read_buffer, 4096)) > 0)
+		{
+			output_str.append(read_buffer, read_ret);
+			if (read_ret < 4096)
+				break;
+		}
+		if (read_ret == -1)
+		{
+			perror("read");
+			return (-1);
+		}
+		wait_ret = wait(&wait_status);
+		*output = new char[output_str.length()];
+		strcpy(*output, output_str.c_str());
+	}
+}
 
+int		main()
+{
+	t_CgiParams	params;
+	char		*ptr;
 
+	params.redirectStatus = "200";
+	params.requestMethod = "GET";
+	params.scriptFilename = "test.php";
+	params.scriptName = "/test.php";
+	params.pathInfo = "/home/user42/webserv/git_webserv/srcs/CgiLauncher/test.php";
+	params.serverName = "hello.local";
+	params.serverProtocol = "HTTP/1.1";
+	params.requestUri = "/kuku/kiki";
+	params.httpHost = "hello.local";
 
-
-
+	launchCgiScript(params, &ptr);
+	std::cout << "output: " << ptr << std::endl;
+	return (0);
 }

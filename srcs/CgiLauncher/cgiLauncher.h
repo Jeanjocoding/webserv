@@ -4,6 +4,8 @@
 # include <iostream>
 # include <unistd.h>
 # include <cstdlib>
+# include <cstring>
+# include <sys/wait.h>
 
 /** cette structure contient les paramètres nécessaire au lancement de scripts CGI. elle est
  * passée en paramètre de la fonction de lancement.
