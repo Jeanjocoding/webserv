@@ -6,6 +6,7 @@
 # include <cstdlib>
 # include <cstring>
 # include <sys/wait.h>
+# include <stdio.h>
 
 /** cette structure contient les paramètres nécessaire au lancement de scripts CGI. elle est
  * passée en paramètre de la fonction de lancement.

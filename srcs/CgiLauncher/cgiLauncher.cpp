@@ -6,7 +6,7 @@ extern char **environ;
 /** a lancer à l'intérieur du processus fils pour que les changements d'env ne durent que
  * le temps de son éxécution */
 
-int		setCgiVariable(std::string name, std::string& value)
+void		setCgiVariable(std::string name, std::string& value)
 {
 	name.append(value);
 	putenv((char*)name.c_str());
@@ -57,7 +57,7 @@ int		launchCgiScript(t_CgiParams& params, char **output)
 		dup2(pipefd[1], 1);
 		close (pipefd[1]);
 		setCgiParamsAsEnvironmentVariables(params);
-		execve(args, &args, environ);
+		execve(args, (char *const*)&args, environ);
 		std::cout << "execve failed" << std::endl;
 	}
 	else
@@ -80,6 +80,7 @@ int		launchCgiScript(t_CgiParams& params, char **output)
 		*output = new char[output_str.length()];
 		strcpy(*output, output_str.c_str());
 	}
+	return (0);
 }
 
 int		main()
