@@ -30,12 +30,26 @@ int		launchCgiScript(t_CgiParams& params, char **output)
 {
 	int		pipefd[2];
 	int 	pid;
+	char
 
-	if (pipe(pipefd) == -1)
+	if (pipe(pipefd) < 0)
 	{
 		perror("pipe");
 		return (-1);
 	}
+	if ((pid = fork()) < 0)
+	{
+		perror("fork");
+		return (-1);
+	}
+	else if (pid == 0)
+	{
+		close(pipefd[0]);
+		dup2(pipefd[1], 1);
+		close (pipefd[1]);
+		setCgiParamsAsEnvironmentVariables(params);
+	}
+
 
 
 
