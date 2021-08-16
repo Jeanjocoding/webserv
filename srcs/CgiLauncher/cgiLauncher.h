@@ -11,9 +11,22 @@ typedef struct s_CgiParams
 {
 
 	int			redirectStatus;
-	std::string	requestMethod;
-	std::string	scriptFilename;
+
+	/**	"The SCRIPT_NAME variable MUST be set to a URI path (not URL-encoded)
+	*	which could identify the CGI script (rather than the script's
+ 	*	output).  The syntax is the same as for PATH_INFO (section 4.1.5)
+
+      SCRIPT_NAME = "" | ( "/" path )
+
+   The leading "/" is not part of the path.  It is optional if the path
+   is NULL; however, the variable MUST still be set in that case"." */
 	std::string scriptName;
+
+
+	std::string	requestMethod;
+
+	/** scritpt's absolute path */
+	std::string	scriptFilename;
 
 	/** "The PATH_INFO variable specifies a path to be interpreted by the CGI
    *	script.  It identifies the resource or sub-resource to be returned by
@@ -39,10 +52,10 @@ typedef struct s_CgiParams
 	*	client sending the request to the server." */
 	std::string	remoteAddress;
 
-	/** "The REMOTE_HOST variable contains the fully qualified domain name of
+	/** "The REMOTE_HOST (= httpHost dans php) variable contains the fully qualified domain name of
 	*	the client sending the request to the server, if available, otherwise
 	*	NULL" */
-	std::string	remoteHost;
+	std::string	httpHost;
 
 	/** "   The REMOTE_IDENT variable MAY be used to provide identity information
 	*	reported about the connection by an RFC 1413 [20] request to the
@@ -57,7 +70,15 @@ typedef struct s_CgiParams
 
 	
 	std::string serverName;
+
+	/** server's IP address*/
+	std::string	serverAddr;
 	std::string	serverProtocol;
+
+	/** software's identification string, given in http responses*/
+	std::string serverSoftware;
+
+	/** The URI which was given in order to access this page; for instance, '/index.html'.  */
 	std::string	requestUri;
 	std::string authType;
 
