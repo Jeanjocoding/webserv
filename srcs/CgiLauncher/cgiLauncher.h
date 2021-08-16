@@ -1,0 +1,86 @@
+#ifndef CGILAUNCHER_H
+# define CGILAUNCHER_H
+
+# include <iostream>
+
+
+/** cette structure contient les paramètres nécessaire au lancement de scripts CGI. elle est
+ * passée en paramètre de la fonction de lancement.
+ */
+typedef struct s_CgiParams
+{
+
+	int			redirectStatus;
+	std::string	requestMethod;
+	std::string	scriptFilename;
+	std::string scriptName;
+
+	/** "The PATH_INFO variable specifies a path to be interpreted by the CGI
+   *	script.  It identifies the resource or sub-resource to be returned by
+   *	the CGI script, and is derived from the portion of the URI path
+   *	hierarchy following the part that identifies the script itself.
+   *	Unlike a URI path, the PATH_INFO is not URL-encoded, and cannot
+   *	contain path-segment parameters.  A PATH_INFO of "/" represents a
+   *	single void path segment." */
+	std::string pathInfo;
+
+	/** "The PATH_TRANSLATED variable is derived by taking the PATH_INFO
+	*	value, parsing it as a local URI in its own right, and performing any
+	*	virtual-to-physical translation appropriate to map it onto the
+	*	server's document repository structure." */
+	std::string pathTranslated;
+
+	/** "   The QUERY_STRING variable contains a URL-encoded search or parameter
+	*	string; it provides information to the CGI script to affect or refine
+	*	the document to be returned by the script." */
+	std::string queryString;
+
+	/** "   The REMOTE_ADDR variable MUST be set to the network address of the
+	*	client sending the request to the server." */
+	std::string	remoteAddress;
+
+	/** "The REMOTE_HOST variable contains the fully qualified domain name of
+	*	the client sending the request to the server, if available, otherwise
+	*	NULL" */
+	std::string	remoteHost;
+
+	/** "   The REMOTE_IDENT variable MAY be used to provide identity information
+	*	reported about the connection by an RFC 1413 [20] request to the
+	*	remote agent, if available.  The server may choose not to support
+	*	this feature, or not to request the data for efficiency reasons, or
+	*	not to return available identity data." */
+	std::string	remoteIdent;
+
+	/** "   The REMOTE_USER variable provides a user identification string
+	*	supplied by client as part of user authentication." */
+	std::string	remoteUser;
+
+	
+	std::string serverName;
+	std::string	serverProtocol;
+	std::string	requestUri;
+	std::string authType;
+
+	/** "The server MUST set this meta-variable if and only if the request is
+	*	accompanied by a message-body entity.  The CONTENT_LENGTH value must
+	*	reflect the length of the message-body after the server has removed
+	*	any transfer-codings or content-codings." */
+	int			contentLength;
+
+	/** "If the request includes a message-body, the CONTENT_TYPE variable is
+	*	set to the Internet Media Type [6] of the message-body." */
+	std::string contentType;
+
+	/**    "The GATEWAY_INTERFACE variable MUST be set to the dialect of CGI
+	*	being used by the server to communicate with the script.  
+	*	Syntax: GATEWAY_INTERFACE = "CGI" "/" 1*digit "." 1*digit    " */
+	std::string gatewayInterface;
+
+
+
+
+
+
+}				t_CgiParams;
+
+#endif
