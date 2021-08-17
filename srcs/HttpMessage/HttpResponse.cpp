@@ -6,7 +6,7 @@
 /*   By: asablayr <marvin@42.fr>                    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2021/08/02 16:27:33 by asablayr          #+#    #+#             */
-/*   Updated: 2021/08/16 16:50:02 by asablayr         ###   ########.fr       */
+/*   Updated: 2021/08/17 13:58:47 by asablayr         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -70,15 +70,31 @@ void	HttpResponse::setStatusCode(unsigned short status_nbr)
 }
 
 void	HttpResponse::setStatusMessage(void)
-{//TODO handle all the Status numbers
+{
 	if (_status_code == "200")
 		_status_message = "OK";
 	else if (_status_code == "400")
 		_status_message = "Invalid Request";
+	else if (_status_code == "403")
+		_status_message = "Forbidden";
+	else if (_status_code == "405")
+		_status_message = "Method Not Allowed";
+	else if (_status_code == "408")
+		_status_message = "Request Timeout";
 	else if (_status_code == "404")
 		_status_message = "Not Found";
 	else if (_status_code == "500")
-		_status_message = "Internal Error";
+		_status_message = "Internal Server Error";
+	else if (_status_code == "501")
+		_status_message = "Not Implemented";
+	else if (_status_code == "502")
+		_status_message = "Bad Gateway";
+	else if (_status_code == "503")
+		_status_message = "Service Unavailable";
+	else if (_status_code == "504")
+		_status_message = "Gateway Timeout";
+	else if (_status_code == "505")
+		_status_message = "HTTP Version Not Supported";
 	else 
 		_status_message = "";
 }

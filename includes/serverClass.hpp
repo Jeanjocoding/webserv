@@ -6,7 +6,7 @@
 /*   By: asablayr <marvin@42.fr>                    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2021/06/07 10:16:05 by asablayr          #+#    #+#             */
-/*   Updated: 2021/08/09 12:19:25 by asablayr         ###   ########.fr       */
+/*   Updated: 2021/08/17 22:27:38 by asablayr         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -31,6 +31,7 @@ class serverClass
 			serverClass& operator = (serverClass const& to_copy);
 			std::string* operator [] (std::string setting_name);
 
+			void			setLocation(void);
 			void			setLocation(LocationClass& location) const;
 			void			startServer(void);
 			LocationClass&	getLocation(std::string const& uri) const;//TODO
@@ -54,6 +55,11 @@ class serverClass
 			struct addrinfo							*_addr;
 
 	private:
+
+			unsigned long	caseSensitiveReMatch(std::string const& s1, std::string const& s2) const;
+			unsigned long	caseInsensitiveReMatch(std::string const& s1, std::string const& s2) const;
+			unsigned long	caseSensitiveMatch(std::string const& s1, std::string const& s2) const;
+
 			std::map<unsigned short, std::string>	baseErrorPages(void);
 
 };
