@@ -66,11 +66,11 @@ int		launchCgiScript(t_CgiParams& params, char **output)
 	char		read_buffer[4096];
 	char 		**customEnv;
 
-//	std::string	execname("/usr/bin/php-cgi");
-	std::string	execname("/home/user42/webserv/git_webserv/srcs/CgiLauncher/ubuntu_cgi_tester");
+	std::string	execname("/usr/bin/php-cgi");
+//	std::string	execname("/home/user42/webserv/git_webserv/srcs/CgiLauncher/ubuntu_cgi_tester");
 //	std::string	argname("/home/user42/webserv/git_webserv/srcs/CgiLauncher/test.php");
 	std::string	argname("/home/user42/webserv/git_webserv/srcs/CgiLauncher/test.php");
-	char*	args[] = {(char*)execname.c_str(), (char*)argname.c_str(), NULL};
+	char*	args[] = {(char*)execname.c_str()/*, (char*)argname.c_str()*/, NULL};
 
 	if (pipe(pipefd) < 0)
 	{
@@ -92,7 +92,7 @@ int		launchCgiScript(t_CgiParams& params, char **output)
 //		std::string method_to_check("REQUEST_METHOD");
 //		std::cout << "REQUEST METHOD in env: " << std::getenv("REQUEST_METHOD") << std::endl;
 //		if (execve("./ubuntu_cgi_tester", args, customEnv) == -1)
-		if (execve("/home/user42/webserv/git_webserv/srcs/CgiLauncher/ubuntu_cgi_tester", args, customEnv) == -1)
+		if (execve(args[0], args, customEnv) == -1)
 			perror("execve");
 		std::cout << "execve failed" << std::endl;
 		close(pipefd[1]);
@@ -132,17 +132,20 @@ int		main()
 	params.redirectStatus = "200";
 	params.requestMethod = "GET";
 	params.scriptFilename = "/home/user42/webserv/git_webserv/srcs/CgiLauncher/test.php";
-	params.scriptName = "test.php";
+	params.scriptName = "/test.php";
+//	params.scriptName = "/blorg.bla";
 //	params.pathInfo = "/home/user42/webserv/git_webserv/srcs/CgiLauncher/test.php";
+//	params.pathInfo = "/blorg.bla";
 	params.pathInfo = "/test.php";
 //	params.pathInfo = "/test.php";
 //	params.pathInfo = "/test.php/resultat";
 //	params.pathInfo = "/specific";
-	params.serverName = "hello.local";
+	params.serverName = "localhost";
 	params.serverProtocol = "HTTP/1.1";
 	params.requestUri = "/test.php";
-	params.httpHost = "hello.local";
-	params.queryString = "";
+//	params.requestUri = "/blorg.bla";
+	params.httpHost = "localhost";
+	params.queryString = "/kaka/kiki/kuku";
 
 	launchCgiScript(params, &ptr);
 	std::cout << "output: " << ptr << std::endl;
