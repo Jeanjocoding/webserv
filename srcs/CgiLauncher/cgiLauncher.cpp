@@ -40,7 +40,8 @@ int		launchCgiScript(t_CgiParams& params, char **output)
 	char		read_buffer[4096];
 
 	std::string	execname("/usr/bin/php-cgi");
-	char*	args[] = {(char*)execname.c_str()};
+	std::string	argname("test.php");
+	char*	args[] = {(char*)execname.c_str(), (char*)argname.c_str()};
 
 	if (pipe(pipefd) < 0)
 	{
@@ -56,7 +57,7 @@ int		launchCgiScript(t_CgiParams& params, char **output)
 	{
 		close(pipefd[0]);
 		dup2(pipefd[1], 1);
-//		close (pipefd[1]); //pas sur, mais ça semble marcher
+		close (pipefd[1]); //pas sur, mais ça semble marcher
 		setCgiParamsAsEnvironmentVariables(params);
 		if (execve("/usr/bin/php-cgi", args, environ) == -1)
 			perror("execve");
@@ -69,12 +70,13 @@ int		launchCgiScript(t_CgiParams& params, char **output)
 		close(pipefd[1]);
 		dup2(pipefd[0], 0);
 //		close (pipefd[0]);
+//		sleep(1);
 		while ((read_ret = read(pipefd[0], read_buffer, 4096)) > 0)
 		{
-			std::cout << "output_Str: " << output_str << std::endl;
+//			std::cout << "output_Str: " << output_str << std::endl;
 			output_str.append(read_buffer, read_ret);
-			if (read_ret < 4096)
-				break;
+//			if (read_ret < 4096)
+//				break;
 		}
 		close(pipefd[0]);
 		if (read_ret == -1)
@@ -98,7 +100,7 @@ int		main()
 	params.requestMethod = "GET";
 	params.scriptFilename = "test.php";
 	params.scriptName = "/test.php";
-	params.pathInfo = "/home/user42/webserv/git_webserv/srcs/CgiLauncher/test.php";
+	params.pathInfo = "/home/user42/webserv/git_webserv/srcs/CgiLauncher/";
 	params.serverName = "hello.local";
 	params.serverProtocol = "HTTP/1.1";
 	params.requestUri = "/kuku/kiki";
