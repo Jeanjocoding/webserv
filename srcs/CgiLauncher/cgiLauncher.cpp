@@ -1,28 +1,54 @@
 #include "cgiLauncher.h"
 
+void		printtab(char ** tab, int length)
+{
+	int  i = 0;
+
+	std::cout << "----------- print tab: -------------" << std::endl;
+	while (i < length)
+	{
+		std::cout << tab[i] << std::endl;
+		i++;
+	}
+	std::cout << " ----------------------- " << std::endl;
+}
+
 /** recupere l'environnement global, peut-être serait-il mieux de faire un environnement custom? */
 extern char **environ;
 
 /** a lancer à l'intérieur du processus fils pour que les changements d'env ne durent que
  * le temps de son éxécution */
 
-void		setCgiVariable(std::string name, std::string& value)
+int			allocateCustomEnv(char ***customEnv)
 {
-	name.append(value);
-	putenv((char*)name.c_str());
+	*customEnv = new char*[ENV_SIZE];
+	return (1);
 }
 
-int		setCgiParamsAsEnvironmentVariables(t_CgiParams& params)
+void		setCgiVariable(std::string name, std::string& value, char **customEnv, int& envIndex)
 {
-	setCgiVariable("REDIRECT_STATUS=", params.redirectStatus);
-	setCgiVariable("REQUEST_METHOD=", params.requestMethod);
-	setCgiVariable("SCRIPT_FILENAME=", params.scriptFilename);
-	setCgiVariable("SCRIPT_NAME=", params.scriptName);
-	setCgiVariable("PATH_INFO=", params.pathInfo);
-	setCgiVariable("SERVER_NAME=", params.serverName);
-	setCgiVariable("SERVER_PROTOCOL=", params.scriptFilename);
-	setCgiVariable("REQUEST_URI=", params.requestUri);
-	setCgiVariable("HTTP_HOST=", params.httpHost);
+	name.append(value);
+	customEnv[envIndex] = new char[name.length() + 1];
+	std::strncpy(customEnv[envIndex], name.c_str(), name.length());
+	customEnv[envIndex][name.length()] = '\0';
+	envIndex++;
+}
+
+int		setCgiParamsAsEnvironmentVariables(t_CgiParams& params, char **customEnv)
+{
+	int		index = 0;
+
+	setCgiVariable("REQUEST_METHOD=", params.requestMethod, customEnv, index);
+	setCgiVariable("REDIRECT_STATUS=", params.redirectStatus, customEnv, index);
+	setCgiVariable("SCRIPT_FILENAME=", params.scriptFilename, customEnv, index);
+	setCgiVariable("SCRIPT_NAME=", params.scriptName, customEnv, index);
+	setCgiVariable("PATH_INFO=", params.pathInfo, customEnv, index);
+	setCgiVariable("SERVER_NAME=", params.serverName, customEnv, index);
+	setCgiVariable("SERVER_PROTOCOL=", params.serverProtocol, customEnv, index);
+	setCgiVariable("REQUEST_URI=", params.requestUri, customEnv, index);
+	setCgiVariable("HTTP_HOST=", params.httpHost, customEnv, index);
+	setCgiVariable("QUERY_STRING=", params.queryString, customEnv, index);
+	printtab(customEnv, index);
 
 	return (0);
 
@@ -38,10 +64,13 @@ int		launchCgiScript(t_CgiParams& params, char **output)
 	int			wait_ret;
 	int			wait_status;
 	char		read_buffer[4096];
+	char 		**customEnv;
 
-	std::string	execname("/usr/bin/php-cgi");
-	std::string	argname("test.php");
-	char*	args[] = {(char*)execname.c_str(), (char*)argname.c_str()};
+//	std::string	execname("/usr/bin/php-cgi");
+	std::string	execname("/home/user42/webserv/git_webserv/srcs/CgiLauncher/ubuntu_cgi_tester");
+//	std::string	argname("/home/user42/webserv/git_webserv/srcs/CgiLauncher/test.php");
+	std::string	argname("/home/user42/webserv/git_webserv/srcs/CgiLauncher/test.php");
+	char*	args[] = {(char*)execname.c_str(), (char*)argname.c_str(), NULL};
 
 	if (pipe(pipefd) < 0)
 	{
@@ -58,8 +87,12 @@ int		launchCgiScript(t_CgiParams& params, char **output)
 		close(pipefd[0]);
 		dup2(pipefd[1], 1);
 		close (pipefd[1]); //pas sur, mais ça semble marcher
-		setCgiParamsAsEnvironmentVariables(params);
-		if (execve("/usr/bin/php-cgi", args, environ) == -1)
+		allocateCustomEnv(&customEnv);
+		setCgiParamsAsEnvironmentVariables(params, customEnv);
+//		std::string method_to_check("REQUEST_METHOD");
+//		std::cout << "REQUEST METHOD in env: " << std::getenv("REQUEST_METHOD") << std::endl;
+//		if (execve("./ubuntu_cgi_tester", args, customEnv) == -1)
+		if (execve("/home/user42/webserv/git_webserv/srcs/CgiLauncher/ubuntu_cgi_tester", args, customEnv) == -1)
 			perror("execve");
 		std::cout << "execve failed" << std::endl;
 		close(pipefd[1]);
@@ -98,13 +131,18 @@ int		main()
 
 	params.redirectStatus = "200";
 	params.requestMethod = "GET";
-	params.scriptFilename = "test.php";
-	params.scriptName = "/test.php";
-	params.pathInfo = "/home/user42/webserv/git_webserv/srcs/CgiLauncher/";
+	params.scriptFilename = "/home/user42/webserv/git_webserv/srcs/CgiLauncher/test.php";
+	params.scriptName = "test.php";
+//	params.pathInfo = "/home/user42/webserv/git_webserv/srcs/CgiLauncher/test.php";
+	params.pathInfo = "/test.php";
+//	params.pathInfo = "/test.php";
+//	params.pathInfo = "/test.php/resultat";
+//	params.pathInfo = "/specific";
 	params.serverName = "hello.local";
 	params.serverProtocol = "HTTP/1.1";
-	params.requestUri = "/kuku/kiki";
+	params.requestUri = "/test.php";
 	params.httpHost = "hello.local";
+	params.queryString = "";
 
 	launchCgiScript(params, &ptr);
 	std::cout << "output: " << ptr << std::endl;
