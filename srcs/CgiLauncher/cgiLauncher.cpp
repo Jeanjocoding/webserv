@@ -86,7 +86,7 @@ int		launchCgiScript(t_CgiParams& params, char **output)
 	{
 		close(pipefd[0]);
 		dup2(pipefd[1], 1);
-		close (pipefd[1]); //pas sur, mais ça semble marcher
+		close (pipefd[1]);
 		allocateCustomEnv(&customEnv);
 		setCgiParamsAsEnvironmentVariables(params, customEnv);
 //		std::string method_to_check("REQUEST_METHOD");
@@ -102,16 +102,11 @@ int		launchCgiScript(t_CgiParams& params, char **output)
 	{
 		close(pipefd[1]);
 		dup2(pipefd[0], 0);
-//		close (pipefd[0]);
-//		sleep(1);
-		while ((read_ret = read(pipefd[0], read_buffer, 4096)) > 0)
+		close (pipefd[0]);
+		while ((read_ret = read(0, read_buffer, 4096)) > 0)
 		{
-//			std::cout << "output_Str: " << output_str << std::endl;
 			output_str.append(read_buffer, read_ret);
-//			if (read_ret < 4096)
-//				break;
 		}
-		close(pipefd[0]);
 		if (read_ret == -1)
 		{
 			perror("read");
