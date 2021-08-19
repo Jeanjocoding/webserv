@@ -7,6 +7,8 @@
 # include <cstring>
 # include <sys/wait.h>
 # include <stdio.h>
+#include "../../includes/HttpRequest.h"
+#include "../../includes/LocationClass.h"
 
 # define ENV_SIZE 30
 
@@ -92,7 +94,7 @@ typedef struct s_CgiParams
 	*	accompanied by a message-body entity.  The CONTENT_LENGTH value must
 	*	reflect the length of the message-body after the server has removed
 	*	any transfer-codings or content-codings." */
-	int			contentLength;
+	std::string		contentLength;
 
 	/** "If the request includes a message-body, the CONTENT_TYPE variable is
 	*	set to the Internet Media Type [6] of the message-body." */
@@ -106,6 +108,6 @@ typedef struct s_CgiParams
 }				t_CgiParams;
 
 int		setCgiParamsAsEnvironmentVariables(t_CgiParams& params);
-int		launchCgiScript(t_CgiParams& params, char **output);
+int		launchCgiScript(t_CgiParams& params, HttpRequest& request, LocationClass& location , char **output);
 
 #endif

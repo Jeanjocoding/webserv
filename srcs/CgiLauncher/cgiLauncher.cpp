@@ -48,6 +48,7 @@ int		setCgiParamsAsEnvironmentVariables(t_CgiParams& params, char **customEnv)
 	setCgiVariable("REQUEST_URI=", params.requestUri, customEnv, index);
 	setCgiVariable("HTTP_HOST=", params.httpHost, customEnv, index);
 	setCgiVariable("QUERY_STRING=", params.queryString, customEnv, index);
+	setCgiVariable("CONTENT_LENGTH=", params.contentLength, customEnv, index);
 	printtab(customEnv, index);
 
 	return (0);
@@ -55,9 +56,11 @@ int		setCgiParamsAsEnvironmentVariables(t_CgiParams& params, char **customEnv)
 
 }
 
-int		launchCgiScript(t_CgiParams& params, char **output)
+
+
+int		launchCgiScript(t_CgiParams& params, HttpRequest& request, LocationClass& location, char **output)
 {
-	int			pipefd[2];
+	int			script_output_pipe[2];
 	int 		pid;
 	std::string	output_str;
 	int			read_ret;
@@ -72,7 +75,7 @@ int		launchCgiScript(t_CgiParams& params, char **output)
 	std::string	argname("/home/user42/webserv/git_webserv/srcs/CgiLauncher/test.php");
 	char*	args[] = {(char*)execname.c_str()/*, (char*)argname.c_str()*/, NULL};
 
-	if (pipe(pipefd) < 0)
+	if (pipe(script_output_pipe) < 0)
 	{
 		perror("pipe");
 		return (-1);
@@ -84,26 +87,33 @@ int		launchCgiScript(t_CgiParams& params, char **output)
 	}
 	else if (pid == 0)
 	{
-		close(pipefd[0]);
-		dup2(pipefd[1], 1);
-		close (pipefd[1]);
+		close(script_output_pipe[0]);
+		dup2(script_output_pipe[1], 1);
+		close (script_output_pipe[1]);
 		allocateCustomEnv(&customEnv);
 		setCgiParamsAsEnvironmentVariables(params, customEnv);
+		if (request.getMethod() == POST_METHOD)
+		{
+			if (request.getContentLength())
+			{
+				//TODO: gerer envoi du body
+			}
+		}
 //		std::string method_to_check("REQUEST_METHOD");
 //		std::cout << "REQUEST METHOD in env: " << std::getenv("REQUEST_METHOD") << std::endl;
 //		if (execve("./ubuntu_cgi_tester", args, customEnv) == -1)
 		if (execve(args[0], args, customEnv) == -1)
 			perror("execve");
 		std::cout << "execve failed" << std::endl;
-		close(pipefd[1]);
+//		close(pipefd[1]);
 		return (-1);
 	}
 	else
 	{
-		close(pipefd[1]);
-		dup2(pipefd[0], 0);
-		close (pipefd[0]);
-		while ((read_ret = read(0, read_buffer, 4096)) > 0)
+		close(script_output_pipe[1]);
+//		dup2(pipefd[0], 0);
+//		close (pipefd[0]);
+		while ((read_ret = read(script_output_pipe[0], read_buffer, 4096)) > 0)
 		{
 			output_str.append(read_buffer, read_ret);
 		}
@@ -125,7 +135,8 @@ int		main()
 	char		*ptr;
 
 	params.redirectStatus = "200";
-	params.requestMethod = "GET";
+	params.requestMethod = "POST";
+	params.contentLength = "10";
 	params.scriptFilename = "/home/user42/webserv/git_webserv/srcs/CgiLauncher/test.php";
 	params.scriptName = "/test.php";
 //	params.scriptName = "/blorg.bla";
