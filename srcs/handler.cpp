@@ -6,7 +6,7 @@
 /*   By: asablayr <marvin@42.fr>                    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2021/06/06 21:54:40 by asablayr          #+#    #+#             */
-/*   Updated: 2021/08/04 21:36:47 by asablayr         ###   ########.fr       */
+/*   Updated: 2021/08/16 16:37:58 by asablayr         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -105,39 +105,35 @@ static HttpResponse	answer_get(HttpRequest const& request, LocationClass const& 
 {
 	HttpResponse	response;
 	std::string		tmp = location.getRoot();
-
 	//TODO
 	
 	std::cout << "root : " << location.getRoot() << std::endl;
 	tmp.append(request.getRequestLineInfos().target);
 	std::cout << "answering get request\ntrying to get file : " << tmp << std::endl;
-/*
-//	if (request.uriIsFile())//TODO
-	if (request.getRequestLineInfos().target.end()-- != '/')
+
+	if (*(--request.getRequestLineInfos().target.end()) != '/')
 	{
-		tmp = location.getRoot();
-		tmp += request.getRequestLineInfos().target;
 		std::ifstream body;
 		body.open(tmp.c_str());
 		if (!body.is_open())
-			response = HttpResponse(404, location.getErrorMap().find(404)->second);
+			response = HttpResponse(404, location.getErrorPage(404));
 		else
 			response = HttpResponse(200, tmp);
 	}
 	else
 	{
-		tmp = location.getIndex();//TODO
+		tmp.append(location.getIndex());
 		if (tmp.empty() && location.autoIndexIsOn())
 			response.setBody(location.getAutoIndex());// to code
-		tmp += location.getIndex();// to code
 		std::ifstream body;
 		body.open(tmp.c_str());
+		std::cout << "tmp : " << tmp << std::endl;
 		if (!body.is_open())
-			response = HttpResponse(404, location.getErrorMap().find(404)->second);
+			response = HttpResponse(404, location.getErrorPage(404));
 		else
-			response = HttpResponse(200, request.getRequestLineInfos().target);
+			response = HttpResponse(200, tmp);
 	}
-*/	return response;
+	return response;
 }
 
 static HttpResponse	answer_post(HttpRequest const& request, LocationClass const& location)
@@ -196,8 +192,7 @@ void	answer_connection(ConnectionClass& connection)
 		default :
 			return send_error(501, location.getErrorMap(), connection);
 	}
-	if (connection.sendResponse("HTTP/1.1 200 OK\r\nContent-length: 52\r\n\r\n<html><body><h1>Welcome to Webser</h1></body></html>") == -1)// for testing
-//	if (connection.sendResponse(response.toString) == -1)
+	if (connection.sendResponse(response.toString()) == -1)
 	{
 		std::perror("send");
 		connection.closeConnection();

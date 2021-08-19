@@ -6,7 +6,7 @@
 /*   By: asablayr <marvin@42.fr>                    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2021/06/07 18:49:16 by asablayr          #+#    #+#             */
-/*   Updated: 2021/08/11 20:02:00 by asablayr         ###   ########.fr       */
+/*   Updated: 2021/08/17 22:31:02 by asablayr         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -124,9 +124,54 @@ std::string*	serverClass::operator [] (std::string setting_name)
 
 LocationClass&	serverClass::getLocation(std::string const& uri) const
 {
-	//TODO
-	std::string tmp = uri;// for compiling
-	return *_location[0];
+	unsigned long	max_match = 0;
+	unsigned long	tmp = 0;
+	LocationClass* ret;
+	for (std::vector<LocationClass*>::const_iterator it = _location.begin(); it != _location.end(); it++)
+	{
+		if ((*it)->getParam() == "=")
+		{
+			if ((*it)->getUri() == uri)
+				return **it;
+			else
+				continue ;
+		}
+		else if ((*it)->getParam() == "~")
+		{
+			tmp = caseSensitiveReMatch((*it)->getUri(), uri);
+			if (tmp > max_match)
+			{
+				max_match = tmp;
+				ret = *it;
+			}
+		}
+		else if ((*it)->getParam() == "~*")
+		{
+			tmp = caseInsensitiveReMatch((*it)->getUri(), uri);
+			if (tmp > max_match)
+			{
+				max_match = tmp;
+				ret = *it;
+			}
+		}
+		else if ((*it)->getParam() == "^~" || (*it)->getParam() == "")
+		{
+			tmp = caseSensitiveMatch((*it)->getUri(), uri);
+			if (tmp > max_match)
+			{
+				max_match = tmp;
+				ret = *it;
+			}
+		}
+	}
+	std::cout << "location chosen : " << ret->getUri() << "\n";
+	return *ret;
+}
+
+void			serverClass::setLocation(void)
+{
+	for (std::vector<LocationClass*>::iterator it = _location.begin(); it != _location.end(); it++)
+		setLocation(**it);
 }
 
 void			serverClass::setLocation(LocationClass& location) const
@@ -134,7 +179,7 @@ void			serverClass::setLocation(LocationClass& location) const
 	if (location._directives.find("root") == location._directives.end())
 		location.setRoot(_root);
 	if (location._directives.find("index") == location._directives.end())
-		location.setIndex(_root);
+		location.setIndex(_index);
 	location.setErrorPages(_default_error_pages);
 /*	if (location._directives.find("error_log") == location._directives.end())
 		location.setErrorLog(_root);
@@ -198,6 +243,35 @@ std::map<unsigned short, std::string>	serverClass::baseErrorPages(void)
 	std::map<unsigned short, std::string>	res;
 
 	res[400] = ERR_400_PATH;
-	res[404] = ERR_404_PATH;
+	res[404] = ERR_404_PATH;//TODO complete error map
 	return res;
+}
+
+unsigned long	serverClass::caseSensitiveReMatch(std::string const& s1, std::string const& s2) const
+{//TODO
+	std::string s = s1;
+	s = s2;
+	return 0;
+}
+
+unsigned long	serverClass::caseInsensitiveReMatch(std::string const& s1, std::string const& s2) const
+{//TODO
+	std::string s = s1;
+	s = s2;
+	return 0;
+}
+
+unsigned long	serverClass::caseSensitiveMatch(std::string const& s1, std::string const& s2) const
+{
+	unsigned long ret = 0;
+	for (std::string::const_iterator i = s1.begin(), it = s2.begin(); i != s1.end() && it != s2.end(); i++, it++)
+	{
+		if (*i != *it)
+			break;
+		ret++;
+	}
+	if (ret < s1.length())
+		return 0;
+	else
+		return ret;
 }
