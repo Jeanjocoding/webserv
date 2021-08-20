@@ -7,8 +7,8 @@
 # include <cstring>
 # include <sys/wait.h>
 # include <stdio.h>
-#include "../../includes/HttpRequest.h"
-#include "../../includes/LocationClass.h"
+#include "HttpRequest.hpp"
+#include "LocationClass.hpp"
 
 # define ENV_SIZE 30
 

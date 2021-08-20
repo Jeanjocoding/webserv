@@ -129,7 +129,7 @@ int		launchCgiScript(t_CgiParams& params, HttpRequest& request, LocationClass& l
 	return (0);
 }
 
-int		main()
+/*int		main()
 {
 	t_CgiParams	params;
 	char		*ptr;
@@ -156,4 +156,4 @@ int		main()
 	launchCgiScript(params, &ptr);
 	std::cout << "output: " << ptr << std::endl;
 	return (0);
-}
+} */

@@ -19,6 +19,8 @@ DEFS_PATH = defines/
 
 SETUP_PATH = setup/
 CONNECTION_PATH = connection/
+CGILAUNCHER_PATH = CgiLauncher/
+POSTHANDLER_PATH = POST_handler/
 HTTPMSG_PATH = HttpMessage/
 
 HDRS =	webserv.hpp \
@@ -26,11 +28,13 @@ HDRS =	webserv.hpp \
 		HttpMessage.hpp \
 		HttpRequest.hpp \
 		ConnectionUtils.hpp \
+		CgiLauncher.hpp \
+		PostHandler.hpp \
 		ConnectionClass.hpp
 
 SRCS =	main.cpp \
-		handler.cpp \
-		serverClass.cpp
+	handler.cpp \
+	serverClass.cpp
 
 include main_module.mk
 

@@ -20,6 +20,8 @@
 #include "HttpMessage.hpp"
 #include "HttpRequest.hpp"
 #include "contextClass.hpp"
+#include "cgiLauncher.hpp"
+#include "PostHandler.hpp"
 
 #define DEFAULT_CONF_FILE "conf.conf"
 
