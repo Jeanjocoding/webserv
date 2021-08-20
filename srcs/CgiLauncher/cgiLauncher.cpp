@@ -1,4 +1,4 @@
-#include "cgiLauncher.h"
+#include "cgiLauncher.hpp"
 
 void		printtab(char ** tab, int length)
 {
@@ -58,7 +58,7 @@ int		setCgiParamsAsEnvironmentVariables(t_CgiParams& params, char **customEnv)
 
 
 
-int		launchCgiScript(t_CgiParams& params, HttpRequest& request, LocationClass& location, char **output)
+int		launchCgiScript(t_CgiParams& params, HttpRequest const& request, LocationClass const& location, char **output)
 {
 	int			script_output_pipe[2];
 	int 		pid;
@@ -75,6 +75,7 @@ int		launchCgiScript(t_CgiParams& params, HttpRequest& request, LocationClass& l
 	std::string	argname("/home/user42/webserv/git_webserv/srcs/CgiLauncher/test.php");
 	char*	args[] = {(char*)execname.c_str()/*, (char*)argname.c_str()*/, NULL};
 
+	location.getUri(); // pour eviter pbs de compilation
 	if (pipe(script_output_pipe) < 0)
 	{
 		perror("pipe");

@@ -108,6 +108,6 @@ typedef struct s_CgiParams
 }				t_CgiParams;
 
 int		setCgiParamsAsEnvironmentVariables(t_CgiParams& params);
-int		launchCgiScript(t_CgiParams& params, HttpRequest& request, LocationClass& location , char **output);
+int		launchCgiScript(t_CgiParams& params, HttpRequest const& request, LocationClass const& location , char **output);
 
 #endif

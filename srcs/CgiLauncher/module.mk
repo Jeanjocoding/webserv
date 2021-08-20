@@ -1,1 +1,1 @@
-SRCS += $(CGILAUNCHER_PATH)CgiLauncher.cpp
+SRCS += $(CGILAUNCHER_PATH)cgiLauncher.cpp
