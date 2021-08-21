@@ -1,4 +1,6 @@
 #include "cgiLauncher.hpp"
+#include <cstdlib>
+#include <cstring>
 
 void		printtab(char ** tab, int length)
 {
@@ -49,6 +51,7 @@ int		setCgiParamsAsEnvironmentVariables(t_CgiParams& params, char **customEnv)
 	setCgiVariable("HTTP_HOST=", params.httpHost, customEnv, index);
 	setCgiVariable("QUERY_STRING=", params.queryString, customEnv, index);
 	setCgiVariable("CONTENT_LENGTH=", params.contentLength, customEnv, index);
+	customEnv[index] = (char*)0;
 	printtab(customEnv, index);
 
 	return (0);
@@ -61,6 +64,7 @@ int		setCgiParamsAsEnvironmentVariables(t_CgiParams& params, char **customEnv)
 int		launchCgiScript(t_CgiParams& params, HttpRequest const& request, LocationClass const& location, char **output)
 {
 	int			script_output_pipe[2];
+	int			script_input_pipe[2];
 	int 		pid;
 	std::string	output_str;
 	int			read_ret;
@@ -68,15 +72,27 @@ int		launchCgiScript(t_CgiParams& params, HttpRequest const& request, LocationCl
 	int			wait_status;
 	char		read_buffer[4096];
 	char 		**customEnv;
+	char	**args = new char*[2];
 
-	std::string	execname("/usr/bin/php-cgi");
+	std::string	execname("/usr/local/bin/php-cgi");
 //	std::string	execname("/home/user42/webserv/git_webserv/srcs/CgiLauncher/ubuntu_cgi_tester");
 //	std::string	argname("/home/user42/webserv/git_webserv/srcs/CgiLauncher/test.php");
-	std::string	argname("/home/user42/webserv/git_webserv/srcs/CgiLauncher/test.php");
-	char*	args[] = {(char*)execname.c_str()/*, (char*)argname.c_str()*/, NULL};
+	std::string	argname("php-cgi");
 
+	args[0] = new char[execname.length() + 1];
+	std::strncpy(args[0], execname.c_str(), execname.length());
+	args[0][execname.length()] = '\0';
+//	args[1] = new char[params.scriptFilename.length() + 1];
+//	std::strncpy(args[1], params.scriptFilename.c_str(), params.scriptFilename.length());
+//	args[1][params.scriptFilename.length()] = '\0';
+	args[1] = (char*)0;
 	location.getUri(); // pour eviter pbs de compilation
 	if (pipe(script_output_pipe) < 0)
+	{
+		perror("pipe");
+		return (-1);
+	}
+	if (pipe(script_input_pipe) < 0)
 	{
 		perror("pipe");
 		return (-1);
@@ -90,20 +106,16 @@ int		launchCgiScript(t_CgiParams& params, HttpRequest const& request, LocationCl
 	{
 		close(script_output_pipe[0]);
 		dup2(script_output_pipe[1], 1);
-		close (script_output_pipe[1]);
+		close(script_output_pipe[1]);
+		close(script_input_pipe[1]);
+		dup2(script_input_pipe[0], 0);
+		close(script_input_pipe[0]);
 		allocateCustomEnv(&customEnv);
 		setCgiParamsAsEnvironmentVariables(params, customEnv);
-		if (request.getMethod() == POST_METHOD)
-		{
-			if (request.getContentLength())
-			{
-				//TODO: gerer envoi du body
-			}
-		}
 //		std::string method_to_check("REQUEST_METHOD");
 //		std::cout << "REQUEST METHOD in env: " << std::getenv("REQUEST_METHOD") << std::endl;
 //		if (execve("./ubuntu_cgi_tester", args, customEnv) == -1)
-		if (execve(args[0], args, customEnv) == -1)
+		if (execve(args[0], (char *const *) args, customEnv) == -1)
 			perror("execve");
 		std::cout << "execve failed" << std::endl;
 //		close(pipefd[1]);
@@ -111,21 +123,31 @@ int		launchCgiScript(t_CgiParams& params, HttpRequest const& request, LocationCl
 	}
 	else
 	{
+		close(script_input_pipe[0]);
+		if (request.getMethod() == POST_METHOD && request.getContentLength())
+		{
+			if (write(script_input_pipe[1], request.getContent().c_str(), request.getContentLength()) == -1)
+				perror("write");
+		}
+		close (script_input_pipe[1]);
 		close(script_output_pipe[1]);
-//		dup2(pipefd[0], 0);
-//		close (pipefd[0]);
 		while ((read_ret = read(script_output_pipe[0], read_buffer, 4096)) > 0)
 		{
 			output_str.append(read_buffer, read_ret);
 		}
+		close (script_output_pipe[0]);
+		delete args[0];
+		delete [] args;
 		if (read_ret == -1)
 		{
 			perror("read");
 			return (-1);
 		}
 		wait_ret = wait(&wait_status);
-		*output = new char[output_str.length()];
-		strcpy(*output, output_str.c_str());
+		std::cout << "output str: " << output_str << std::endl;
+		*output = new char[output_str.length() + 1];
+		std::strncpy(*output, output_str.c_str(), output_str.length() + 1);
+		(*output)[output_str.length()] = '\0';
 	}
 	return (0);
 }
