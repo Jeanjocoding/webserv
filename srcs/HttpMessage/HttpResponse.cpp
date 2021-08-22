@@ -161,6 +161,11 @@ void	HttpResponse::setBody(std::string::iterator start, std::string::iterator en
 	setLength();
 }
 
+void	HttpResponse::setBody(char *str, int len)
+{
+	_body = std::string(str, len);
+	setLength();
+}
 void	HttpResponse::setDateTime(void)
 {
 	time_t t;

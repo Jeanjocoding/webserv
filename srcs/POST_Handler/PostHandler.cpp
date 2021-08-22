@@ -1,18 +1,63 @@
 #include "PostHandler.hpp"
 #include "cgiLauncher.hpp"
 #include <sstream>
+#include <utility>
+
+// 	adds cgi headers to other headers and sets index of the beginning of the messager body
 
 
-
-HttpResponse	answer_post(HttpRequest const& request, LocationClass const& location)
+int				_findStrIndex(std::string to_find, char *buf, size_t buffer_size)
 {
-	HttpResponse	response;
-	std::string		tmp = location.getRoot();
+	size_t		i = 0;
+	size_t 	j = 0;
+	while (i < buffer_size)
+	{
+		while (buf[i] == to_find[j])
+		{
+			if (j == to_find.length())
+			{
+				return (i - (to_find.length() - 1));
+			}
+			i++;
+			j++;
+		}
+		if (j)
+			j = 0;
+		i++;
+	}
+	return (-1);
+}
 
-	//TODO
-	t_CgiParams	params;
+void	add_header_part(HttpResponse& HttpResponse , char *str, size_t buffer_size ,size_t& body_beginning)
+{
+	body_beginning = _findStrIndex("\r\n\r\n", str, buffer_size);
+	std::cout << "body beginning: " << body_beginning << std::endl;
+	std::string	header_part(str, body_beginning);
+	std::string	header_string;
+	size_t	next_crlf;
+	size_t	field_value_separator_index;
+	size_t pos = 0;
+
+	std::cout << "header part: " << header_part << std::endl;
+	next_crlf = header_part.find("\r\n");
+	while (next_crlf <= body_beginning)
+	{
+		header_string = header_part.substr(pos, next_crlf - pos);
+		std::cout << "header string: " << header_string << std::endl;
+		field_value_separator_index = header_string.find(':');
+		std::pair<std::string, std::string> header_pair(header_string.substr(0, field_value_separator_index), header_string.substr(field_value_separator_index + 1)); //optimisable
+		HttpResponse.addHeader(header_pair);
+		if (next_crlf == body_beginning)
+			break;
+		next_crlf = header_part.find("\r\n", next_crlf + 2);
+	}
+	body_beginning += 4; // je saute les crlf pour arriver direct au début du body
+}
+
+void		setCgiParams(t_CgiParams& params, HttpRequest const& request, LocationClass const& location)
+{
+	std::string		tmp = location.getRoot();
 	std::string	target = request.getRequestLineInfos().target;
-	char		*ptr;
 
 	tmp.append(target);
 	if ( target.length() > 4 && target.find(".php") == (target.length() - 4))
@@ -34,22 +79,35 @@ HttpResponse	answer_post(HttpRequest const& request, LocationClass const& locati
 		stream << request.getContentLength();
 		stream >> params.contentLength;
 	}
-//	params.scriptName = "/blorg.bla";
-//	params.pathInfo = "/home/user42/webserv/git_webserv/srcs/CgiLauncher/test.php";
-//	params.pathInfo = "/blorg.bla";
 	params.pathInfo = target;
-//	params.pathInfo = "/test.php";
-//	params.pathInfo = "/test.php/resultat";
-//	params.pathInfo = "/specific";
 	params.serverName = "localhost"; // a modif
 	params.serverProtocol = "HTTP/1.1"; // a modif
 	params.requestUri = target;
-//	params.requestUri = "/blorg.bla";
-	params.httpHost = "localhost"; // a modif
-//	params.queryString = "/kaka/kiki/kuku";
+	params.httpHost = "localhost"; // a modif	
+}
 
-	launchCgiScript(params, request, location, &ptr);
-	std::cout << "output: " << ptr << std::endl;
-	std::cout << "answering post request\n";
-	return response;
+HttpResponse	answer_post(HttpRequest const& request, LocationClass const& location)
+{
+	HttpResponse	response;
+
+	//TODO
+	char		*output;
+	t_CgiParams	params;
+	size_t		body_beginning = 0;
+	size_t		output_len = 0;
+
+	setCgiParams(params, request, location);
+	launchCgiScript(params, request, location, &output, output_len);
+	std::cout << "output: ";
+	write(1, output, output_len);
+	add_header_part(response, output, output_len, body_beginning);
+	std::cout << "after header" << std::endl;
+	response.setBody(&(output[body_beginning]), output_len - body_beginning);
+	response.setLength(output_len - body_beginning);
+	response.setDateTime();
+	response.setServerName();
+	response.setStatusCode(200);
+	response.setStatusMessage();
+	
+	return (response);
 }

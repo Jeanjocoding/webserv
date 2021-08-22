@@ -2,6 +2,18 @@
 #include <cstdlib>
 #include <cstring>
 
+int		append_to_buffer(char **buffer, int& buffer_size, char * to_append, int append_size)
+{
+	char *new_buf = new char[buffer_size + append_size];
+	std::strncpy(new_buf, *buffer, buffer_size);
+	std::strncpy(&new_buf[buffer_size], to_append, append_size);
+	if (buffer_size > 0)
+		delete *buffer;
+	buffer_size += append_size;
+	*buffer = new_buf;
+	return (1);
+}
+
 void		printtab(char ** tab, int length)
 {
 	int  i = 0;
@@ -61,7 +73,7 @@ int		setCgiParamsAsEnvironmentVariables(t_CgiParams& params, char **customEnv)
 
 
 
-int		launchCgiScript(t_CgiParams& params, HttpRequest const& request, LocationClass const& location, char **output)
+int		launchCgiScript(t_CgiParams& params, HttpRequest const& request, LocationClass const& location, char **output, size_t& output_len)
 {
 	int			script_output_pipe[2];
 	int			script_input_pipe[2];
@@ -70,6 +82,7 @@ int		launchCgiScript(t_CgiParams& params, HttpRequest const& request, LocationCl
 	int			read_ret;
 	int			wait_ret;
 	int			wait_status;
+	int			buffer_size = 0;
 	char		read_buffer[4096];
 	char 		**customEnv;
 	char	**args = new char*[2];
@@ -133,7 +146,7 @@ int		launchCgiScript(t_CgiParams& params, HttpRequest const& request, LocationCl
 		close(script_output_pipe[1]);
 		while ((read_ret = read(script_output_pipe[0], read_buffer, 4096)) > 0)
 		{
-			output_str.append(read_buffer, read_ret);
+			append_to_buffer(output, buffer_size, read_buffer, read_ret);
 		}
 		close (script_output_pipe[0]);
 		delete args[0];
@@ -144,10 +157,7 @@ int		launchCgiScript(t_CgiParams& params, HttpRequest const& request, LocationCl
 			return (-1);
 		}
 		wait_ret = wait(&wait_status);
-		std::cout << "output str: " << output_str << std::endl;
-		*output = new char[output_str.length() + 1];
-		std::strncpy(*output, output_str.c_str(), output_str.length() + 1);
-		(*output)[output_str.length()] = '\0';
+		output_len = buffer_size;
 	}
 	return (0);
 }
