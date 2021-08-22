@@ -23,7 +23,7 @@ print("len : " + str(len(mega_Str)))
 #to_send = "GET /FZEFGEZ/RGERgergerG/erzfe HTTP/1.1\r\nTransfer-Encoding: gzip, chunked\r\n\r\n5\r\nhhhhh\r\n0\r\n\r\n"
 #	print(to_send)
 #to_send = "POST /test_cgi/test.php HTTP/1.1\r\nhello:     goodbye      \r\nContent-Length: 3 \r\nConnection: c\r\n\r\nbjr"
-to_send = "POST /test_cgi HTTP/1.1\r\nhello:     goodbye      \r\nContent-Length: 3 \r\nConnection: c\r\n\r\nbjr"
+to_send = "POST /test.php HTTP/1.1\r\nhello:     goodbye      \r\nContent-Length: 3 \r\nConnection: c\r\n\r\nbjr"
 s.send(to_send.encode())
 resp = s.recv(1000);
 print("response from server: " + resp.decode("ascii"))

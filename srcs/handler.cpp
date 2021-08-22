@@ -171,8 +171,9 @@ void	answer_connection(ConnectionClass& connection)
 	HttpRequest& request = connection._request_pipeline[0];
 	if (!request.isValid())
 		return send_error(400, server._default_error_pages, connection);
-	LocationClass location = server.getLocation(request.getRequestLineInfos().target);//TODO
 	print_request(request);
+	std::cout << "target: " << request.getRequestLineInfos().target << std::endl;
+	LocationClass location = server.getLocation(request.getRequestLineInfos().target);//TODO
 	if (!location.methodIsAllowed(request.getMethod()))
 	{
 		std::cerr << "forbiden Http request method on location " << location.getUri() << std::endl;
