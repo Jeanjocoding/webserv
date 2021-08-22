@@ -14,7 +14,7 @@ int				_findStrIndex(std::string to_find, char *buf, size_t buffer_size)
 	{
 		while (buf[i] == to_find[j])
 		{
-			if (j == to_find.length())
+			if (j == to_find.length() - 1)
 			{
 				return (i - (to_find.length() - 1));
 			}
@@ -28,7 +28,7 @@ int				_findStrIndex(std::string to_find, char *buf, size_t buffer_size)
 	return (-1);
 }
 
-void	add_header_part(HttpResponse& HttpResponse , char *str, size_t buffer_size ,size_t& body_beginning)
+void	add_header_part(HttpResponse& response , char *str, size_t buffer_size ,size_t& body_beginning)
 {
 	body_beginning = _findStrIndex("\r\n\r\n", str, buffer_size);
 	std::cout << "body beginning: " << body_beginning << std::endl;
@@ -40,18 +40,28 @@ void	add_header_part(HttpResponse& HttpResponse , char *str, size_t buffer_size 
 
 	std::cout << "header part: " << header_part << std::endl;
 	next_crlf = header_part.find("\r\n");
-	while (next_crlf <= body_beginning)
+	while (next_crlf < body_beginning)
 	{
 		header_string = header_part.substr(pos, next_crlf - pos);
 		std::cout << "header string: " << header_string << std::endl;
 		field_value_separator_index = header_string.find(':');
 		std::pair<std::string, std::string> header_pair(header_string.substr(0, field_value_separator_index), header_string.substr(field_value_separator_index + 1)); //optimisable
-		HttpResponse.addHeader(header_pair);
-		if (next_crlf == body_beginning)
-			break;
+		response.addHeader(header_pair);
+		pos = next_crlf + 2;
 		next_crlf = header_part.find("\r\n", next_crlf + 2);
+		if (next_crlf == header_part.npos)
+		{
+			header_string = header_part.substr(pos, next_crlf - pos);
+			std::cout << "header string: " << header_string << std::endl;
+			field_value_separator_index = header_string.find(':');
+			std::pair<std::string, std::string> header_pair(header_string.substr(0, field_value_separator_index), header_string.substr(field_value_separator_index + 1)); //optimisable
+			response.addHeader(header_pair);
+			break;	
+		}
+		std::cout << "next crlf: " << next_crlf << ", body_beginning: " << body_beginning << std::endl; 
 	}
 	body_beginning += 4; // je saute les crlf pour arriver direct au début du body
+//	response.printHeaders();
 }
 
 void		setCgiParams(t_CgiParams& params, HttpRequest const& request, LocationClass const& location)
@@ -103,11 +113,12 @@ HttpResponse	answer_post(HttpRequest const& request, LocationClass const& locati
 	add_header_part(response, output, output_len, body_beginning);
 	std::cout << "after header" << std::endl;
 	response.setBody(&(output[body_beginning]), output_len - body_beginning);
-	response.setLength(output_len - body_beginning);
+	response.setHeader();
+/*	response.setLength(output_len - body_beginning);
 	response.setDateTime();
 	response.setServerName();
 	response.setStatusCode(200);
-	response.setStatusMessage();
+	response.setStatusMessage();*/
 	
 	return (response);
 }

@@ -64,7 +64,7 @@ int		setCgiParamsAsEnvironmentVariables(t_CgiParams& params, char **customEnv)
 	setCgiVariable("QUERY_STRING=", params.queryString, customEnv, index);
 	setCgiVariable("CONTENT_LENGTH=", params.contentLength, customEnv, index);
 	customEnv[index] = (char*)0;
-	printtab(customEnv, index);
+//	printtab(customEnv, index);
 
 	return (0);
 
