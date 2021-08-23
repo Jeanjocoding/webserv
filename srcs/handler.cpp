@@ -6,13 +6,14 @@
 /*   By: asablayr <marvin@42.fr>                    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2021/06/06 21:54:40 by asablayr          #+#    #+#             */
-/*   Updated: 2021/08/16 16:37:58 by asablayr         ###   ########.fr       */
+/*   Updated: 2021/08/23 14:23:53 by asablayr         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include <utility>
 #include <iostream>
 #include <fstream>
+#include <streambuf>
 #include <vector>
 #include <cstdio>
 #include <vector>
@@ -84,54 +85,69 @@ void	print_request(HttpRequest& request)
 
 static void	send_error(unsigned short error_nb, std::map<unsigned short, std::string> const& error_map, ConnectionClass& connection)
 {
-	HttpResponse response = HttpResponse(error_nb, error_map.find(error_nb)->second);//TODO
-	if (connection.sendResponse(response.toString()) == -1)
-	{
-		std::perror("send");
-		connection.closeConnection();
-	}
-	connection._request_pipeline.erase(connection._request_pipeline.begin());//might put this part in a connection method
-	if (connection._request_pipeline.empty())
-	{
-		if (connection.isPersistent())
-			connection.setStatus(CO_ISDONE);
-		else
-			connection.closeConnection();
-	}
-	return ;
+	HttpResponse response = HttpResponse(error_nb, error_map.find(error_nb)->second);
+	connection.sendResponse(response.toString());
 }
 
 static HttpResponse	answer_get(HttpRequest const& request, LocationClass const& location)
 {
 	HttpResponse	response;
-	std::string		tmp = location.getRoot();
+	std::string		tmp = location.getRoot();// Put the root working directory in tmp
 	//TODO
 	
-	std::cout << "root : " << location.getRoot() << std::endl;
-	tmp.append(request.getRequestLineInfos().target);
+	tmp.append(request.getRequestLineInfos().target);// Append the requested  uri
 	std::cout << "answering get request\ntrying to get file : " << tmp << std::endl;
 
-	if (*(--request.getRequestLineInfos().target.end()) != '/')
+	if (request.getRequestLineInfos().target == location.getUri() + "/" ||
+		(request.getRequestLineInfos().target == location.getUri() && *(--request.getRequestLineInfos().target.end()) == '/'))// If index is requested
 	{
-		std::ifstream body;
-		body.open(tmp.c_str());
-		if (!body.is_open())
-			response = HttpResponse(404, location.getErrorPage(404));
-		else
-			response = HttpResponse(200, tmp);
-	}
-	else
-	{
-		tmp.append(location.getIndex());
-		if (tmp.empty() && location.autoIndexIsOn())
-			response.setBody(location.getAutoIndex());// to code
+		tmp.append(location.getIndex());// Append the name of the index file
 		std::ifstream body;
 		body.open(tmp.c_str());
 		std::cout << "tmp : " << tmp << std::endl;
 		if (!body.is_open())
-			response = HttpResponse(404, location.getErrorPage(404));
+		{
+			if (location.autoIndexIsOn())
+			{
+				response.setBody(location.getAutoIndex());//TODO to code
+				response.setHeader(200);
+			}
+			else
+				response = HttpResponse(404, location.getErrorPage(404));
+		}
 		else
-			response = HttpResponse(200, tmp);
+		{
+			try// Try to input requested file in response body
+			{
+				tmp = std::string(std::istreambuf_iterator<char>(body), std::istreambuf_iterator<char>());
+				response.setBody(tmp.begin(), tmp.end());
+				response.setHeader(200);
+			}
+			catch (std::ios_base::failure const& e)// If requested file is a folder return 404
+			{
+				response = HttpResponse(404, location.getErrorPage(404));
+			}
+		}
+	}
+	else // If request is not index
+	{
+		std::ifstream body;// Creates a buffer to put file content
+		body.open(tmp.c_str());//might put all this part in the HttpResponse object
+		if (!body.is_open())
+			response = HttpResponse(404, location.getErrorPage(404));// If requested file is not open return 404
+		else
+		{
+			try// Try to input requested file in response body
+			{
+				tmp = std::string(std::istreambuf_iterator<char>(body), std::istreambuf_iterator<char>());
+				response.setBody(tmp.begin(), tmp.end());
+				response.setHeader(200);
+			}
+			catch (std::ios_base::failure const& e)// If requested file is a folder return 404
+			{
+				response = HttpResponse(404, location.getErrorPage(404));
+			}
+		}
 	}
 	return response;
 }
@@ -169,69 +185,39 @@ void	answer_connection(ConnectionClass& connection)
 		return ;
 	}
 	HttpRequest& request = connection._request_pipeline[0];
-	if (!request.isValid())
+	if (!request.isValid())//TODO check why is invalid and respond accordingly
 		return send_error(400, server._default_error_pages, connection);
-	LocationClass location = server.getLocation(request.getRequestLineInfos().target);//TODO
-	print_request(request);
-	if (!location.methodIsAllowed(request.getMethod()))
+	LocationClass location = server.getLocation(request.getRequestLineInfos().target);// Select the proper location block to work with
+	print_request(request);// For test
+	if (!location.methodIsAllowed(request.getMethod()))// Check if Http method is allowed in working location block
 	{
 		std::cerr << "forbiden Http request method on location " << location.getUri() << std::endl;
-		return send_error(405, location.getErrorMap(), connection);//TODO
+		return send_error(405, location.getErrorMap(), connection);
 	}
-	switch (request.getMethod())
+	if (location.isRedirect())//TODO redirect request
+	{
+		std::string tmp = location.getRedirectUrl();
+/*		std::string tmp(request.getRequestLineInfos().target);
+		if (!(location.getUri() == "/" && request.getRequestLineInfos().target == "/"))
+			tmp.erase(0, location.getUri().size());
+		tmp.insert(0, location.getRedirectUrl());
+*/		std::cout << "redirecting " << request.getRequestLineInfos().target << " to " << location.getRedirectUrl()<< " resulting in : " << tmp << std::endl;//for test
+		connection.sendResponse(HttpResponse(location.getRedirectCode(), tmp).toString());// Send redirect response
+		return ;
+	}
+	switch (request.getMethod())// Generate the HttpResponse depending on HttpMethod
 	{
 		case GET_METHOD :
-			response = answer_get(request, location);//TODO
+			response = answer_get(request, location);
 			break;
 		case POST_METHOD :
-			response = answer_post(request, location);//TODO
+			response = answer_post(request, location);
 			break;
 		case DELETE_METHOD :
-			response = answer_delete(request, location);//TODO
+			response = answer_delete(request, location);
 			break;
 		default :
 			return send_error(501, location.getErrorMap(), connection);
 	}
-	if (connection.sendResponse(response.toString()) == -1)
-	{
-		std::perror("send");
-		connection.closeConnection();
-		return ;
-	}
-	connection._request_pipeline.erase(connection._request_pipeline.begin());//might put this part in a connection method
-	if (connection._request_pipeline.empty())
-	{
-		if (connection.isPersistent())
-			connection.setStatus(CO_ISDONE);
-		else
-			connection.closeConnection();
-	}
-}
-
-void	handle_connection(ConnectionClass& connection)
-{
-	int send_ret;
-	int retVal = 0;
-	std::vector<HttpRequest>	RequestPipeline;
-
-//	std::cout << "connection server on port : " << connection._server->_port << std::endl;
-//	retVal = connection.receiveRequest(RequestPipeline);
-	if (retVal == -1)
-	{
-		connection.closeConnection();
-		return;
-	}
-	else if (retVal == 0)
-	{
-		std::cout << "connection closed by client" << std::endl;
-		connection.closeConnection();
-		return;
-	}
-	print_pipeline(RequestPipeline, connection);
-	send_ret = connection.sendResponse("HTTP/1.1 200 OK\r\nContent-length: 52\r\n\r\n<html><body><h1>Welcome to Webser</h1></body></html>");
-	if (send_ret == -1)
-		std::perror("send");
-	if (!connection.isPersistent())
-		connection.closeConnection();
-
+	connection.sendResponse(response.toString());// Handles all of the response sending and adjust the connection accordingly (cf: pop request list close connection etc...)
 }

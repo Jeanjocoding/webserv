@@ -6,7 +6,7 @@
 /*   By: asablayr <marvin@42.fr>                    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2021/07/15 13:31:12 by asablayr          #+#    #+#             */
-/*   Updated: 2021/08/12 15:05:06 by asablayr         ###   ########.fr       */
+/*   Updated: 2021/08/19 16:52:24 by asablayr         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -43,7 +43,7 @@ LocationClass::LocationClass(std::string const& params, std::string const& buff)
 	setMethods();
 }
 
-LocationClass::LocationClass(LocationClass const& copy): contextClass(copy), _uri(copy._uri), _param(copy._param), _root(copy._root), _index(copy._index), _autoindex(copy._autoindex), _error_pages(copy._error_pages)
+LocationClass::LocationClass(LocationClass const& copy): contextClass(copy), _uri(copy._uri), _param(copy._param), _root(copy._root), _index(copy._index), _autoindex(copy._autoindex), _redirect_bool(copy._redirect_bool), _redirect_code(copy._redirect_code), _redirect_uri(copy._redirect_uri), _error_pages(copy._error_pages)
 {
 	_methods[GET_METHOD] = copy._methods[GET_METHOD];
 	_methods[POST_METHOD] = copy._methods[POST_METHOD];
@@ -129,6 +129,21 @@ bool LocationClass::methodIsAllowed(unsigned int method) const
 		return _methods[method];
 }
 
+bool LocationClass::isRedirect(void) const
+{
+	return _redirect_bool;
+}
+
+unsigned short LocationClass::getRedirectCode(void) const
+{
+	return _redirect_code;
+}
+
+std::string LocationClass::getRedirectUrl(void) const
+{
+	return _redirect_uri;
+}
+
 bool LocationClass::autoIndexIsOn(void) const
 {
 	return _autoindex;
@@ -182,7 +197,7 @@ void	LocationClass::setAutoindex(void)
 
 void	LocationClass::setRedirect(void)
 {
-	std::map<std::string, std::string>::const_iterator it = _directives.find("redirect");
+	std::map<std::string, std::string>::const_iterator it = _directives.find("return");
 	if (it == _directives.end())
 		return ;
 	std::istringstream ss(it->second);
@@ -191,7 +206,7 @@ void	LocationClass::setRedirect(void)
 	ss >> tmp;
 	_redirect_code = std::atoi(tmp.c_str());
 	ss >> tmp;
-	_redirect_uri = tmp; 
+	_redirect_uri = tmp;
 }
 
 void	LocationClass::setMethods(void)

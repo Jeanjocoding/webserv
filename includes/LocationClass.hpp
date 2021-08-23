@@ -6,7 +6,7 @@
 /*   By: asablayr <marvin@42.fr>                    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2021/06/12 14:11:07 by asablayr          #+#    #+#             */
-/*   Updated: 2021/08/10 19:23:45 by asablayr         ###   ########.fr       */
+/*   Updated: 2021/08/19 16:32:21 by asablayr         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -44,6 +44,9 @@ class LocationClass : public contextClass
 			std::string								getErrorPage(unsigned short error_code) const;// get single error_page
 			void									setErrorPages(std::map<unsigned short, std::string> const& error_map);// set the _error_pages attribute
 			bool									methodIsAllowed(unsigned int method) const;// check if HTTP method is allowed
+			bool									isRedirect(void) const;
+			unsigned short							getRedirectCode(void) const;
+			std::string								getRedirectUrl(void) const;
 			bool									autoIndexIsOn(void) const;// check if auto index is on
 			unsigned int 							matchUri(std::string const& s) const;// returns the number of character match
 
