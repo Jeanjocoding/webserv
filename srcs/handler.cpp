@@ -6,7 +6,7 @@
 /*   By: asablayr <marvin@42.fr>                    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2021/06/06 21:54:40 by asablayr          #+#    #+#             */
-/*   Updated: 2021/08/23 14:23:53 by asablayr         ###   ########.fr       */
+/*   Updated: 2021/08/24 11:32:42 by asablayr         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -175,6 +175,25 @@ static HttpResponse	answer_delete(HttpRequest const& request, LocationClass cons
 	return response;
 }
 
+static HttpResponse	answer_redirection(HttpRequest const& request, LocationClass const& location)
+{
+	std::string tmp;
+	if (location.getRedirectUrl().find('$') != std::string::npos)
+	{
+		tmp = request.getRequestLineInfos().target;// Put original requested uri in tmp
+//		if (!(location.getUri() == "/" && request.getRequestLineInfos().target == "/"))
+//			tmp.erase(0, location.getUri().size());
+		tmp.erase(0, location.getUri().size());// Remove the location part of the url
+		tmp.insert(0, location.getRedirectUrl(), 0, location.getRedirectUrl().find('$'));// Put redirect uri at begining of requested uri
+	}
+	else
+	{
+		tmp = location.getRedirectUrl();
+	}
+	std::cout << "redirecting " << request.getRequestLineInfos().target << " to " << location.getRedirectUrl()<< " resulting in : " << tmp << std::endl;//for test
+	return HttpResponse(location.getRedirectCode(), tmp);// Send redirect response
+}
+
 void	answer_connection(ConnectionClass& connection)
 {
 	serverClass& server = *connection._server;
@@ -196,13 +215,7 @@ void	answer_connection(ConnectionClass& connection)
 	}
 	if (location.isRedirect())//TODO redirect request
 	{
-		std::string tmp = location.getRedirectUrl();
-/*		std::string tmp(request.getRequestLineInfos().target);
-		if (!(location.getUri() == "/" && request.getRequestLineInfos().target == "/"))
-			tmp.erase(0, location.getUri().size());
-		tmp.insert(0, location.getRedirectUrl());
-*/		std::cout << "redirecting " << request.getRequestLineInfos().target << " to " << location.getRedirectUrl()<< " resulting in : " << tmp << std::endl;//for test
-		connection.sendResponse(HttpResponse(location.getRedirectCode(), tmp).toString());// Send redirect response
+		connection.sendResponse(answer_redirection(request, location).toString());// Send redirect response
 		return ;
 	}
 	switch (request.getMethod())// Generate the HttpResponse depending on HttpMethod

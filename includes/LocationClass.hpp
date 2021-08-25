@@ -6,7 +6,7 @@
 /*   By: asablayr <marvin@42.fr>                    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2021/06/12 14:11:07 by asablayr          #+#    #+#             */
-/*   Updated: 2021/08/19 16:32:21 by asablayr         ###   ########.fr       */
+/*   Updated: 2021/08/23 18:41:22 by asablayr         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -31,7 +31,8 @@ class LocationClass : public contextClass
 
 			~LocationClass();
 
-			std::string								getUri(void) const;// get uri of block
+			std::string&							getUri(void);// get uri of block
+			std::string const&						getUri(void) const;// get uri of block
 			std::string								getParam(void) const;// get the uri match method
 			std::string								getRoot(void) const;// get _root attribute
 			void									setRoot(std::string root);

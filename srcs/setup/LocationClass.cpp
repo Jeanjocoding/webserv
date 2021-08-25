@@ -6,7 +6,7 @@
 /*   By: asablayr <marvin@42.fr>                    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2021/07/15 13:31:12 by asablayr          #+#    #+#             */
-/*   Updated: 2021/08/19 16:52:24 by asablayr         ###   ########.fr       */
+/*   Updated: 2021/08/23 18:40:50 by asablayr         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -70,7 +70,12 @@ LocationClass& LocationClass::operator = (LocationClass const& copy)
 	return *this;
 }
 
-std::string	LocationClass::getUri(void) const
+std::string& LocationClass::getUri(void)
+{
+	return _uri;
+}
+
+std::string	const& LocationClass::getUri(void) const
 {
 	return _uri;
 }
