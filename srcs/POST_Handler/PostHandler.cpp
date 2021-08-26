@@ -78,8 +78,8 @@ void		setCgiParams(t_CgiParams& params, HttpRequest const& request, LocationClas
 	}
 	else
 	{
-		params.scriptFilename = tmp.append("/" + location.getIndex());
-		params.scriptName = "/" + location.getIndex();
+		params.scriptFilename = tmp.append(location.getIndex());
+		params.scriptName = location.getIndex();
 	}
 	std::cout << "tmp: " << tmp << std::endl;
 	params.redirectStatus = "200";
