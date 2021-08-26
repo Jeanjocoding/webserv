@@ -2,6 +2,7 @@
 #include "cgiLauncher.hpp"
 #include <sstream>
 #include <utility>
+#include <fstream>
 
 // 	adds cgi headers to other headers and sets index of the beginning of the messager body
 
@@ -105,8 +106,17 @@ HttpResponse	answer_post(HttpRequest const& request, LocationClass const& locati
 	t_CgiParams	params;
 	size_t		body_beginning = 0;
 	size_t		output_len = 0;
+	std::ifstream body;
 
 	setCgiParams(params, request, location);
+	body.open(params.scriptFilename.c_str());
+	if (!body.is_open())
+	{
+		response = HttpResponse(404, location.getErrorPage(404));
+		body.close();
+		return (response);
+	}
+	body.close();
 	launchCgiScript(params, request, location, &output, output_len);
 	std::cout << "output: ";
 	write(1, output, output_len);
@@ -114,11 +124,6 @@ HttpResponse	answer_post(HttpRequest const& request, LocationClass const& locati
 	std::cout << "after header" << std::endl;
 	response.setBody(&(output[body_beginning]), output_len - body_beginning);
 	response.setHeader();
-/*	response.setLength(output_len - body_beginning);
-	response.setDateTime();
-	response.setServerName();
-	response.setStatusCode(200);
-	response.setStatusMessage();*/
 	
 	return (response);
 }

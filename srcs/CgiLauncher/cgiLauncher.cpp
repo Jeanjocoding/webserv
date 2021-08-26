@@ -64,7 +64,6 @@ int		setCgiParamsAsEnvironmentVariables(t_CgiParams& params, char **customEnv)
 	setCgiVariable("QUERY_STRING=", params.queryString, customEnv, index);
 	setCgiVariable("CONTENT_LENGTH=", params.contentLength, customEnv, index);
 	customEnv[index] = (char*)0;
-//	printtab(customEnv, index);
 
 	return (0);
 
@@ -88,16 +87,11 @@ int		launchCgiScript(t_CgiParams& params, HttpRequest const& request, LocationCl
 	char	**args = new char*[2];
 
 	std::string	execname("/usr/local/bin/php-cgi");
-//	std::string	execname("/home/user42/webserv/git_webserv/srcs/CgiLauncher/ubuntu_cgi_tester");
-//	std::string	argname("/home/user42/webserv/git_webserv/srcs/CgiLauncher/test.php");
 	std::string	argname("php-cgi");
 
 	args[0] = new char[execname.length() + 1];
 	std::strncpy(args[0], execname.c_str(), execname.length());
 	args[0][execname.length()] = '\0';
-//	args[1] = new char[params.scriptFilename.length() + 1];
-//	std::strncpy(args[1], params.scriptFilename.c_str(), params.scriptFilename.length());
-//	args[1][params.scriptFilename.length()] = '\0';
 	args[1] = (char*)0;
 	location.getUri(); // pour eviter pbs de compilation
 	if (pipe(script_output_pipe) < 0)
@@ -125,13 +119,9 @@ int		launchCgiScript(t_CgiParams& params, HttpRequest const& request, LocationCl
 		close(script_input_pipe[0]);
 		allocateCustomEnv(&customEnv);
 		setCgiParamsAsEnvironmentVariables(params, customEnv);
-//		std::string method_to_check("REQUEST_METHOD");
-//		std::cout << "REQUEST METHOD in env: " << std::getenv("REQUEST_METHOD") << std::endl;
-//		if (execve("./ubuntu_cgi_tester", args, customEnv) == -1)
 		if (execve(args[0], (char *const *) args, customEnv) == -1)
 			perror("execve");
 		std::cout << "execve failed" << std::endl;
-//		close(pipefd[1]);
 		return (-1);
 	}
 	else
@@ -161,32 +151,3 @@ int		launchCgiScript(t_CgiParams& params, HttpRequest const& request, LocationCl
 	}
 	return (0);
 }
-
-/*int		main()
-{
-	t_CgiParams	params;
-	char		*ptr;
-
-	params.redirectStatus = "200";
-	params.requestMethod = "POST";
-	params.contentLength = "10";
-	params.scriptFilename = "/home/user42/webserv/git_webserv/srcs/CgiLauncher/test.php";
-	params.scriptName = "/test.php";
-//	params.scriptName = "/blorg.bla";
-//	params.pathInfo = "/home/user42/webserv/git_webserv/srcs/CgiLauncher/test.php";
-//	params.pathInfo = "/blorg.bla";
-	params.pathInfo = "/test.php";
-//	params.pathInfo = "/test.php";
-//	params.pathInfo = "/test.php/resultat";
-//	params.pathInfo = "/specific";
-	params.serverName = "localhost";
-	params.serverProtocol = "HTTP/1.1";
-	params.requestUri = "/test.php";
-//	params.requestUri = "/blorg.bla";
-	params.httpHost = "localhost";
-	params.queryString = "/kaka/kiki/kuku";
-
-	launchCgiScript(params, &ptr);
-	std::cout << "output: " << ptr << std::endl;
-	return (0);
-} */
