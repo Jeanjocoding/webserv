@@ -6,7 +6,7 @@
 /*   By: asablayr <marvin@42.fr>                    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2021/06/12 14:11:07 by asablayr          #+#    #+#             */
-/*   Updated: 2021/08/10 19:23:45 by asablayr         ###   ########.fr       */
+/*   Updated: 2021/08/26 15:57:33 by asablayr         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -31,10 +31,14 @@ class LocationClass : public contextClass
 
 			~LocationClass();
 
-			std::string								getUri(void) const;// get uri of block
+			std::string&							getUri(void);// get uri of block
+			std::string const&						getUri(void) const;// get uri of block
 			std::string								getParam(void) const;// get the uri match method
 			std::string								getRoot(void) const;// get _root attribute
 			void									setRoot(std::string root);
+			std::string const&						getServerName(void) const;// get _server_name attribute
+			std::string&							getServerName(void);// get _server_name attribute
+			void									setServerName(std::string server_name);// set _server_name
 			std::string								getIndex(void) const;// get _root attribute
 			void									setIndex(std::string index);
 			std::string								getAutoIndex(void) const;// generate and returns the auto index page as string
@@ -44,6 +48,9 @@ class LocationClass : public contextClass
 			std::string								getErrorPage(unsigned short error_code) const;// get single error_page
 			void									setErrorPages(std::map<unsigned short, std::string> const& error_map);// set the _error_pages attribute
 			bool									methodIsAllowed(unsigned int method) const;// check if HTTP method is allowed
+			bool									isRedirect(void) const;
+			unsigned short							getRedirectCode(void) const;
+			std::string								getRedirectUrl(void) const;
 			bool									autoIndexIsOn(void) const;// check if auto index is on
 			unsigned int 							matchUri(std::string const& s) const;// returns the number of character match
 
@@ -62,6 +69,7 @@ class LocationClass : public contextClass
 
 			std::string								_uri;
 			std::string								_param;
+			std::string								_server_name;
 			std::string								_root;
 			std::string								_index;
 			bool									_methods[3];

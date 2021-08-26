@@ -6,7 +6,7 @@
 /*   By: asablayr <marvin@42.fr>                    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2021/08/02 16:27:33 by asablayr          #+#    #+#             */
-/*   Updated: 2021/08/17 13:58:47 by asablayr         ###   ########.fr       */
+/*   Updated: 2021/08/19 18:15:09 by asablayr         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -34,7 +34,14 @@ HttpResponse::~HttpResponse(void)
 
 HttpResponse::HttpResponse(unsigned short status_code, std::string body_path)
 {
-	if(!setBody(body_path))
+	if (status_code == 301 || status_code == 302)
+	{
+		setHeader(status_code);
+		_header.append("Location: ");
+		_header.append(body_path);
+		_header.append("\r\n");
+	}
+	else if(!setBody(body_path))
 		setHeader(500);
 	else
 		setHeader(status_code);
@@ -51,6 +58,7 @@ HttpResponse&	HttpResponse::operator = (HttpResponse const& copy)
 std::string		HttpResponse::toString(void) const
 {
 	std::string res = _header;
+	res.append("\r\n");
 	res.append(_body);
 	return res;
 }
@@ -136,7 +144,6 @@ void	HttpResponse::setHeader(void)
 	_header.append("Connection: ");
 	_header.append(_connection);
 	_header.append("\r\n");
-	_header.append("\r\n");
 }
 
 bool	HttpResponse::setBody(std::string const& body_path)
@@ -148,6 +155,7 @@ bool	HttpResponse::setBody(std::string const& body_path)
 	if (!file.is_open())
 	{
 		_body = DEFAULT_ERROR_BODY;
+		setLength();
 		return false;
 	}
 	_body = std::string(std::istreambuf_iterator<char>(file), std::istreambuf_iterator<char>());

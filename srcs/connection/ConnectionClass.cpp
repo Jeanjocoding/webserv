@@ -6,7 +6,7 @@
 /*   By: asablayr <marvin@42.fr>                    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2021/07/04 17:42:52 by asablayr          #+#    #+#             */
-/*   Updated: 2021/08/02 16:22:23 by asablayr         ###   ########.fr       */
+/*   Updated: 2021/08/20 11:40:23 by asablayr         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -1514,7 +1514,21 @@ int			ConnectionClass::receiveRequest(void)
 
 int			ConnectionClass::sendResponse(std::string response)
 {
-	return (send(_socketNbr, response.c_str(), response.length(), 0));
+	if (send(_socketNbr, response.c_str(), response.length(), 0) == -1)
+	{
+		std::perror("send");
+		closeConnection();
+		return (-1);
+	}
+	_request_pipeline.erase(_request_pipeline.begin());
+	if (_request_pipeline.empty())
+	{
+		if (isPersistent())
+			setStatus(CO_ISDONE);
+		else
+			closeConnection();
+	}
+	return (0);
 }
 
 /** Empties the reading buffer before closing the connection */

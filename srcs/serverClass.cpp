@@ -6,7 +6,7 @@
 /*   By: asablayr <marvin@42.fr>                    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2021/06/07 18:49:16 by asablayr          #+#    #+#             */
-/*   Updated: 2021/08/17 22:31:02 by asablayr         ###   ########.fr       */
+/*   Updated: 2021/08/26 16:07:18 by asablayr         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -170,12 +170,23 @@ LocationClass&	serverClass::getLocation(std::string const& uri) const
 
 void			serverClass::setLocation(void)
 {
+	bool	check = false;
+
 	for (std::vector<LocationClass*>::iterator it = _location.begin(); it != _location.end(); it++)
 		setLocation(**it);
+	for (std::vector<LocationClass*>::iterator it = _location.begin(); it != _location.end(); it++)
+		if ((*it)->getUri() == "/" && ((*it)->getParam() == "" || (*it)->getParam() == "^~"))
+			check = true;
+	if (!check)
+	{
+		_location.insert(_location.begin(), new LocationClass());
+		setLocation(**_location.begin());
+	}
 }
 
 void			serverClass::setLocation(LocationClass& location) const
 {
+	location.setServerName(_server_name);
 	if (location._directives.find("root") == location._directives.end())
 		location.setRoot(_root);
 	if (location._directives.find("index") == location._directives.end())
@@ -243,7 +254,9 @@ std::map<unsigned short, std::string>	serverClass::baseErrorPages(void)
 	std::map<unsigned short, std::string>	res;
 
 	res[400] = ERR_400_PATH;
-	res[404] = ERR_404_PATH;//TODO complete error map
+	res[404] = ERR_404_PATH;
+	res[405] = ERR_405_PATH;
+	res[501] = ERR_501_PATH;//TODO complete error map
 	return res;
 }
 
