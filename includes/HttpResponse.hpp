@@ -44,6 +44,7 @@ public:
 	void						setHeader(void);
 	bool						setBody(std::string const& body_path);
 	void						setBody(std::string::iterator start, std::string::iterator end);
+	void						setBody(char *str, int len);
 	void						setLength(void);
 	void						setLength(unsigned long length);
 	void						setDateTime(void);
