@@ -6,7 +6,7 @@
 /*   By: asablayr <marvin@42.fr>                    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2021/07/15 13:31:12 by asablayr          #+#    #+#             */
-/*   Updated: 2021/08/23 18:40:50 by asablayr         ###   ########.fr       */
+/*   Updated: 2021/08/26 16:04:41 by asablayr         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -15,14 +15,14 @@
 #include <cstdlib>
 #include "LocationClass.hpp"
 
-LocationClass::LocationClass(): _uri("/"), _param(""), _root("."), _index("index.html"), _autoindex(false)
+LocationClass::LocationClass(): _uri("/"), _param(""), _root("."), _index(""), _autoindex(false)
 {
 	_methods[GET_METHOD] = true;
 	_methods[POST_METHOD] = true;
 	_methods[DELETE_METHOD] = true;
 }
 
-LocationClass::LocationClass(std::string const& params, std::string const& buff) : contextClass("location", buff), _uri("/"), _param(""), _root("."), _index("index.html"), _autoindex(false)
+LocationClass::LocationClass(std::string const& params, std::string const& buff) : contextClass("location", buff), _uri("/"), _param(""), _server_name("webserv"), _root("."), _index("index.html"), _autoindex(false)
 {
 	std::istringstream iss(params);
 	std::string tmp;
@@ -43,7 +43,7 @@ LocationClass::LocationClass(std::string const& params, std::string const& buff)
 	setMethods();
 }
 
-LocationClass::LocationClass(LocationClass const& copy): contextClass(copy), _uri(copy._uri), _param(copy._param), _root(copy._root), _index(copy._index), _autoindex(copy._autoindex), _redirect_bool(copy._redirect_bool), _redirect_code(copy._redirect_code), _redirect_uri(copy._redirect_uri), _error_pages(copy._error_pages)
+LocationClass::LocationClass(LocationClass const& copy): contextClass(copy), _uri(copy._uri), _param(copy._param), _server_name(copy._server_name), _root(copy._root), _index(copy._index), _autoindex(copy._autoindex), _redirect_bool(copy._redirect_bool), _redirect_code(copy._redirect_code), _redirect_uri(copy._redirect_uri), _error_pages(copy._error_pages)
 {
 	_methods[GET_METHOD] = copy._methods[GET_METHOD];
 	_methods[POST_METHOD] = copy._methods[POST_METHOD];
@@ -88,6 +88,16 @@ std::string	LocationClass::getParam(void) const
 std::string	LocationClass::getRoot(void) const
 {
 	return _root;
+}
+
+std::string const&	LocationClass::getServerName(void) const
+{
+	return _server_name;
+}
+
+std::string&	LocationClass::getServerName(void)
+{
+	return _server_name;
 }
 
 std::string	LocationClass::getIndex(void) const
@@ -174,6 +184,11 @@ void	LocationClass::setRoot(void)
 void	LocationClass::setRoot(std::string root)
 {
 	_root = root;
+}
+
+void	LocationClass::setServerName(std::string server_name)
+{
+	_server_name = server_name;
 }
 
 void	LocationClass::setIndex(void)

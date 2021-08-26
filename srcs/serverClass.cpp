@@ -6,7 +6,7 @@
 /*   By: asablayr <marvin@42.fr>                    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2021/06/07 18:49:16 by asablayr          #+#    #+#             */
-/*   Updated: 2021/08/18 14:47:24 by asablayr         ###   ########.fr       */
+/*   Updated: 2021/08/26 16:07:18 by asablayr         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -186,6 +186,7 @@ void			serverClass::setLocation(void)
 
 void			serverClass::setLocation(LocationClass& location) const
 {
+	location.setServerName(_server_name);
 	if (location._directives.find("root") == location._directives.end())
 		location.setRoot(_root);
 	if (location._directives.find("index") == location._directives.end())
