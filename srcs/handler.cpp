@@ -44,8 +44,11 @@ void	print_pipeline(std::vector<HttpRequest>& requestPipeline, ConnectionClass& 
 		std::cout << "ENCODINGS: " << std::endl;
 		print_vec(requestPipeline[i].getModifyableTE());
 		std::cout << std::endl;
-		std::cout << "BODY: " << requestPipeline[i].getContent() << std::endl;
-		std::cout << std::endl;
+		if (requestPipeline[i].isChunked())
+			std::cout << "content length of chunked: " << requestPipeline[i].getCurrentContentLength() << std::endl;
+		std::cout << "BODY: ";
+	std::string to_print(requestPipeline[i].getContent(), requestPipeline[i].getCurrentContentLength());
+	std::cout << to_print << std::endl;
 		std::cout << "TRAILERS: " << std::endl;
 		requestPipeline[i].printTrailers();
 		std::cout << std::endl;
@@ -72,7 +75,12 @@ void	print_request(HttpRequest& request)
 	std::cout << "ENCODINGS: " << std::endl;
 	print_vec(request.getModifyableTE());
 	std::cout << std::endl;
-	std::cout << "BODY: " << request.getContent() << std::endl;
+	if (request.isChunked())
+		std::cout << "content length of chunked: " << request.getCurrentContentLength() << std::endl;
+	std::cout << std::endl;
+	std::cout << "BODY: ";
+	std::string to_print(request.getContent(), request.getCurrentContentLength());
+	std::cout << to_print << std::endl;
 	std::cout << std::endl;
 	std::cout << "TRAILERS: " << std::endl;
 	request.printTrailers();

@@ -43,7 +43,7 @@
 #include "ConnectionUtils.hpp"
 #include <vector>
 
-#define	READING_BUF_SIZE  10000
+#define	READING_BUF_SIZE  12
 #define	SINGLE_READ_SIZE 4
 #define EMPTYBUF_READ_SIZE 4096
 #define MAX_READ_BEFORE_FORCE_CLOSE 25000

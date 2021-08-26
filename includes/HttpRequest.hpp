@@ -3,6 +3,7 @@
 
 #include <vector>
 #include "HttpMessage.hpp"
+#include "utils.hpp"
 
 typedef struct s_requestLineInfos
 {
@@ -40,7 +41,7 @@ public:
 	long				getContentLength(void) const;
 	void				setContentLength(long length);
 	void				setContent(std::string const& req_content);
-	std::string const&		getContent() const;
+	char				*getContent() const;
 	requestLineInfos const&		getRequestLineInfos(void) const;
 	int				hasContent(void) const;
 	void				setHasContent(bool hasContent);
@@ -55,6 +56,7 @@ public:
 	void				setHasTrailer(bool value);
 	bool				HasTrailers() const;
 	std::vector<std::string>&	getModifyableConnectionOptions();
+	long/* const&	*/		getCurrentContentLength() const;
 
 
 
@@ -67,7 +69,8 @@ private:
 	requestLineInfos		_requestLine;
 	int				_lineCount;
 	long				_contentLength;
-	std::string			_content;
+	long				_currentContentLength;
+	char				*_content;
 	bool				_hasBody;
 	std::vector<std::string>	_transferEncodings;
 	std::vector<std::string>	_trailers;

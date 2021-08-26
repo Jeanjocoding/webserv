@@ -1,18 +1,7 @@
 #include "cgiLauncher.hpp"
 #include <cstdlib>
 #include <cstring>
-
-int		append_to_buffer(char **buffer, int& buffer_size, char * to_append, int append_size)
-{
-	char *new_buf = new char[buffer_size + append_size];
-	std::strncpy(new_buf, *buffer, buffer_size);
-	std::strncpy(&new_buf[buffer_size], to_append, append_size);
-	if (buffer_size > 0)
-		delete *buffer;
-	buffer_size += append_size;
-	*buffer = new_buf;
-	return (1);
-}
+#include "utils.hpp"
 
 void		printtab(char ** tab, int length)
 {
@@ -81,7 +70,7 @@ int		launchCgiScript(t_CgiParams& params, HttpRequest const& request, LocationCl
 	int			read_ret;
 	int			wait_ret;
 	int			wait_status;
-	int			buffer_size = 0;
+	long			buffer_size = 0;
 	char		read_buffer[4096];
 	char 		**customEnv;
 	char	**args = new char*[2];
@@ -129,7 +118,7 @@ int		launchCgiScript(t_CgiParams& params, HttpRequest const& request, LocationCl
 		close(script_input_pipe[0]);
 		if (request.getMethod() == POST_METHOD && request.getContentLength())
 		{
-			if (write(script_input_pipe[1], request.getContent().c_str(), request.getContentLength()) == -1)
+			if (write(script_input_pipe[1], request.getContent(), request.getContentLength()) == -1)
 				perror("write");
 		}
 		close (script_input_pipe[1]);
