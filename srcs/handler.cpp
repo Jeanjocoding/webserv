@@ -173,7 +173,7 @@ static HttpResponse	answer_get(HttpRequest const& request, LocationClass const& 
 	return response;
 } */
 
-static HttpResponse	answer_delete(HttpRequest const& request, LocationClass const& location)
+/*static HttpResponse	answer_delete(HttpRequest const& request, LocationClass const& location)
 {
 	HttpResponse	response;
 	std::string		tmp = location.getRoot();
@@ -182,7 +182,7 @@ static HttpResponse	answer_delete(HttpRequest const& request, LocationClass cons
 	tmp.append(request.getRequestLineInfos().target);
 	std::cout << "answering delete request\n";
 	return response;
-}
+}*/
 
 static HttpResponse	answer_redirection(HttpRequest const& request, LocationClass const& location)
 {
