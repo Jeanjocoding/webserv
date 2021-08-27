@@ -19,8 +19,8 @@ print("len : " + str(len(mega_Str)))
 #to_send = "GET /FZEFGEZ/RGERgergerG/gerge HTTP/1.1\r\nhello:     goodbye      \r\nContent-Length: 1 \r\nConnection: c\r\n\r\n1GET /FZEFGEZ/RGERgergerG/gerge HTTP/1.1\r\nhello:     2oodbye2  \r\ncontent-length: 2    \r\n\r\n22GET /FZEFGEZ/RGERgergerG/erzfe HTTP/1.1\r\nTransfer-Encoding: gzip, chunked\r\n\r\n5\r\nhhhhh\r\nA\r\nbbbbbbbbbC\r\na\r\n" + mega_Str + "\r\n0\r\n\r\nGET /FZEFGEZ/RGERgergerG/gerge HTTP/1.1\r\nhello:     3oodbye3\r\n\r\nGET /FZEFGEZ/RGERgergerG/gerge HTTP/1.1\r\nhello:     4ofbye4\r\n\r\nGET /FZEFGEZ/RGERgergerG/gerge HTTP/1.1\r\nhello:     5oodbye5      \r\n\r\n"
 #to_send = "GET /FZEFGEZ/RGERgergerG/gerge HTTP/1.1\r\nhello:     goodbye      \r\nContent-Length: 1 \r\nConnection: c\r\n\r\n1GET /FZEFGEZ/RGERgergerG/gerge HTTP/1.1\r\nhello:     2oodbye2  \r\ncontent-length: 2    \r\n\r\n22GET /FZEFGEZ/RGERgergerG/gerge HTTP/1.1\r\nhello:     3oodbye3\r\n\r\nGET /FZEFGEZ/RGERgergerG/gerge HTTP/1.1\r\nhello:     4ofbye4\r\n\r\nGET /FZEFGEZ/RGERgergerG/gerge HTTP/1.1\r\nhello:     5oodbye5      \r\n\r\n"
 #to_send = "GET /FZEFGEZ/RGERgergerG/gerge HTTP/1.1\r\nhello:     goodbye      \r\nContent-Length: 1 \r\nConnection: c\r\n\r\n"
-mega_Str = "0".zfill(7);
-to_send = "GET /FZEFGEZ/RGERgergerG/erzfe HTTP/1.1\r\nTransfer-Encoding: gzip, chunked\r\nTrailer: bobo\r\n\r\n5\r\nhhhhh\r\nA\r\nbbbbbbbbbC\r\n7\r\n" + mega_Str + "\r\n0\r\nbobo: bonjour\r\n\r\n"
+mega_Str = "0".zfill(1000);
+to_send = "POST /zfe.php HTTP/1.1\r\nTransfer-Encoding: gzip, chunked\r\nTrailer: bobo\r\n\r\n5\r\nhhhhh\r\nA\r\nbbbbbbbbbC\r\n3E8\r\n" + mega_Str + "\r\n0\r\nbobo: bonjour\r\n\r\n"
 #to_send = "GET /FZEFGEZ/RGERgergerG/erzfe HTTP/1.1\r\nTransfer-Encoding: gzip, chunked\r\n\r\n5\r\nhhhhh\r\nA\r\nbbbbbbbbbC\r\na\r\n" + mega_Str + "\r\n0\r\n\r\nGET /FZEFGEZ/RGERgergerG/gerge HTTP/1.1\r\nhello:     goodbye      \r\nConnection: c\r\n\r\n"
 #to_send = "GET /FZEFGEZ/RGERgergerG/erzfe HTTP/1.1\r\nTransfer-Encoding: gzip, chunked\r\n\r\n5\r\nhhhhh\r\n0\r\n\r\n"
 #	print(to_send)

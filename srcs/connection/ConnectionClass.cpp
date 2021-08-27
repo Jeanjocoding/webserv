@@ -1152,7 +1152,7 @@ int		ConnectionClass::_read_request_content(HttpRequest& CurrentRequest, reading
 	int 		diff = buffer.end - buffer.deb;
 
 //	std::cout << "in read_Request_Content" << std::endl;
-	_print_content_info(buffer, CurrentRequest, "deb read request");
+//	_print_content_info(buffer, CurrentRequest, "deb read request");
 	if (diff) // if part of the content is already in the buffer
 	{
 //		int diff = buffer.end - buffer.deb;
