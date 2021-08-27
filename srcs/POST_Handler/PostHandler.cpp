@@ -91,10 +91,10 @@ void		setCgiParams(t_CgiParams& params, HttpRequest const& request, LocationClas
 		stream >> params.contentLength;
 	}
 	params.pathInfo = target;
-	params.serverName = "localhost"; // a modif
-	params.serverProtocol = "HTTP/1.1"; // a modif
+	params.serverName = location.getServerName(); // a modif
+	params.serverProtocol = "HTTP/1.1";
 	params.requestUri = target;
-	params.httpHost = "localhost"; // a modif	
+	params.serverName = location.getServerName(); // a modif
 }
 
 HttpResponse	answer_post(HttpRequest const& request, LocationClass const& location)
