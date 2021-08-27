@@ -44,8 +44,11 @@ void	print_pipeline(std::vector<HttpRequest>& requestPipeline, ConnectionClass& 
 		std::cout << "ENCODINGS: " << std::endl;
 		print_vec(requestPipeline[i].getModifyableTE());
 		std::cout << std::endl;
-		std::cout << "BODY: " << requestPipeline[i].getContent() << std::endl;
-		std::cout << std::endl;
+		if (requestPipeline[i].isChunked())
+			std::cout << "content length of chunked: " << requestPipeline[i].getCurrentContentLength() << std::endl;
+		std::cout << "BODY: ";
+	std::string to_print(requestPipeline[i].getContent(), requestPipeline[i].getCurrentContentLength());
+	std::cout << to_print << std::endl;
 		std::cout << "TRAILERS: " << std::endl;
 		requestPipeline[i].printTrailers();
 		std::cout << std::endl;
@@ -72,7 +75,12 @@ void	print_request(HttpRequest& request)
 	std::cout << "ENCODINGS: " << std::endl;
 	print_vec(request.getModifyableTE());
 	std::cout << std::endl;
-	std::cout << "BODY: " << request.getContent() << std::endl;
+	if (request.isChunked())
+		std::cout << "content length of chunked: " << request.getCurrentContentLength() << std::endl;
+	std::cout << std::endl;
+	std::cout << "BODY: ";
+	std::string to_print(request.getContent(), request.getCurrentContentLength());
+	std::cout << to_print << std::endl;
 	std::cout << std::endl;
 	std::cout << "TRAILERS: " << std::endl;
 	request.printTrailers();
@@ -153,7 +161,7 @@ static HttpResponse	answer_get(HttpRequest const& request, LocationClass const& 
 	return response;
 }
 
-static HttpResponse	answer_post(HttpRequest const& request, LocationClass const& location)
+/* static HttpResponse	answer_post(HttpRequest const& request, LocationClass const& location)
 {
 	HttpResponse	response;
 	std::string		tmp = location.getRoot();
@@ -163,7 +171,7 @@ static HttpResponse	answer_post(HttpRequest const& request, LocationClass const&
 	tmp.append(request.getRequestLineInfos().target);
 	std::cout << "answering post request\n";
 	return response;
-}
+} */
 
 static HttpResponse	answer_delete(HttpRequest const& request, LocationClass const& location)
 {
@@ -207,9 +215,9 @@ void	answer_connection(ConnectionClass& connection)
 	HttpRequest& request = connection._request_pipeline[0];
 	if (!request.isValid())//TODO check why is invalid and respond accordingly
 		return send_error(400, server._default_error_pages, connection);
-	LocationClass location = server.getLocation(request.getRequestLineInfos().target);// Select the proper location block to work with
-	print_request(request);// For test
-	if (!location.methodIsAllowed(request.getMethod()))// Check if Http method is allowed in working location block
+	print_request(request);
+	LocationClass location = server.getLocation(request.getRequestLineInfos().target);//TODO
+	if (!location.methodIsAllowed(request.getMethod()))
 	{
 		std::cerr << "forbiden Http request method on location " << location.getUri() << std::endl;
 		return send_error(405, location.getErrorMap(), connection);

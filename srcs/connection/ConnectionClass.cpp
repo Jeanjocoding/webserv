@@ -235,6 +235,8 @@ int		ConnectionClass::_read_buffer(readingBuffer& buffer, std::vector<HttpReques
 		/** cela signifie que la requête a été completement lue, je peux push sur le pipeline */
 		if (!_isHandlingBody)
 		{
+			if (currentRequest.isChunked())
+				currentRequest.setContentLength(currentRequest.getCurrentContentLength());
 			requestPipeline.push_back(currentRequest);
 			if (read_ret != HTTP_ERROR)	
 				requestPipeline.back().setValidity(1);
@@ -257,6 +259,8 @@ int		ConnectionClass::_read_buffer(readingBuffer& buffer, std::vector<HttpReques
 			_save_request_and_buffer(currentRequest, buffer);
 			return (SAVE_REQUEST);
 		}
+		if (currentRequest.isChunked())
+			currentRequest.setContentLength(currentRequest.getCurrentContentLength());
 		requestPipeline.push_back(currentRequest);
 		if (read_ret != HTTP_ERROR)	
 			requestPipeline.back().setValidity(1);
@@ -275,6 +279,8 @@ int		ConnectionClass::_read_buffer(readingBuffer& buffer, std::vector<HttpReques
 			_save_request_and_buffer(currentRequest, buffer);
 			return (1);
 		}
+		if (currentRequest.isChunked())
+			currentRequest.setContentLength(currentRequest.getCurrentContentLength());
 		requestPipeline.push_back(currentRequest);
 		if (read_ret != HTTP_ERROR)	
 			requestPipeline.back().setValidity(1);
@@ -309,6 +315,8 @@ int		ConnectionClass::_read_buffer(readingBuffer& buffer, std::vector<HttpReques
 			return (0);
 		else if (getnr_ret == SAVE_REQUEST)
 			return (1); // EN SUIS-JE SUR ?
+		if (currentRequest.isChunked())
+			currentRequest.setContentLength(currentRequest.getCurrentContentLength());
 		requestPipeline.push_back(currentRequest);
 		if (getnr_ret == HTTP_ERROR)
 			return (HTTP_ERROR);
@@ -1085,7 +1093,7 @@ int		ConnectionClass::_getChunkedData(HttpRequest& currentRequest, readingBuffer
 		}
 		_ContentLeftToRead = nbred + 2;
 	}
-	return (currentRequest.getContent().length());
+	return (currentRequest.getCurrentContentLength());
 }
 
 void		ConnectionClass::_print_content_info(readingBuffer& buffer, HttpRequest& currentRequest, std::string message)
@@ -1102,8 +1110,12 @@ void		ConnectionClass::_print_content_info(readingBuffer& buffer, HttpRequest& c
 	std::cout << "_isReadingChunkNbr: " << _isReadingChunknbr << std::endl;
 //:w
 	std::cout << "_isParsingContent: " << _isParsingContent << std::endl;
-	std::cout << "content in request: " << currentRequest.getContent() << std::endl;
-	std::cout << "content length in request: " << currentRequest.getContent().length() << std::endl;
+	if (currentRequest.getCurrentContentLength())
+	{
+		std::string to_print(currentRequest.getContent(), currentRequest.getCurrentContentLength());
+		std::cout << "content in request: " << to_print << std::endl;
+	}
+	std::cout << "content length in request: " << currentRequest.getCurrentContentLength() << std::endl;
 	std::cout << "buffer.deb: " << buffer.deb << ", buffer.end: " << buffer.end << std::endl;
 	std::string str_buffer(&(buffer.buf[buffer.deb]), buffer.end - buffer.deb);
 	std::cout << "buffer from buf.deb to buf.end: " << str_buffer << std::endl;;
@@ -1121,8 +1133,12 @@ void		ConnectionClass::_print_content_info(HttpRequest& currentRequest, std::str
 	std::cout << "_isChunking: " << _isChunking << std::endl;
 	std::cout << "_isReadingChunkNbr: " << _isReadingChunknbr << std::endl;
 //	std::cout << "_isParsingContent: " << _isParsingContent << std::endl;
-	std::cout << "content in request: " << currentRequest.getContent() << std::endl;
-	std::cout << "content length in request: " << currentRequest.getContent().length() << std::endl;
+	if (currentRequest.getCurrentContentLength())
+	{
+		std::string to_print(currentRequest.getContent(), currentRequest.getCurrentContentLength());
+		std::cout << "content in request: " << to_print << std::endl;
+	}
+	std::cout << "content length in request: " << currentRequest.getCurrentContentLength() << std::endl;
 	std::cout << "end content info -"<< std::endl << std::endl;
 
 }

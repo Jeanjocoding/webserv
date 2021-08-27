@@ -9,28 +9,14 @@ HttpRequest::HttpRequest(void): HttpMessage()
 	_hasTrailers = 0;
 	_hasBody = 0;
 	_isChunked = 0;
+	_currentContentLength = 0;
+	_content = 0;
 	return;	
 }
 
 HttpRequest::HttpRequest(HttpRequest const& to_copy) : HttpMessage(to_copy)
 {
-	_contentLength = to_copy._contentLength;
-	_isValid = to_copy._isValid;
-	_startLine = to_copy._startLine;
-	_method = to_copy._method;
-	_methodArgument = to_copy._methodArgument;
-	_requestLine = to_copy._requestLine;
-	_errorCode = to_copy._errorCode;
-	_lineCount = to_copy._lineCount;
-	_content = to_copy._content;
-	_hasBody = to_copy._hasBody;
-	_hasTE = to_copy._hasTE;
-	_transferEncodings = to_copy._transferEncodings;
-	_isChunked = to_copy._isChunked;
-	_hasTrailers = to_copy._hasTrailers;
-	_trailers = to_copy._trailers;
-	_connectionOptions = to_copy._connectionOptions;
-
+	*this = to_copy;
 }
 
 /*HttpRequest::HttpRequest(std::string str_message) : HttpMessage(str_message)
@@ -40,13 +26,14 @@ HttpRequest::HttpRequest(HttpRequest const& to_copy) : HttpMessage(to_copy)
 
 HttpRequest::~HttpRequest(void)
 {
-	
+	clear();
 }
 
 
 
 HttpRequest&	HttpRequest::operator=(HttpRequest const& to_copy)
 {
+//	clear(); //POSSIBLE FUITE ICI DU A CE COMMENTAIRE
 	HttpMessage::operator=(to_copy)	;
 //	HttpMessage::_headers = to_copy._headers;
 	_isValid = to_copy._isValid;
@@ -57,7 +44,8 @@ HttpRequest&	HttpRequest::operator=(HttpRequest const& to_copy)
 	_errorCode = to_copy._errorCode;
 	_lineCount = to_copy._lineCount;
 	_contentLength = to_copy._contentLength;
-	_content = to_copy._content;
+	_currentContentLength = 0;
+	append_to_buffer(&_content, _currentContentLength, to_copy._content, to_copy._currentContentLength);
 	_hasBody = to_copy._hasBody;
 	_hasTE = to_copy._hasTE;
 	_transferEncodings = to_copy._transferEncodings;
@@ -77,7 +65,9 @@ void		HttpRequest::clear(void)
 	_errorCode = 0;
 	_requestLine.method.clear();
 	_requestLine.target.clear();
-	_content.clear();
+	if (_currentContentLength)
+		delete _content;
+	_content = 0;
 	_requestLine.protocol.first = 0;
 	_requestLine.protocol.second = 0;
 	_lineCount = 0;
@@ -89,6 +79,7 @@ void		HttpRequest::clear(void)
 	_trailers.clear();
 	_hasTrailers = 0;
 	_connectionOptions.clear();
+	_currentContentLength = 0;
 
 }
 
@@ -163,10 +154,10 @@ long		HttpRequest::getContentLength(void) const
 
 void		HttpRequest::setContent(std::string const& req_content)
 {
-	_content = req_content;
+	append_to_buffer(&_content, _currentContentLength, (char*)req_content.c_str(), req_content.length());
 }
 
-std::string const&	HttpRequest::getContent() const
+char	*HttpRequest::getContent() const
 {
 	return (_content);
 }
@@ -218,12 +209,12 @@ bool			HttpRequest::isValid(void) const
 
 void			HttpRequest::appendToContent(std::string& to_append)
 {
-	_content.append(to_append);
+	append_to_buffer(&_content, _currentContentLength, (char*)to_append.c_str(), to_append.length());
 }
 
 void			HttpRequest::appendToContent(char *str, int len)
 {
-	_content.append(str, len);
+	append_to_buffer(&_content, _currentContentLength, str, len);
 }
 
 void			HttpRequest::setHasTrailer(bool value)
@@ -244,4 +235,9 @@ std::vector<std::string>& 	HttpRequest::getModifyableTrailers(void)
 std::vector<std::string>&	HttpRequest::getModifyableConnectionOptions(void)
 {
 	return (_connectionOptions);
+}
+
+long /*const&	*/		HttpRequest::getCurrentContentLength() const
+{
+	return (_currentContentLength);
 }
