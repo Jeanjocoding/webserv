@@ -6,7 +6,7 @@
 #    By: asablayr <marvin@42.fr>                    +#+  +:+       +#+         #
 #                                                 +#+#+#+#+#+   +#+            #
 #    Created: 2020/11/26 10:50:04 by asablayr          #+#    #+#              #
-#    Updated: 2021/07/04 19:52:34 by asablayr         ###   ########.fr        #
+#    Updated: 2021/08/27 12:24:09 by asablayr         ###   ########.fr        #
 #                                                                              #
 # **************************************************************************** #
 
@@ -20,7 +20,7 @@ DEFS_PATH = defines/
 SETUP_PATH = setup/
 CONNECTION_PATH = connection/
 CGILAUNCHER_PATH = CgiLauncher/
-POSTHANDLER_PATH = POST_handler/
+POSTHANDLER_PATH = POST_Handler/
 HTTPMSG_PATH = HttpMessage/
 UTILS_PATH = utils/
 
