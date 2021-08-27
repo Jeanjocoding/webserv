@@ -6,7 +6,7 @@
 /*   By: asablayr <marvin@42.fr>                    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2021/08/02 16:27:33 by asablayr          #+#    #+#             */
-/*   Updated: 2021/08/19 18:15:09 by asablayr         ###   ########.fr       */
+/*   Updated: 2021/08/27 11:50:58 by asablayr         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -197,9 +197,10 @@ void	HttpResponse::setLength(unsigned long length)
 void	HttpResponse::setServerName(std::string const& name)
 {
 	_server_name = name;
+	setServerName();
 }
 
-void	HttpResponse::setServerName()//TODO test against nginx server_name directive
+void	HttpResponse::setServerName()
 {
 	_server_name = SERVER_NAME;
 	_server_name.append("/");
@@ -209,7 +210,15 @@ void	HttpResponse::setServerName()//TODO test against nginx server_name directiv
 	_server_name.append(")");
 }
 
-void	HttpResponse::setConnectionStatus()
+void	HttpResponse::setConnectionStatus(std::string const& connection_status)
 {
-	_connection = "CLOSE";//TODO
+	_connection = connection_status;
+}
+
+void	HttpResponse::setConnectionStatus(bool connection_status)
+{
+	if (connection_status == true)
+		_connection = "keep-alive";
+	else
+		_connection = "close";
 }

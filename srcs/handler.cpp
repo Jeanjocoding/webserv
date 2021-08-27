@@ -6,7 +6,7 @@
 /*   By: asablayr <marvin@42.fr>                    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2021/06/06 21:54:40 by asablayr          #+#    #+#             */
-/*   Updated: 2021/08/24 11:32:42 by asablayr         ###   ########.fr       */
+/*   Updated: 2021/08/27 12:16:08 by asablayr         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -86,6 +86,7 @@ void	print_request(HttpRequest& request)
 static void	send_error(unsigned short error_nb, std::map<unsigned short, std::string> const& error_map, ConnectionClass& connection)
 {
 	HttpResponse response = HttpResponse(error_nb, error_map.find(error_nb)->second);
+	response.setConnectionStatus(false);
 	connection.sendResponse(response.toString());
 }
 
@@ -232,5 +233,7 @@ void	answer_connection(ConnectionClass& connection)
 		default :
 			return send_error(501, location.getErrorMap(), connection);
 	}
+	if (!connection.isPersistent())
+		response.setConnectionStatus(false);
 	connection.sendResponse(response.toString());// Handles all of the response sending and adjust the connection accordingly (cf: pop request list close connection etc...)
 }

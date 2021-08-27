@@ -6,7 +6,7 @@
 /*   By: asablayr <marvin@42.fr>                    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2021/07/02 15:07:21 by asablayr          #+#    #+#             */
-/*   Updated: 2021/08/12 16:57:25 by asablayr         ###   ########.fr       */
+/*   Updated: 2021/08/27 11:57:43 by asablayr         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -49,7 +49,8 @@ public:
 	void						setDateTime(void);
 	void						setServerName(void);
 	void						setServerName(std::string const& name);
-	void						setConnectionStatus(void);
+	void						setConnectionStatus(std::string const& connection_status = "keep-alive");
+	void						setConnectionStatus(bool connection_status);
 
 private:
 
