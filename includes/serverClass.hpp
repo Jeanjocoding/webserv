@@ -6,7 +6,7 @@
 /*   By: asablayr <marvin@42.fr>                    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2021/06/07 10:16:05 by asablayr          #+#    #+#             */
-/*   Updated: 2021/08/17 22:27:38 by asablayr         ###   ########.fr       */
+/*   Updated: 2021/08/27 19:01:13 by asablayr         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -31,10 +31,19 @@ class serverClass
 			serverClass& operator = (serverClass const& to_copy);
 			std::string* operator [] (std::string setting_name);
 
+			void			setListen(std::string);
+			void			setPort(std::string);
+			void			setHost(std::string);
+			void			setServerName(std::string);
+			void			setRoot(std::string);
+			void			setIndex(std::string);
+			void			setErrorLog(std::string);
+			void			setAccessLog(std::string);
 			void			setLocation(void);
 			void			setLocation(LocationClass& location) const;
 			void			startServer(void);
-			LocationClass&	getLocation(std::string const& uri) const;//TODO
+			LocationClass&	getLocation(std::string const& uri) const;//TODO cgi
+			time_t			getKeepAliveTimeout(void) const;
 
 			bool									_default_server;
 			std::string								_listen;
@@ -45,7 +54,6 @@ class serverClass
 			std::string								_index;
 			std::string								_error_log;
 			std::string								_access_log;
-			std::string								_fastcgi_pass;
 			std::map<unsigned short, std::string>	_default_error_pages;
 			std::string								_client_body_size_max;
 			std::string								_keepalive_timeout;

@@ -6,7 +6,7 @@
 /*   By: asablayr <marvin@42.fr>                    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2021/07/04 17:42:52 by asablayr          #+#    #+#             */
-/*   Updated: 2021/08/20 11:40:23 by asablayr         ###   ########.fr       */
+/*   Updated: 2021/08/27 16:28:32 by asablayr         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -31,10 +31,11 @@ ConnectionClass::ConnectionClass(void)
 	_hasRead = 0;
 	_isProcessingLastNL = 0;
 	_isProcessingTrailers = 0;
+	_timer = time(0);
 	return;
 }
 
-ConnectionClass::ConnectionClass(ConnectionClass const& to_copy): _socketNbr(to_copy._socketNbr), _server(to_copy._server), _status(to_copy._status), _isPersistent(to_copy._isPersistent), _hasRestRequest(to_copy._hasRestRequest), _hasRestBuffer(to_copy._hasRestBuffer), _hasBegRest(to_copy._hasBegRest)
+ConnectionClass::ConnectionClass(ConnectionClass const& to_copy): _socketNbr(to_copy._socketNbr), _server(to_copy._server), _status(to_copy._status), _isPersistent(to_copy._isPersistent), _hasRestRequest(to_copy._hasRestRequest), _hasRestBuffer(to_copy._hasRestBuffer), _hasBegRest(to_copy._hasBegRest), _timer(to_copy._timer)
 {
 	_isHandlingBody = to_copy._isHandlingBody;
 	_isParsingContent = to_copy._isParsingContent;
@@ -71,6 +72,7 @@ ConnectionClass::ConnectionClass(int socknum, serverClass* server): _socketNbr(s
 	_isProcessingLastNL = 0;
 	_hasRead = 0;
 	_isProcessingTrailers = 0;
+	_timer = time(0);
 	return;	
 }
 
@@ -103,6 +105,7 @@ ConnectionClass&	ConnectionClass::operator=(ConnectionClass const& to_copy)
 		_incompleteRequest = new HttpRequest(*(to_copy._incompleteRequest));
 	if (to_copy._hasBegRest)
 		_beginningRestBuffer = new std::string(*(to_copy._beginningRestBuffer));
+	_timer = to_copy._timer;
 	return (*this);
 }
 
@@ -1544,6 +1547,7 @@ int			ConnectionClass::sendResponse(std::string response)
 		else
 			closeConnection();
 	}
+	resetTimer();
 	return (0);
 }
 
@@ -1652,4 +1656,14 @@ HttpRequest const&	ConnectionClass::getRequest(unsigned int request_number) cons
 	if (request_number >= _request_pipeline.size())
 		request_number = _request_pipeline.size() - 1;
 	return (_request_pipeline[request_number]);
+}
+
+time_t			ConnectionClass::getTimer(void) const
+{
+	return _timer;
+}
+
+void			ConnectionClass::resetTimer(void)
+{
+	_timer = time(0);
 }

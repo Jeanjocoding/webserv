@@ -6,7 +6,7 @@
 /*   By: asablayr <marvin@42.fr>                    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2021/06/07 18:49:16 by asablayr          #+#    #+#             */
-/*   Updated: 2021/08/26 16:07:18 by asablayr         ###   ########.fr       */
+/*   Updated: 2021/08/27 19:00:12 by asablayr         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -35,7 +35,6 @@ serverClass::serverClass()
 	_index = DEFAULT_INDEX;
 	_error_log = DEFAULT_ERROR_LOG;
 	_access_log = DEFAULT_ACCESS_LOG;
-	_fastcgi_pass = DEFAULT_FASTCGI_PASS;
 	_default_error_pages = baseErrorPages();
 	_client_body_size_max = DEFAULT_BODY_MAX;
 	_keepalive_timeout = DEFAULT_KEEPALIVE_TIMEOUT;
@@ -108,8 +107,6 @@ std::string*	serverClass::operator [] (std::string setting_name)
 		return &_error_log;
 	else if (setting_name == "access_log")
 		return &_access_log;
-	else if (setting_name == "fastcgi_pass")
-		return &_fastcgi_pass;
 	else if (setting_name == "404")//TODO change this
 		return &_default_error_pages[404];
 	else if (setting_name == "400")
@@ -120,6 +117,36 @@ std::string*	serverClass::operator [] (std::string setting_name)
 		return &_keepalive_timeout;
 	else
 		return NULL;
+}
+
+void			serverClass::setListen(std::string listen)
+{
+	_listen = listen;
+}
+
+void			serverClass::setPort(std::string port)
+{
+	_port = port;
+}
+
+void			serverClass::setHost(std::string host)
+{
+	_host = host;
+}
+
+void			serverClass::setServerName(std::string server_name)
+{
+	_server_name = server_name;
+}
+
+void			serverClass::setRoot(std::string root)
+{
+	_root = root;
+}
+
+void			serverClass::setIndex(std::string index)
+{
+	_index = index;
 }
 
 LocationClass&	serverClass::getLocation(std::string const& uri) const
@@ -166,6 +193,11 @@ LocationClass&	serverClass::getLocation(std::string const& uri) const
 	}
 	std::cout << "location chosen : " << ret->getUri() << "\n";
 	return *ret;
+}
+
+time_t			serverClass::getKeepAliveTimeout(void) const
+{
+	return _keepalive_timeout;
 }
 
 void			serverClass::setLocation(void)

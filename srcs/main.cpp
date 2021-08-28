@@ -6,7 +6,7 @@
 /*   By: asablayr <marvin@42.fr>                    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2021/06/06 15:27:02 by asablayr          #+#    #+#             */
-/*   Updated: 2021/08/03 14:30:28 by asablayr         ###   ########.fr       */
+/*   Updated: 2021/08/27 19:05:09 by asablayr         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -113,6 +113,24 @@ int main(int ac, char** av)
 				{
 					FD_CLR(i, &wfds);
 					FD_SET(i, &rfds);
+				}
+			}
+		}
+		for (std::map<int, ConnectionClass>::iterator i = connection_map.begin(); i != connection_map.end(); i ++)
+		{
+			if (!i->second.isPersistent())
+				continue;
+			if (time(0) - i->second.getTimer() > i->second._server->getKeepAliveTimeout())
+			{
+				if (FD_ISSET(i->first, &rfds))
+				{
+					connection_map[i->first].closeConnection();
+					FD_CLR(i->first, &wfds);
+				}
+				else if (FD_ISSET(i->first, &wfds))
+				{
+					connection_map[i->first].closeConnection();
+					FD_CLR(i->first, &wfds);
 				}
 			}
 		}

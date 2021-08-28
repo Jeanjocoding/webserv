@@ -6,7 +6,7 @@
 /*   By: asablayr <marvin@42.fr>                    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2021/06/06 21:54:40 by asablayr          #+#    #+#             */
-/*   Updated: 2021/08/27 12:16:08 by asablayr         ###   ########.fr       */
+/*   Updated: 2021/08/27 19:16:29 by asablayr         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -98,6 +98,26 @@ static void	send_error(unsigned short error_nb, std::map<unsigned short, std::st
 	connection.sendResponse(response.toString());
 }
 
+static HttpResponse answer_cgi_get(HttpRequest const& request, LocationClass const& location)
+{
+	HttpResponse	response;
+	char*			output;
+	t_CgiParams		params;
+	size_t			body_begin = 0;
+	size_t			output_len = 0;
+	std::ifstream	body;
+
+	setCgiParams(params, request, location);
+	body.open(params.scriptFilename.c_str());
+	if (!body.is_open())
+		return HttpResponse(404, location.getErrorPage(404));
+	launchCgiScript(params, request, location, &output, output_len);
+	add_header_part(response, output, output_len, body_begin);
+	response.setBody(&(output[body_begin]));
+	response.setHeader();
+	return response;
+}
+
 static HttpResponse	answer_get(HttpRequest const& request, LocationClass const& location)
 {
 	HttpResponse	response;
@@ -107,6 +127,8 @@ static HttpResponse	answer_get(HttpRequest const& request, LocationClass const& 
 	tmp.append(request.getRequestLineInfos().target);// Append the requested  uri
 	std::cout << "answering get request\ntrying to get file : " << tmp << std::endl;
 
+	if (location.isCGI())
+		return answer_cgi_get(request, location);
 	if (request.getRequestLineInfos().target == location.getUri() + "/" ||
 		(request.getRequestLineInfos().target == location.getUri() && *(--request.getRequestLineInfos().target.end()) == '/'))// If index is requested
 	{
@@ -161,18 +183,6 @@ static HttpResponse	answer_get(HttpRequest const& request, LocationClass const& 
 	return response;
 }
 
-/* static HttpResponse	answer_post(HttpRequest const& request, LocationClass const& location)
-{
-	HttpResponse	response;
-	std::string		tmp = location.getRoot();
-
-	//TODO
-
-	tmp.append(request.getRequestLineInfos().target);
-	std::cout << "answering post request\n";
-	return response;
-} */
-
 static HttpResponse	answer_delete(HttpRequest const& request, LocationClass const& location)
 {
 	HttpResponse	response;
@@ -196,10 +206,8 @@ static HttpResponse	answer_redirection(HttpRequest const& request, LocationClass
 		tmp.insert(0, location.getRedirectUrl(), 0, location.getRedirectUrl().find('$'));// Put redirect uri at begining of requested uri
 	}
 	else
-	{
 		tmp = location.getRedirectUrl();
-	}
-	std::cout << "redirecting " << request.getRequestLineInfos().target << " to " << location.getRedirectUrl()<< " resulting in : " << tmp << std::endl;//for test
+//	std::cout << "redirecting " << request.getRequestLineInfos().target << " to " << location.getRedirectUrl()<< " resulting in : " << tmp << std::endl;//for test
 	return HttpResponse(location.getRedirectCode(), tmp);// Send redirect response
 }
 

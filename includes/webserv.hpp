@@ -6,7 +6,7 @@
 /*   By: asablayr <marvin@42.fr>                    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2021/06/06 22:00:11 by asablayr          #+#    #+#             */
-/*   Updated: 2021/07/18 18:34:12 by asablayr         ###   ########.fr       */
+/*   Updated: 2021/08/28 08:54:34 by asablayr         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -31,5 +31,6 @@ bool								parse_conf_file(std::string& buff);
 void								handle_connection(ConnectionClass& connection);
 void								answer_connection(ConnectionClass& connection);
 
+void								setCgiParams(t_CgiParams& params, HttpRequest const& request, LocationCLass const& location);
 
 #endif
