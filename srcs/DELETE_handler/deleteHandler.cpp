@@ -11,7 +11,6 @@ HttpResponse	answer_delete(HttpRequest const& request, LocationClass const& loca
 	//TODO
 	if (!location.methodIsAllowed(DELETE_METHOD))
 	{
-		std::cout << "not allowed" << std::endl;
 		response = HttpResponse(405, location.getErrorPage(405));
 		return (response);
 	}
@@ -26,7 +25,6 @@ HttpResponse	answer_delete(HttpRequest const& request, LocationClass const& loca
 	else
 	{
 		body.close();
-//		std::cout << "i delete" << std::endl;
 		std::remove(tmp.c_str());
 	}
 	response.setStatusCode(204);
