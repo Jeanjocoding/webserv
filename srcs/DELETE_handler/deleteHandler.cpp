@@ -12,7 +12,7 @@ HttpResponse	answer_delete(HttpRequest const& request, LocationClass const& loca
 	if (!location.methodIsAllowed(DELETE_METHOD))
 	{
 		std::cout << "not allowed" << std::endl;
-		response = HttpResponse(404, location.getErrorPage(405));
+		response = HttpResponse(405, location.getErrorPage(405));
 		return (response);
 	}
 	tmp.append(request.getRequestLineInfos().target);
@@ -29,7 +29,9 @@ HttpResponse	answer_delete(HttpRequest const& request, LocationClass const& loca
 //		std::cout << "i delete" << std::endl;
 		std::remove(tmp.c_str());
 	}
-//	response = HttpResponse();
+	response.setStatusCode(204);
+	response.setStatusMessage();
+	response.setHeader();
 //	std::cout << "answering delete request\n";
 	return response;
 }

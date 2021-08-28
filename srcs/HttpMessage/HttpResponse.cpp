@@ -81,6 +81,8 @@ void	HttpResponse::setStatusMessage(void)
 {
 	if (_status_code == "200")
 		_status_message = "OK";
+	if (_status_code == "204")
+		_status_message = "No Content";
 	else if (_status_code == "400")
 		_status_message = "Invalid Request";
 	else if (_status_code == "403")
