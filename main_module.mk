@@ -15,4 +15,5 @@ include $(addprefix $(SRCS_PATH), $(CONNECTION_PATH))module.mk
 include $(addprefix $(SRCS_PATH), $(CGILAUNCHER_PATH))module.mk
 include $(addprefix $(SRCS_PATH), $(HTTPMSG_PATH))module.mk
 include $(addprefix $(SRCS_PATH), $(POSTHANDLER_PATH))module.mk
+include $(addprefix $(SRCS_PATH), $(DELETEHANDLER_PATH))module.mk
 include $(addprefix $(SRCS_PATH), $(UTILS_PATH))module.mk

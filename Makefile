@@ -21,6 +21,7 @@ SETUP_PATH = setup/
 CONNECTION_PATH = connection/
 CGILAUNCHER_PATH = CgiLauncher/
 POSTHANDLER_PATH = POST_Handler/
+DELETEHANDLER_PATH = DELETE_Handler/
 HTTPMSG_PATH = HttpMessage/
 UTILS_PATH = utils/
 
@@ -31,6 +32,7 @@ HDRS =	webserv.hpp \
 		ConnectionUtils.hpp \
 		ConnectionClass.hpp \
 		PostHandler.hpp \
+		deleteHandler.hpp \
 		cgiLauncher.hpp \
 		utils.hpp
 
