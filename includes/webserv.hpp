@@ -32,6 +32,6 @@ bool								parse_conf_file(std::string& buff);
 void								handle_connection(ConnectionClass& connection);
 void								answer_connection(ConnectionClass& connection);
 
-void								setCgiParams(t_CgiParams& params, HttpRequest const& request, LocationCLass const& location);
+void								setCgiParams(t_CgiParams& params, HttpRequest const& request, LocationClass const& location);
 
 #endif
