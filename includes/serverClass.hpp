@@ -6,7 +6,7 @@
 /*   By: asablayr <marvin@42.fr>                    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2021/06/07 10:16:05 by asablayr          #+#    #+#             */
-/*   Updated: 2021/08/27 19:01:13 by asablayr         ###   ########.fr       */
+/*   Updated: 2021/08/31 18:27:35 by asablayr         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -43,7 +43,7 @@ class serverClass
 			void			setLocation(LocationClass& location) const;
 			void			startServer(void);
 			LocationClass&	getLocation(std::string const& uri) const;//TODO cgi
-			time_t			getKeepAliveTimeout(void) const;
+			long	getKeepAliveTimeout(void) const;
 
 			bool									_default_server;
 			std::string								_listen;
