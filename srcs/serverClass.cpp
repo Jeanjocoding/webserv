@@ -6,7 +6,7 @@
 /*   By: asablayr <marvin@42.fr>                    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2021/06/07 18:49:16 by asablayr          #+#    #+#             */
-/*   Updated: 2021/08/27 19:00:12 by asablayr         ###   ########.fr       */
+/*   Updated: 2021/08/31 18:27:29 by asablayr         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -195,9 +195,9 @@ LocationClass&	serverClass::getLocation(std::string const& uri) const
 	return *ret;
 }
 
-time_t			serverClass::getKeepAliveTimeout(void) const
+long	serverClass::getKeepAliveTimeout(void) const
 {
-	return _keepalive_timeout;
+	return std::atoi(_keepalive_timeout.c_str());
 }
 
 void			serverClass::setLocation(void)

@@ -6,7 +6,7 @@
 /*   By: asablayr <marvin@42.fr>                    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2021/06/12 14:11:07 by asablayr          #+#    #+#             */
-/*   Updated: 2021/08/26 15:57:33 by asablayr         ###   ########.fr       */
+/*   Updated: 2021/08/31 19:31:07 by asablayr         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -48,6 +48,7 @@ class LocationClass : public contextClass
 			std::string								getErrorPage(unsigned short error_code) const;// get single error_page
 			void									setErrorPages(std::map<unsigned short, std::string> const& error_map);// set the _error_pages attribute
 			bool									methodIsAllowed(unsigned int method) const;// check if HTTP method is allowed
+			bool									isCGI(void) const;
 			bool									isRedirect(void) const;
 			unsigned short							getRedirectCode(void) const;
 			std::string								getRedirectUrl(void) const;
@@ -64,6 +65,7 @@ class LocationClass : public contextClass
 			void									setIndex(void);
 			void									setAutoindex(void);
 			void									setRedirect(void);
+			void									setCGI(void);
 			void									setErrorPages(void);
 			void									setMethods(void);
 
@@ -74,6 +76,8 @@ class LocationClass : public contextClass
 			std::string								_index;
 			bool									_methods[3];
 			bool									_autoindex;
+			bool									_cgi_bool;
+			std::string								_cgi_path;
 			bool									_redirect_bool;
 			int										_redirect_code;
 			std::string								_redirect_uri;

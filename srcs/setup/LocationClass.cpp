@@ -6,7 +6,7 @@
 /*   By: asablayr <marvin@42.fr>                    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2021/07/15 13:31:12 by asablayr          #+#    #+#             */
-/*   Updated: 2021/08/26 16:04:41 by asablayr         ###   ########.fr       */
+/*   Updated: 2021/08/31 19:32:18 by asablayr         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -41,6 +41,7 @@ LocationClass::LocationClass(std::string const& params, std::string const& buff)
 	setErrorPages();
 	setRedirect();
 	setMethods();
+	setCGI();
 }
 
 LocationClass::LocationClass(LocationClass const& copy): contextClass(copy), _uri(copy._uri), _param(copy._param), _server_name(copy._server_name), _root(copy._root), _index(copy._index), _autoindex(copy._autoindex), _redirect_bool(copy._redirect_bool), _redirect_code(copy._redirect_code), _redirect_uri(copy._redirect_uri), _error_pages(copy._error_pages)
@@ -149,6 +150,11 @@ bool LocationClass::isRedirect(void) const
 	return _redirect_bool;
 }
 
+bool LocationClass::isCGI(void) const
+{
+	return _cgi_bool;
+}
+
 unsigned short LocationClass::getRedirectCode(void) const
 {
 	return _redirect_code;
@@ -227,6 +233,19 @@ void	LocationClass::setRedirect(void)
 	_redirect_code = std::atoi(tmp.c_str());
 	ss >> tmp;
 	_redirect_uri = tmp;
+}
+
+void	LocationClass::setCGI(void)
+{
+	if (!(_param == "~*"))
+		_cgi_bool = false;
+	if (_uri.find(".bla") != std::string::npos || _uri.find(".php") != std::string::npos
+		|| _uri.find(".py") != std::string::npos || _uri.find(".pl") != std::string::npos)
+		_cgi_bool = true;
+	if (_directives.find("cgi_path") != _directives.end())
+		_cgi_path = _directives.find("cgi_path")->second;
+	else
+		_cgi_path = "/usr/bin/php-cgi";//TODO switch to os relative define
 }
 
 void	LocationClass::setMethods(void)
