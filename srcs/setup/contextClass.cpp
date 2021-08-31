@@ -6,7 +6,7 @@
 /*   By: asablayr <marvin@42.fr>                    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2021/06/12 15:24:19 by asablayr          #+#    #+#             */
-/*   Updated: 2021/08/08 18:44:06 by asablayr         ###   ########.fr       */
+/*   Updated: 2021/08/31 20:43:58 by asablayr         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -137,6 +137,7 @@ void contextClass::setDirectives(void)
 		_directive_set.push_back(_accepted_directive_set["error_log"]);
 		_directive_set.push_back(_accepted_directive_set["index"]);
 		_directive_set.push_back(_accepted_directive_set["error_page"]);
+		_directive_set.push_back(_accepted_directive_set["keepalive_timeout"]);
 	}
 	else if (_name == "events")
 	{
@@ -153,6 +154,7 @@ void contextClass::setDirectives(void)
 		_directive_set.push_back(_accepted_directive_set["return"]);
 		_directive_set.push_back(_accepted_directive_set["error_page"]);
 		_directive_set.push_back(_accepted_directive_set["index"]);
+		_directive_set.push_back(_accepted_directive_set["keepalive_timeout"]);
 	}
     else if (_name == "location")
 	{
@@ -165,7 +167,8 @@ void contextClass::setDirectives(void)
 		_directive_set.push_back(_accepted_directive_set["error_page"]);
 		_directive_set.push_back(_accepted_directive_set["index"]);
 		_directive_set.push_back(_accepted_directive_set["autoindex"]);
-		
+		_directive_set.push_back(_accepted_directive_set["keepalive_timeout"]);
+		_directive_set.push_back(_accepted_directive_set["cgi_path"]);
 	}
     else
 	{
@@ -478,6 +481,7 @@ void contextClass::setAcceptedDirectives(void)
 	_accepted_directive_set["alias"]._name = "alias";
 	_accepted_directive_set["auth_delay"]._name = "auth_delay";
 	_accepted_directive_set["autoindex"]._name = "autoindex";
+	_accepted_directive_set["cgi_path"]._name = "cgi_path";
 	_accepted_directive_set["chunked_transfer_encoding"]._name = "chunked_transfer_encoding";
 	_accepted_directive_set["client_body_buffer_size"]._name = "client_body_buffer_size";
 	_accepted_directive_set["client_body_in_file_only"]._name = "client_body_in_file_only";
@@ -573,6 +577,7 @@ void contextClass::setAcceptedDirectives(void)
 	_accepted_directive_set["alias"]._contexts = setAcceptedDirectiveContext("location");
 	_accepted_directive_set["auth_delay"]._contexts = setAcceptedDirectiveContext("http server location");
 	_accepted_directive_set["autoindex"]._contexts = setAcceptedDirectiveContext("location");
+	_accepted_directive_set["cgi_path"]._contexts = setAcceptedDirectiveContext("location");
 	_accepted_directive_set["chunked_transfer_encoding"]._contexts = setAcceptedDirectiveContext("http server location");
 	_accepted_directive_set["client_body_buffer_size"]._contexts = setAcceptedDirectiveContext("http server location");
 	_accepted_directive_set["client_body_in_file_only"]._contexts = setAcceptedDirectiveContext("http server location");
@@ -668,6 +673,7 @@ void contextClass::setAcceptedDirectives(void)
 	_accepted_directive_set["alias"]._syntax = SYNTAX_PATH;
 	_accepted_directive_set["auth_delay"]._syntax = SYNTAX_TIME;
 	_accepted_directive_set["autoindex"]._syntax = SYNTAX_ON_OFF;
+	_accepted_directive_set["cgi_path"]._syntax = SYNTAX_STRING;
 	_accepted_directive_set["chunked_transfer_encoding"]._syntax = SYNTAX_ON_OFF;
 	_accepted_directive_set["client_body_buffer_size"]._syntax = SYNTAX_SIZE;
 	_accepted_directive_set["client_body_in_file_only"]._syntax = SYNTAX_ON_OFF;
