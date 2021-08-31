@@ -15,7 +15,7 @@ HttpResponse	answer_delete(HttpRequest const& request, LocationClass const& loca
 		return (response);
 	}
 	tmp.append(request.getRequestLineInfos().target);
-	body.open(tmp);
+	body.open(tmp.c_str());
 	if (!body.is_open())
 	{
 		response = HttpResponse(404, location.getErrorPage(404));
