@@ -52,6 +52,7 @@ int		setCgiParamsAsEnvironmentVariables(t_CgiParams& params, char **customEnv)
 	setCgiVariable("HTTP_HOST=", params.httpHost, customEnv, index);
 	setCgiVariable("QUERY_STRING=", params.queryString, customEnv, index);
 	setCgiVariable("CONTENT_LENGTH=", params.contentLength, customEnv, index);
+	setCgiVariable("CONTENT_TYPE=", params.contentType, customEnv, index);
 	customEnv[index] = (char*)0;
 
 	return (0);

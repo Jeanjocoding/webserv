@@ -1,10 +1,11 @@
 
 <?php
-$uploaddir = '/Users/theophile/42/webserv/git_webserv/test_pages/test_upload/upload_dir';
+$uploaddir = '/Users/theophile/42/webserv/git_webserv/test_pages/test_upload/upload_dir/';
 $uploadfile = $uploaddir . basename($_FILES['userfile']['name']);
 
 
 echo '<pre>';
+print_r($_SERVER);
 echo "uploadfile: ".$uploadfile."\n";
 print_r($_POST);
 if (move_uploaded_file($_FILES['userfile']['tmp_name'], $uploadfile)) {
