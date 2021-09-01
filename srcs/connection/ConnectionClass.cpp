@@ -1191,7 +1191,7 @@ int		ConnectionClass::_read_request_content(HttpRequest& CurrentRequest, reading
 				return (read_ret);
 			buffer.end += read_ret;
 			_hasRead = 1;
-			_print_content_info(buffer, CurrentRequest, "before appending");
+//			_print_content_info(buffer, CurrentRequest, "before appending");
 			CurrentRequest.appendToContent(&(buffer.buf[buffer.deb]), read_ret);
 //			std::cout << "content: " << CurrentRequest.getContent() << std::endl;
 			_ContentLeftToRead -= read_ret;

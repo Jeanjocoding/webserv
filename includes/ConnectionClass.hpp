@@ -44,8 +44,8 @@
 #include "serverClass.hpp"
 #include "ConnectionUtils.hpp"
 
-#define	READING_BUF_SIZE  4096
-#define	SINGLE_READ_SIZE 1024
+#define	READING_BUF_SIZE  12289
+#define	SINGLE_READ_SIZE 4096
 #define EMPTYBUF_READ_SIZE 4096
 #define MAX_READ_BEFORE_FORCE_CLOSE 25000
 #define	MAX_LINE_LENGTH 12000	// POUR SECURITY
