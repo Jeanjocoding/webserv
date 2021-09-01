@@ -75,12 +75,13 @@ void	print_request(HttpRequest& request)
 	std::cout << "ENCODINGS: " << std::endl;
 	print_vec(request.getModifyableTE());
 	std::cout << std::endl;
-	if (request.isChunked())
-		std::cout << "content length of chunked: " << request.getCurrentContentLength() << std::endl;
+	if (request.isChunked() || request.getContentLength())
+		std::cout << "current content length: " << request.getCurrentContentLength() << std::endl;
 	std::cout << std::endl;
 	std::cout << "BODY: ";
-	std::string to_print(request.getContent(), request.getCurrentContentLength());
-	std::cout << to_print << std::endl;
+	write (1, request.getContent(), request.getCurrentContentLength());
+//	std::string to_print(request.getContent(), request.getCurrentContentLength());
+//	std::cout << to_print << std::endl;
 	std::cout << std::endl;
 	std::cout << "TRAILERS: " << std::endl;
 	request.printTrailers();
