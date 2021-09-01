@@ -4,6 +4,7 @@
 #include <iostream>
 #include <map>
 #include "http_method.hpp"
+#include "utils.hpp"
 
 
 class HttpMessage {
@@ -23,14 +24,26 @@ public:
 	void								printHeaders();
 	void								printTrailers();
 	void								clear();
+		long				getContentLength(void) const;
+	void				setContentLength(long length);
+	void				setContent(std::string const& req_content);
+	char				*getContent() const;
+	int				hasContent(void) const;
+	void				setHasContent(bool hasContent);
+	void				appendToContent(std::string& to_append);
+	void				appendToContent(char *str, int len);
+	long/* const&	*/		getCurrentContentLength() const;
 
 
 protected:
 	std::multimap<std::string, std::string>				_headers;
 	std::multimap<std::string, std::string>				_trailing_headers;
-	std::string							_body;
+	long								_contentLength;
+	long								_currentContentLength;
+	char								*_content;
 	std::string							_protocol;
 	std::string							_stringMessage;
+	bool								_hasBody;
 
 };
 

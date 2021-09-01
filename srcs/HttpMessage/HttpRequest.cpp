@@ -43,9 +43,9 @@ HttpRequest&	HttpRequest::operator=(HttpRequest const& to_copy)
 	_requestLine = to_copy._requestLine;
 	_errorCode = to_copy._errorCode;
 	_lineCount = to_copy._lineCount;
-	_contentLength = to_copy._contentLength;
-	_currentContentLength = 0;
-	append_to_buffer(&_content, _currentContentLength, to_copy._content, to_copy._currentContentLength);
+//	_contentLength = to_copy._contentLength;
+//	_currentContentLength = 0;
+//	append_to_buffer(&_content, _currentContentLength, to_copy._content, to_copy._currentContentLength);
 	_hasBody = to_copy._hasBody;
 	_hasTE = to_copy._hasTE;
 	_transferEncodings = to_copy._transferEncodings;
@@ -65,13 +65,13 @@ void		HttpRequest::clear(void)
 	_errorCode = 0;
 	_requestLine.method.clear();
 	_requestLine.target.clear();
-	if (_currentContentLength)
-		delete _content;
-	_content = 0;
+//	if (_currentContentLength)
+//		delete _content;
+//	_content = 0;
 	_requestLine.protocol.first = 0;
 	_requestLine.protocol.second = 0;
 	_lineCount = 0;
-	_contentLength = 0;
+//	_contentLength = 0;
 	_hasBody = 0;
 	_hasTE = 0;
 	_transferEncodings.clear();
@@ -142,7 +142,7 @@ int			HttpRequest::getMethod(void) const
 	return (_requestLine.int_method);//why request line ?
 }
 
-void		HttpRequest::setContentLength(long content_length)
+/*void		HttpRequest::setContentLength(long content_length)
 {
 	_contentLength = content_length;
 }
@@ -160,14 +160,14 @@ void		HttpRequest::setContent(std::string const& req_content)
 char	*HttpRequest::getContent() const
 {
 	return (_content);
-}
+}*/
 
 requestLineInfos const&		HttpRequest::getRequestLineInfos(void) const
 {
 	return (_requestLine);
 }
 
-int			HttpRequest::hasContent(void) const
+/*int			HttpRequest::hasContent(void) const
 {
 	return (_hasBody);
 }
@@ -175,7 +175,7 @@ int			HttpRequest::hasContent(void) const
 void			HttpRequest::setHasContent(bool hasContent)
 {
 	_hasBody = hasContent;
-}
+}*/
 
 std::vector<std::string>& HttpRequest::getModifyableTE()
 {
@@ -207,7 +207,7 @@ bool			HttpRequest::isValid(void) const
 	return (_isValid);
 }
 
-void			HttpRequest::appendToContent(std::string& to_append)
+/*void			HttpRequest::appendToContent(std::string& to_append)
 {
 	append_to_buffer(&_content, _currentContentLength, (char*)to_append.c_str(), to_append.length());
 }
@@ -215,7 +215,7 @@ void			HttpRequest::appendToContent(std::string& to_append)
 void			HttpRequest::appendToContent(char *str, int len)
 {
 	append_to_buffer(&_content, _currentContentLength, str, len);
-}
+}*/
 
 void			HttpRequest::setHasTrailer(bool value)
 {
@@ -237,7 +237,7 @@ std::vector<std::string>&	HttpRequest::getModifyableConnectionOptions(void)
 	return (_connectionOptions);
 }
 
-long /*const&	*/		HttpRequest::getCurrentContentLength() const
+/*long		HttpRequest::getCurrentContentLength() const
 {
 	return (_currentContentLength);
-}
+}*/

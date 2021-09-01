@@ -18,7 +18,7 @@
 HttpResponse::HttpResponse(void): HttpMessage()
 {
 	//TODO
-	_contentLength = 0;
+//	_contentLength = 0;
 }
 
 HttpResponse::HttpResponse(HttpResponse const& copy) : HttpMessage(copy)
@@ -59,7 +59,7 @@ std::string		HttpResponse::toString(void) const
 {
 	std::string res = _header;
 	res.append("\r\n");
-	res.append(_body);
+	res.append(_content, _currentContentLength);
 	return res;
 }
 
@@ -156,24 +156,24 @@ bool	HttpResponse::setBody(std::string const& body_path)
 	file.open(body_path.c_str());
 	if (!file.is_open())
 	{
-		_body = DEFAULT_ERROR_BODY;
+		setContent(DEFAULT_ERROR_BODY);
 		setLength();
 		return false;
 	}
-	_body = std::string(std::istreambuf_iterator<char>(file), std::istreambuf_iterator<char>());
+	setContent(std::string(std::istreambuf_iterator<char>(file), std::istreambuf_iterator<char>()));
 	setLength();
 	return true;
 }
 
 void	HttpResponse::setBody(std::string::iterator start, std::string::iterator end)
 {
-	_body = std::string(start, end);
+	setContent(std::string(start, end));
 	setLength();
 }
 
 void	HttpResponse::setBody(char *str, int len)
 {
-	_body = std::string(str, len);
+	setContent(std::string(str, len));
 	setLength();
 }
 void	HttpResponse::setDateTime(void)
@@ -190,7 +190,7 @@ void	HttpResponse::setDateTime(void)
 void	HttpResponse::setLength(void)
 {
 	std::stringstream ss;
-	ss << _body.size();
+	ss << _currentContentLength;
 	ss >> _content_length;
 }
 
