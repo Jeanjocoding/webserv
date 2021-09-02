@@ -28,7 +28,7 @@ void		HttpMessage::clear(void)
 {
 	_headers.clear();
 	if (_currentContentLength)
-		delete _content;
+		delete [] _content;
 	_content = 0;
 	_contentLength = 0;
 //	_body.clear();
