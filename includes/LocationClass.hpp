@@ -6,7 +6,7 @@
 /*   By: asablayr <marvin@42.fr>                    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2021/06/12 14:11:07 by asablayr          #+#    #+#             */
-/*   Updated: 2021/08/31 19:31:07 by asablayr         ###   ########.fr       */
+/*   Updated: 2021/09/01 14:41:48 by asablayr         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -35,12 +35,20 @@ class LocationClass : public contextClass
 			std::string const&						getUri(void) const;// get uri of block
 			std::string								getParam(void) const;// get the uri match method
 			std::string								getRoot(void) const;// get _root attribute
-			void									setRoot(std::string root);
+			void									setRoot(std::string const& root);
 			std::string const&						getServerName(void) const;// get _server_name attribute
 			std::string&							getServerName(void);// get _server_name attribute
-			void									setServerName(std::string server_name);// set _server_name
-			std::string								getIndex(void) const;// get _root attribute
-			void									setIndex(std::string index);
+			void									setServerName(std::string const& server_name);// set _server_name
+			std::string								getIndex(void) const;// get _index attribute
+			void									setIndex(std::string const& index);
+			long									getKeepaliveTimeout(void) const;
+			void									setKeepaliveTimeout(void);
+			void									setKeepaliveTimeout(std::string const& val);
+			void									setKeepaliveTimeout(long val);
+			long									getClientBodySizeMax(void) const;
+			void									setClientBodySizeMax(void);
+			void									setClientBodySizeMax(std::string const& val);
+			void									setClientBodySizeMax(long val);
 			std::string								getAutoIndex(void) const;// generate and returns the auto index page as string
 			std::map<unsigned short, std::string>&	getErrorMap(void);// get the _error_pages attribute
 			std::map<unsigned short, std::string>	getErrorMap(void) const;// get the _error_pages attribute
@@ -82,6 +90,8 @@ class LocationClass : public contextClass
 			int										_redirect_code;
 			std::string								_redirect_uri;
 			std::map<unsigned short, std::string>	_error_pages;
+			long									_keepalive_timeout;
+			long									_client_body_size_max;
 
 };
 

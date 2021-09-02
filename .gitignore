@@ -1,4 +1,5 @@
 *.gch
 .*.swp
 objs/*
+test*
 webserv

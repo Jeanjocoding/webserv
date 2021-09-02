@@ -6,7 +6,7 @@
 /*   By: asablayr <marvin@42.fr>                    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2021/07/15 13:31:12 by asablayr          #+#    #+#             */
-/*   Updated: 2021/08/31 19:32:18 by asablayr         ###   ########.fr       */
+/*   Updated: 2021/09/01 15:00:22 by asablayr         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -42,9 +42,11 @@ LocationClass::LocationClass(std::string const& params, std::string const& buff)
 	setRedirect();
 	setMethods();
 	setCGI();
+	setKeepaliveTimeout();
+	setClientBodySizeMax();
 }
 
-LocationClass::LocationClass(LocationClass const& copy): contextClass(copy), _uri(copy._uri), _param(copy._param), _server_name(copy._server_name), _root(copy._root), _index(copy._index), _autoindex(copy._autoindex), _redirect_bool(copy._redirect_bool), _redirect_code(copy._redirect_code), _redirect_uri(copy._redirect_uri), _error_pages(copy._error_pages)
+LocationClass::LocationClass(LocationClass const& copy): contextClass(copy), _uri(copy._uri), _param(copy._param), _server_name(copy._server_name), _root(copy._root), _index(copy._index), _autoindex(copy._autoindex), _redirect_bool(copy._redirect_bool), _redirect_code(copy._redirect_code), _redirect_uri(copy._redirect_uri), _error_pages(copy._error_pages), _keepalive_timeout(copy._keepalive_timeout), _client_body_size_max(copy._client_body_size_max)
 {
 	_methods[GET_METHOD] = copy._methods[GET_METHOD];
 	_methods[POST_METHOD] = copy._methods[POST_METHOD];
@@ -61,13 +63,19 @@ LocationClass& LocationClass::operator = (LocationClass const& copy)
 	contextClass::operator = (copy);
 	_uri = copy._uri;
 	_param = copy._param;
+	_server_name = copy._server_name;
 	_root = copy._root;
 	_index = copy._index;
+	_autoindex = copy._autoindex;
+	_redirect_bool = copy._redirect_bool;
+	_redirect_code = copy._redirect_code;
+	_redirect_uri = copy._redirect_uri;
+	_error_pages = copy._error_pages;
+	_keepalive_timeout = copy._keepalive_timeout;
+	_client_body_size_max = copy._client_body_size_max;
 	_methods[GET_METHOD] = copy._methods[GET_METHOD];
 	_methods[POST_METHOD] = copy._methods[POST_METHOD];
 	_methods[DELETE_METHOD] = copy._methods[DELETE_METHOD];
-	_autoindex = copy._autoindex;
-	_error_pages = copy._error_pages;
 	return *this;
 }
 
@@ -187,12 +195,12 @@ void	LocationClass::setRoot(void)
 	_root = it->second;
 }
 
-void	LocationClass::setRoot(std::string root)
+void	LocationClass::setRoot(std::string const& root)
 {
 	_root = root;
 }
 
-void	LocationClass::setServerName(std::string server_name)
+void	LocationClass::setServerName(std::string const& server_name)
 {
 	_server_name = server_name;
 }
@@ -205,9 +213,102 @@ void	LocationClass::setIndex(void)
 	_index = it->second;
 }
 
-void	LocationClass::setIndex(std::string index)
+void	LocationClass::setIndex(std::string const& index)
 {
 	_index = index;
+}
+
+void	LocationClass::setKeepaliveTimeout(void)
+{
+	std::map<std::string, std::string>::const_iterator it = _directives.find("keepalive_timeout");
+	if (it == _directives.end())
+		return ;
+	_keepalive_timeout = atoi(it->second.c_str());
+	std::cout << "keep_alive_timeout : " << _keepalive_timeout << std::endl;
+	unsigned int i = 0;
+	while (it->second[i] >= '0' && it->second[i] <= '9')
+		i++;
+	if (it->second[i] == 0 || it->second[i] == 's')
+		return ;
+	else if (it->second[i] == 'm' && it->second[i + 1] == 's')
+		_keepalive_timeout /= 1000;
+	else if (it->second[i] == 'm')
+		_keepalive_timeout *= 60;
+	else if (it->second[i] == 'h')
+		_keepalive_timeout *= 360;
+	else if (it->second[i] == 'd')
+		_keepalive_timeout *= 360 * 24;
+	else if (it->second[i] == 'w')
+		_keepalive_timeout *= 360 * 24 * 7;
+	else if (it->second[i] == 'M')
+		_keepalive_timeout *= 360 * 24 * 30;
+	else if (it->second[i] == 'y')
+		_keepalive_timeout *= 360 * 24 * 365;
+}
+
+void	LocationClass::setKeepaliveTimeout(std::string const& val)
+{
+	_keepalive_timeout = atoi(val.c_str());
+	unsigned int i = 0;
+	while (val[i] >= '0' && val[i] <= '9')
+		i++;
+	if (val[i] == 0 || val[i] == 's')
+		return ;
+	else if (val[i] == 'm' && val[i + 1] == 's')
+		_keepalive_timeout /= 1000;
+	else if (val[i] == 'm')
+		_keepalive_timeout *= 60;
+	else if (val[i] == 'h')
+		_keepalive_timeout *= 360;
+	else if (val[i] == 'd')
+		_keepalive_timeout *= 360 * 24;
+	else if (val[i] == 'w')
+		_keepalive_timeout *= 360 * 24 * 7;
+	else if (val[i] == 'M')
+		_keepalive_timeout *= 360 * 24 * 30;
+	else if (val[i] == 'y')
+		_keepalive_timeout *= 360 * 24 * 365;
+}
+
+void	LocationClass::setKeepaliveTimeout(long val)
+{
+	_keepalive_timeout = val;
+}
+
+void	LocationClass::setClientBodySizeMax(void)
+{
+	unsigned int i = 0;
+	std::map<std::string, std::string>::const_iterator it = _directives.find("client_body_size_max");
+	if (it == _directives.end())
+		return ;
+	_client_body_size_max = atoi(it->second.c_str());
+	while (it->second[i] >= '0' && it->second[i] <= '9')
+		i++;
+	if (it->second[i] == 0)
+		return ;
+	else if (it->second[i] == 'K' || it->second[i] == 'k')
+		_client_body_size_max *= 1000;
+	else if (it->second[i] == 'M' || it->second[i] == 'm')
+		_client_body_size_max *= 1000000;
+}
+
+void	LocationClass::setClientBodySizeMax(std::string const& val)
+{
+	unsigned int i = 0;
+	_client_body_size_max = atoi(val.c_str());
+	while (val[i] >= '0' && val[i] <= '9')
+		i++;
+	if (val[i] == 0)
+		return ;
+	else if (val[i] == 'K' || val[i] == 'k')
+		_client_body_size_max *= 1000;
+	else if (val[i] == 'M' || val[i] == 'm')
+		_client_body_size_max *= 1000000;
+}
+
+void	LocationClass::setClientBodySizeMax(long val)
+{
+	_client_body_size_max = val;
 }
 
 void	LocationClass::setAutoindex(void)

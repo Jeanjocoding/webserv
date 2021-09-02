@@ -6,7 +6,7 @@
 /*   By: asablayr <marvin@42.fr>                    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2021/06/07 18:49:16 by asablayr          #+#    #+#             */
-/*   Updated: 2021/08/31 18:27:29 by asablayr         ###   ########.fr       */
+/*   Updated: 2021/09/01 12:47:36 by asablayr         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -197,7 +197,7 @@ LocationClass&	serverClass::getLocation(std::string const& uri) const
 
 long	serverClass::getKeepAliveTimeout(void) const
 {
-	return std::atoi(_keepalive_timeout.c_str());
+	return std::atoi(_keepalive_timeout.c_str());//TODO input parsed value
 }
 
 void			serverClass::setLocation(void)
@@ -223,6 +223,10 @@ void			serverClass::setLocation(LocationClass& location) const
 		location.setRoot(_root);
 	if (location._directives.find("index") == location._directives.end())
 		location.setIndex(_index);
+	if (location._directives.find("keepalive_timeout") == location._directives.end())
+		location.setKeepaliveTimeout(_keepalive_timeout);
+	if (location._directives.find("client_body_size_max") == location._directives.end())
+		location.setClientBodySizeMax(_client_body_size_max);
 	location.setErrorPages(_default_error_pages);
 /*	if (location._directives.find("error_log") == location._directives.end())
 		location.setErrorLog(_root);
