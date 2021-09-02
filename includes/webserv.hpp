@@ -22,6 +22,7 @@
 #include "contextClass.hpp"
 #include "cgiLauncher.hpp"
 #include "PostHandler.hpp"
+#include "deleteHandler.hpp"
 
 #define DEFAULT_CONF_FILE "conf.conf"
 

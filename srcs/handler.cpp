@@ -75,12 +75,13 @@ void	print_request(HttpRequest& request)
 	std::cout << "ENCODINGS: " << std::endl;
 	print_vec(request.getModifyableTE());
 	std::cout << std::endl;
-	if (request.isChunked())
-		std::cout << "content length of chunked: " << request.getCurrentContentLength() << std::endl;
+	if (request.isChunked() || request.getContentLength())
+		std::cout << "current content length: " << request.getCurrentContentLength() << std::endl;
 	std::cout << std::endl;
 	std::cout << "BODY: ";
-	std::string to_print(request.getContent(), request.getCurrentContentLength());
-	std::cout << to_print << std::endl;
+	write (1, request.getContent(), request.getCurrentContentLength());
+//	std::string to_print(request.getContent(), request.getCurrentContentLength());
+//	std::cout << to_print << std::endl;
 	std::cout << std::endl;
 	std::cout << "TRAILERS: " << std::endl;
 	request.printTrailers();
@@ -183,7 +184,19 @@ static HttpResponse	answer_get(HttpRequest const& request, LocationClass const& 
 	return response;
 }
 
-static HttpResponse	answer_delete(HttpRequest const& request, LocationClass const& location)
+/* static HttpResponse	answer_post(HttpRequest const& request, LocationClass const& location)
+{
+	HttpResponse	response;
+	std::string		tmp = location.getRoot();
+
+	//TODO
+
+	tmp.append(request.getRequestLineInfos().target);
+	std::cout << "answering post request\n";
+	return response;
+} */
+
+/*static HttpResponse	answer_delete(HttpRequest const& request, LocationClass const& location)
 {
 	HttpResponse	response;
 	std::string		tmp = location.getRoot();
@@ -192,7 +205,7 @@ static HttpResponse	answer_delete(HttpRequest const& request, LocationClass cons
 	tmp.append(request.getRequestLineInfos().target);
 	std::cout << "answering delete request\n";
 	return response;
-}
+}*/
 
 static HttpResponse	answer_redirection(HttpRequest const& request, LocationClass const& location)
 {

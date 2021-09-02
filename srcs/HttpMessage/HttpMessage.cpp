@@ -2,6 +2,10 @@
 
 HttpMessage::HttpMessage(void)
 {
+	_contentLength = 0;
+	_hasBody = 0;
+	_currentContentLength = 0;
+	_content = 0;
 	return;	
 }
 
@@ -23,7 +27,11 @@ HttpMessage::~HttpMessage(void)
 void		HttpMessage::clear(void)
 {
 	_headers.clear();
-	_body.clear();
+	if (_currentContentLength)
+		delete _content;
+	_content = 0;
+	_contentLength = 0;
+//	_body.clear();
 	_protocol.clear();
 	_stringMessage.clear();
 	_trailing_headers.clear();
@@ -42,7 +50,10 @@ HttpMessage&	HttpMessage::operator=(HttpMessage const& to_copy)
 //		_headers.insert(*itdeb);
 //	}
 	_trailing_headers = to_copy._trailing_headers;
-	_body = to_copy._body;
+	_contentLength = to_copy._contentLength;
+	_currentContentLength = 0;
+	append_to_buffer(&_content, _currentContentLength, to_copy._content, to_copy._currentContentLength);
+//	_body = to_copy._body;
 	return (*this);
 
 }
@@ -93,4 +104,49 @@ void		HttpMessage::addTrailingHeader(std::pair<std::string, std::string>& traile
 std::multimap<std::string, std::string> const&	HttpMessage::getTrailingHeaders(void) const
 {
 	return (_trailing_headers);
+}
+
+int			HttpMessage::hasContent(void) const
+{
+	return (_hasBody);
+}
+
+void			HttpMessage::setHasContent(bool hasContent)
+{
+	_hasBody = hasContent;
+}
+
+void		HttpMessage::setContentLength(long content_length)
+{
+	_contentLength = content_length;
+}
+
+long		HttpMessage::getContentLength(void) const
+{
+	return (_contentLength);
+}
+
+void		HttpMessage::setContent(std::string const& req_content)
+{
+	append_to_buffer(&_content, _currentContentLength, (char*)req_content.c_str(), req_content.length());
+}
+
+char	*HttpMessage::getContent() const
+{
+	return (_content);
+}
+
+void			HttpMessage::appendToContent(std::string& to_append)
+{
+	append_to_buffer(&_content, _currentContentLength, (char*)to_append.c_str(), to_append.length());
+}
+
+void			HttpMessage::appendToContent(char *str, int len)
+{
+	append_to_buffer(&_content, _currentContentLength, str, len);
+}
+
+long /*const&	*/		HttpMessage::getCurrentContentLength() const
+{
+	return (_currentContentLength);
 }

@@ -38,25 +38,25 @@ public:
 	void				setStartLine(std::string const& line);
 	std::string const&		getStartLine(void) const;
 	int					getMethod(void) const;
-	long				getContentLength(void) const;
-	void				setContentLength(long length);
-	void				setContent(std::string const& req_content);
-	char				*getContent() const;
+//	long				getContentLength(void) const;
+//	void				setContentLength(long length);
+//	void				setContent(std::string const& req_content);
+//	char				*getContent() const;
 	requestLineInfos const&		getRequestLineInfos(void) const;
-	int				hasContent(void) const;
-	void				setHasContent(bool hasContent);
+//	int				hasContent(void) const;
+//	void				setHasContent(bool hasContent);
 	void				setHasTE(bool value);
 	bool				HasTE(void) const;
 	std::vector<std::string>&	getModifyableTE();
 	std::vector<std::string>&	getModifyableTrailers();
 	void				setIsChunked(bool value);
 	bool				isChunked() const;
-	void				appendToContent(std::string& to_append);
-	void				appendToContent(char *str, int len);
+//	void				appendToContent(std::string& to_append);
+//	void				appendToContent(char *str, int len);
 	void				setHasTrailer(bool value);
 	bool				HasTrailers() const;
 	std::vector<std::string>&	getModifyableConnectionOptions();
-	long/* const&	*/		getCurrentContentLength() const;
+//	long/* const&	*/		getCurrentContentLength() const;
 
 
 
@@ -68,10 +68,10 @@ private:
 	int				_errorCode;
 	requestLineInfos		_requestLine;
 	int				_lineCount;
-	long				_contentLength;
-	long				_currentContentLength;
-	char				*_content;
-	bool				_hasBody;
+//	long				_contentLength;
+//	long				_currentContentLength;
+//	char				*_content;
+//	bool				_hasBody;
 	std::vector<std::string>	_transferEncodings;
 	std::vector<std::string>	_trailers;
 	std::vector<std::string>	_connectionOptions;

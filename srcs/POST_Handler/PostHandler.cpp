@@ -89,6 +89,7 @@ void		setCgiParams(t_CgiParams& params, HttpRequest const& request, LocationClas
 		std::stringstream	stream;
 		stream << request.getContentLength();
 		stream >> params.contentLength;
+		params.contentType = (*(request.getHeaders().find("Content-Type"))).second;
 	}
 	params.pathInfo = target;
 	params.serverName = location.getServerName(); // a modif

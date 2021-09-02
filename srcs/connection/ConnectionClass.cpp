@@ -1115,13 +1115,14 @@ void		ConnectionClass::_print_content_info(readingBuffer& buffer, HttpRequest& c
 	std::cout << "_isParsingContent: " << _isParsingContent << std::endl;
 	if (currentRequest.getCurrentContentLength())
 	{
-		std::string to_print(currentRequest.getContent(), currentRequest.getCurrentContentLength());
-		std::cout << "content in request: " << to_print << std::endl;
+		std::cout << "content in request: ";
+		write(1, currentRequest.getContent(), currentRequest.getCurrentContentLength());
+		std::cout << std::endl;
 	}
 	std::cout << "content length in request: " << currentRequest.getCurrentContentLength() << std::endl;
 	std::cout << "buffer.deb: " << buffer.deb << ", buffer.end: " << buffer.end << std::endl;
-	std::string str_buffer(&(buffer.buf[buffer.deb]), buffer.end - buffer.deb);
-	std::cout << "buffer from buf.deb to buf.end: " << str_buffer << std::endl;;
+	std::cout << "buffer from buf.deb to buf.end: ";
+	write(1, &(buffer.buf[buffer.deb]), buffer.end - buffer.deb);
 	std::cout << "end content info -"<< std::endl << std::endl;
 
 }
