@@ -37,6 +37,7 @@ ConnectionClass::ConnectionClass(void)
 
 ConnectionClass::ConnectionClass(ConnectionClass const& to_copy): _socketNbr(to_copy._socketNbr), _server(to_copy._server), _status(to_copy._status), _isPersistent(to_copy._isPersistent), _hasRestRequest(to_copy._hasRestRequest), _hasRestBuffer(to_copy._hasRestBuffer), _hasBegRest(to_copy._hasBegRest), _timer(to_copy._timer)
 {
+//	*this = to_copy;
 	_isHandlingBody = to_copy._isHandlingBody;
 	_isParsingContent = to_copy._isParsingContent;
 	_ContentLeftToRead = to_copy._ContentLeftToRead;
@@ -53,7 +54,7 @@ ConnectionClass::ConnectionClass(ConnectionClass const& to_copy): _socketNbr(to_
 		_incompleteRequest = new HttpRequest(*(to_copy._incompleteRequest));
 	_isPersistent = to_copy._isPersistent;
 	_isProcessingTrailers = to_copy._isProcessingTrailers;
-	return;	
+	return;
 }
 
 ConnectionClass::ConnectionClass(int socknum, serverClass* server): _socketNbr(socknum), _server(server)
