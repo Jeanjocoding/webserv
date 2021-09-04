@@ -312,7 +312,7 @@ int		ConnectionClass::_read_buffer(readingBuffer& buffer, std::vector<HttpReques
 	/* parsing all the requests contained in one single read **/
 	while (buffer.deb < buffer.end) // je chope toutes les requêtes qui sont dans le buffer
 	{
-//		_printBufferInfo(buffer, "before gnr: ");
+		_printBufferInfo(buffer, "before gnr: ");
 		getnr_ret = _get_next_request(buffer, currentRequest);
 		if (getnr_ret == -1)
 			return (-1);
@@ -642,6 +642,7 @@ int		ConnectionClass::_read_line(readingBuffer& buffer, HttpRequest& currentRequ
 		buffer.deb += 2;
 		return (2);
 	}
+	std::cout << "_hasRestBuffer: " << _hasRestBuffer << std::endl;
 	if (_hasRestBuffer && _restBuffer->length() && (*_restBuffer)[_restBuffer->length() - 1] == '\r' 
 		&& buffer.buf[buffer.deb] == '\n')
 	{
@@ -969,6 +970,7 @@ int		ConnectionClass::_last_nl_procedure(readingBuffer& buffer)
 		left_inbuf = buffer.end - buffer.deb;
 		delete _restBuffer;
 		_restBuffer = 0;
+		_hasRestBuffer = 0;
 	}
 	_printBufferInfo(buffer, "in last nl deb");
 	std::cout << "left inbuf: "  << left_inbuf << std::endl;
