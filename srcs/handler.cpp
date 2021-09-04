@@ -234,9 +234,9 @@ void	answer_connection(ConnectionClass& connection)
 		return ;
 	}
 	HttpRequest& request = connection._request_pipeline[0];
+	print_request(request);
 	if (!request.isValid())//TODO check why is invalid and respond accordingly
 		return send_error(400, server._default_error_pages, connection);
-	print_request(request);
 	LocationClass location = server.getLocation(request.getRequestLineInfos().target);//TODO
 	if (!location.methodIsAllowed(request.getMethod()))
 	{

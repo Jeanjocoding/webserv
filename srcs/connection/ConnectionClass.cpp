@@ -14,7 +14,7 @@
 #include <cstdio>
 #include <stdlib.h>
 #include "ConnectionClass.hpp"
-
+#include "webserv.hpp"
 
 ConnectionClass::ConnectionClass(void)
 {
@@ -275,6 +275,7 @@ int		ConnectionClass::_read_buffer(readingBuffer& buffer, std::vector<HttpReques
 	}
 	if (_isProcessingLastNL)
 	{
+//		print_request(currentRequest);
 		read_ret = _last_nl_procedure(buffer);
 		if (read_ret == 0 || read_ret == -1)
 			return (read_ret);
@@ -962,18 +963,21 @@ int		ConnectionClass::_last_nl_procedure(readingBuffer& buffer)
 //	std::cout << "processing last nl" << std::endl;
 	if (_hasRestBuffer)
 	{
+//		std::cout << "rest buffer: " << *_restBuffer << std::endl;
 		std::memmove(buffer.buf, _restBuffer->c_str(), _restBuffer->length());
+		buffer.end += _restBuffer->length(); // cette ligne a résolu le bug
 		left_inbuf = buffer.end - buffer.deb;
 		delete _restBuffer;
 		_restBuffer = 0;
 	}
-//	_printBufferInfo(buffer, "in last nl deb");
+	_printBufferInfo(buffer, "in last nl deb");
+	std::cout << "left inbuf: "  << left_inbuf << std::endl;
 	if (left_inbuf < 2)
 	{
 		if (!_hasRead)
 		{
 			//besoin de protection?
-			ret_read = recv(_socketNbr, &(buffer.buf[buffer.deb]), 2 - left_inbuf, 0);
+			ret_read = recv(_socketNbr, &(buffer.buf[buffer.end]), 2 - left_inbuf, 0);
 			buffer.end += ret_read;
 			if (ret_read == 0 || ret_read == -1)
 				return (ret_read);
@@ -983,6 +987,7 @@ int		ConnectionClass::_last_nl_procedure(readingBuffer& buffer)
 		else
 			return (SAVE_REQUEST);
 	}
+	_printBufferInfo(buffer, "before error test in last nl");
 	if (buffer.buf[buffer.deb] != '\r' || buffer.buf[buffer.deb + 1] != '\n')
 		return (HTTP_ERROR);
 	buffer.deb += 2;
