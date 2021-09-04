@@ -77,6 +77,7 @@ int		launchCgiScript(t_CgiParams& params, HttpRequest const& request, LocationCl
 	char	**args = new char*[2];
 
 	std::string	execname("/usr/local/bin/php-cgi");
+//	std::string	execname("/usr/local/bin/php-cgi");
 	std::string	argname("php-cgi");
 
 	args[0] = new char[execname.length() + 1];
@@ -110,7 +111,7 @@ int		launchCgiScript(t_CgiParams& params, HttpRequest const& request, LocationCl
 		allocateCustomEnv(&customEnv);
 		setCgiParamsAsEnvironmentVariables(params, customEnv);
 		if (execve(args[0], (char *const *) args, customEnv) == -1)
-			perror("execve");
+			perror("execvezz");
 		std::cout << "execve failed" << std::endl;
 		return (-1);
 	}
