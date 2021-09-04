@@ -129,7 +129,7 @@ int		launchCgiScript(t_CgiParams& params, HttpRequest const& request, LocationCl
 			append_to_buffer(output, buffer_size, read_buffer, read_ret);
 		}
 		close (script_output_pipe[0]);
-		delete args[0];
+		delete [] args[0];
 		delete [] args;
 		if (read_ret == -1)
 		{
