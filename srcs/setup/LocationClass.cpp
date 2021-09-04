@@ -6,7 +6,7 @@
 /*   By: asablayr <marvin@42.fr>                    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2021/07/15 13:31:12 by asablayr          #+#    #+#             */
-/*   Updated: 2021/09/01 15:00:22 by asablayr         ###   ########.fr       */
+/*   Updated: 2021/09/04 16:08:51 by asablayr         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -46,7 +46,7 @@ LocationClass::LocationClass(std::string const& params, std::string const& buff)
 	setClientBodySizeMax();
 }
 
-LocationClass::LocationClass(LocationClass const& copy): contextClass(copy), _uri(copy._uri), _param(copy._param), _server_name(copy._server_name), _root(copy._root), _index(copy._index), _autoindex(copy._autoindex), _redirect_bool(copy._redirect_bool), _redirect_code(copy._redirect_code), _redirect_uri(copy._redirect_uri), _error_pages(copy._error_pages), _keepalive_timeout(copy._keepalive_timeout), _client_body_size_max(copy._client_body_size_max)
+LocationClass::LocationClass(LocationClass const& copy): contextClass(copy), _uri(copy._uri), _param(copy._param), _server_name(copy._server_name), _root(copy._root), _index(copy._index), _autoindex(copy._autoindex), _cgi_bool(copy._cgi_bool), _cgi_path(copy._cgi_path), _redirect_bool(copy._redirect_bool), _redirect_code(copy._redirect_code), _redirect_uri(copy._redirect_uri), _error_pages(copy._error_pages), _keepalive_timeout(copy._keepalive_timeout), _client_body_size_max(copy._client_body_size_max)
 {
 	_methods[GET_METHOD] = copy._methods[GET_METHOD];
 	_methods[POST_METHOD] = copy._methods[POST_METHOD];
@@ -67,6 +67,8 @@ LocationClass& LocationClass::operator = (LocationClass const& copy)
 	_root = copy._root;
 	_index = copy._index;
 	_autoindex = copy._autoindex;
+	_cgi_bool = copy._cgi_bool;
+	_cgi_path = copy._cgi_path;
 	_redirect_bool = copy._redirect_bool;
 	_redirect_code = copy._redirect_code;
 	_redirect_uri = copy._redirect_uri;
@@ -163,6 +165,11 @@ bool LocationClass::isCGI(void) const
 	return _cgi_bool;
 }
 
+std::string LocationClass::getCGI(void) const
+{
+	return _cgi_path;
+}
+
 unsigned short LocationClass::getRedirectCode(void) const
 {
 	return _redirect_code;
@@ -222,9 +229,11 @@ void	LocationClass::setKeepaliveTimeout(void)
 {
 	std::map<std::string, std::string>::const_iterator it = _directives.find("keepalive_timeout");
 	if (it == _directives.end())
+	{
+		_keepalive_timeout = 0;
 		return ;
-	_keepalive_timeout = atoi(it->second.c_str());
-	std::cout << "keep_alive_timeout : " << _keepalive_timeout << std::endl;
+	}
+	_keepalive_timeout = atoi(it->second.c_str()) * 1000;
 	unsigned int i = 0;
 	while (it->second[i] >= '0' && it->second[i] <= '9')
 		i++;
@@ -248,7 +257,7 @@ void	LocationClass::setKeepaliveTimeout(void)
 
 void	LocationClass::setKeepaliveTimeout(std::string const& val)
 {
-	_keepalive_timeout = atoi(val.c_str());
+	_keepalive_timeout = atoi(val.c_str()) * 1000;
 	unsigned int i = 0;
 	while (val[i] >= '0' && val[i] <= '9')
 		i++;
@@ -398,12 +407,17 @@ void	LocationClass::printLocation(void) const
 {
 	std::cout << "_uri : " << _uri << std::endl;
 	std::cout << "_param : " << _param << std::endl;
+	std::cout << "_server_name : " << _server_name << std::endl;
 	std::cout << "_root : " << _root << std::endl;
 	std::cout << "_index : " << _index << std::endl;
 	std::cout << "GET : " << _methods[GET_METHOD] << std::endl;
 	std::cout << "DELETE : " << _methods[DELETE_METHOD] << std::endl;
 	std::cout << "POST : " << _methods[POST_METHOD] << std::endl;
 	std::cout << "autoindex : " << _autoindex << std::endl;
+	std::cout << "isCgi : " << _cgi_bool << "\t cgi_path : " << _cgi_path << std::endl;
+	std::cout << "isRedirect : " << _redirect_bool << "\tredirect uri : " << _redirect_uri << std::endl;
+	std::cout << "keepalive_timeout : " << _keepalive_timeout << std::endl;
+	std::cout << "client_body_size_max : " << _client_body_size_max << std::endl;
 	for (std::map<unsigned short, std::string>::const_iterator it = _error_pages.begin(); it != _error_pages.end(); it++)
 		std::cout << "_error_pages " << it->first << " : " << it->second << std::endl;
 }

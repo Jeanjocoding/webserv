@@ -6,7 +6,7 @@
 /*   By: asablayr <marvin@42.fr>                    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2021/06/21 17:42:15 by asablayr          #+#    #+#             */
-/*   Updated: 2021/08/08 18:05:24 by asablayr         ###   ########.fr       */
+/*   Updated: 2021/09/03 19:55:13 by asablayr         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -164,9 +164,12 @@ static bool	timeParse(std::string& arg)
 	if (arg[i])
 	{
 		if (arg[i] == 's' || arg[i] == 'y' || arg[i] == 'M' || arg[i] == 'w'
-			|| arg[i] == 'd' || arg[i] == 'h' || arg[i] == 'm'
-			|| (arg[i] == 'm' && arg[i + 1] && arg[i + 1] == 's') || arg[i] == 's')
+			|| arg[i] == 'd' || arg[i] == 'h' || arg[i] == 'm')
+		{
+			if ((arg[i] == 'm' && arg[i + 1] && arg[i + 1] == 's'))
+				i++;
 			i++;
+		}
 		else
 			return false;
 	}

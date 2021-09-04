@@ -6,7 +6,7 @@
 /*   By: asablayr <marvin@42.fr>                    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2021/06/07 18:49:16 by asablayr          #+#    #+#             */
-/*   Updated: 2021/09/01 12:47:36 by asablayr         ###   ########.fr       */
+/*   Updated: 2021/09/03 13:52:54 by asablayr         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -174,11 +174,10 @@ LocationClass&	serverClass::getLocation(std::string const& uri) const
 		}
 		else if ((*it)->getParam() == "~*")
 		{
-			tmp = caseInsensitiveReMatch((*it)->getUri(), uri);
-			if (tmp > max_match)
+			if (uri.find((*it)->getUri()) != std::string::npos)
 			{
-				max_match = tmp;
-				ret = *it;
+				std::cout << "bool : " << (*it)->isCGI() << "\tbin : " << (*it)->getCGI() << std::endl;
+				return **it;
 			}
 		}
 		else if ((*it)->getParam() == "^~" || (*it)->getParam() == "")
