@@ -6,7 +6,7 @@
 /*   By: asablayr <marvin@42.fr>                    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2021/06/06 21:54:40 by asablayr          #+#    #+#             */
-/*   Updated: 2021/09/05 19:38:11 by asablayr         ###   ########.fr       */
+/*   Updated: 2021/09/06 11:48:48 by asablayr         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -114,7 +114,8 @@ static HttpResponse answer_cgi_get(HttpRequest const& request, LocationClass con
 		return HttpResponse(404, location.getErrorPage(404));
 	launchCgiScript(params, request, location, &output, output_len);
 	add_header_part(response, output, output_len, body_begin);
-	response.setBody(&(output[body_begin]));
+//	write(1, output, output_len);
+	response.setBody(&(output[body_begin]), output_len - body_begin);
 	response.setHeader();
 	return response;
 }
@@ -211,6 +212,7 @@ void	answer_connection(ConnectionClass& connection)
 		return ;
 	}
 	HttpRequest& request = connection._request_pipeline[0];
+	print_request(request);
 	if (!request.isValid())//TODO check why is invalid and respond accordingly
 		return send_error(400, server._default_error_pages, connection);
 	print_request(request);

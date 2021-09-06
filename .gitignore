@@ -3,3 +3,4 @@
 objs/*
 test*
 webserv
+*.DS_Store

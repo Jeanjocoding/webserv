@@ -4,13 +4,13 @@ HttpRequest::HttpRequest(void): HttpMessage()
 {
 	_lineCount = 0;
 	_isValid = 0;
-	_contentLength = 0;
+//	_contentLength = 0;
 	_hasTE = 0;
 	_hasTrailers = 0;
-	_hasBody = 0;
+//	_hasBody = 0;
 	_isChunked = 0;
-	_currentContentLength = 0;
-	_content = 0;
+//	_currentContentLength = 0;
+//	_content = 0;
 	return;	
 }
 
