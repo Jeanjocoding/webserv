@@ -6,7 +6,7 @@
 /*   By: asablayr <marvin@42.fr>                    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2021/07/15 13:31:12 by asablayr          #+#    #+#             */
-/*   Updated: 2021/09/05 11:45:46 by asablayr         ###   ########.fr       */
+/*   Updated: 2021/09/06 11:45:26 by asablayr         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -366,7 +366,7 @@ void	LocationClass::setCGI(void)
 	if (_directives.find("cgi_path") != _directives.end())
 		_cgi_path = _directives.find("cgi_path")->second;
 	else
-		_cgi_path = "/usr/bin/php-cgi";//TODO switch to os relative define
+		_cgi_path = DEFAULT_CGI_BIN_PATH;
 }
 
 void	LocationClass::setMethods(void)
