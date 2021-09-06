@@ -6,7 +6,7 @@
 /*   By: asablayr <marvin@42.fr>                    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2021/06/06 21:54:40 by asablayr          #+#    #+#             */
-/*   Updated: 2021/08/27 19:16:29 by asablayr         ###   ########.fr       */
+/*   Updated: 2021/09/05 19:38:11 by asablayr         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -108,7 +108,7 @@ static HttpResponse answer_cgi_get(HttpRequest const& request, LocationClass con
 	size_t			output_len = 0;
 	std::ifstream	body;
 
-	setCgiParams(params, request, location);
+	setCgiParams(params, request, location);//TODO check with mate
 	body.open(params.scriptFilename.c_str());
 	if (!body.is_open())
 		return HttpResponse(404, location.getErrorPage(404));
@@ -126,10 +126,10 @@ static HttpResponse	answer_get(HttpRequest const& request, LocationClass const& 
 	//TODO
 	
 	tmp.append(request.getRequestLineInfos().target);// Append the requested  uri
-	std::cout << "answering get request\ntrying to get file : " << tmp << std::endl;
+	std::cout << "answering get request\ntrying to get file : " << tmp << std::endl; //testing
 
-	if (location.isCGI())
-		return answer_cgi_get(request, location);
+	if (location.isCGI())// If cgi is requested
+		return answer_cgi_get(request, location); //Return response returned by answer_cgi
 	if (request.getRequestLineInfos().target == location.getUri() + "/" ||
 		(request.getRequestLineInfos().target == location.getUri() && *(--request.getRequestLineInfos().target.end()) == '/'))// If index is requested
 	{
@@ -184,29 +184,6 @@ static HttpResponse	answer_get(HttpRequest const& request, LocationClass const& 
 	return response;
 }
 
-/* static HttpResponse	answer_post(HttpRequest const& request, LocationClass const& location)
-{
-	HttpResponse	response;
-	std::string		tmp = location.getRoot();
-
-	//TODO
-
-	tmp.append(request.getRequestLineInfos().target);
-	std::cout << "answering post request\n";
-	return response;
-} */
-
-/*static HttpResponse	answer_delete(HttpRequest const& request, LocationClass const& location)
-{
-	HttpResponse	response;
-	std::string		tmp = location.getRoot();
-
-	//TODO
-	tmp.append(request.getRequestLineInfos().target);
-	std::cout << "answering delete request\n";
-	return response;
-}*/
-
 static HttpResponse	answer_redirection(HttpRequest const& request, LocationClass const& location)
 {
 	std::string tmp;
@@ -237,13 +214,16 @@ void	answer_connection(ConnectionClass& connection)
 	if (!request.isValid())//TODO check why is invalid and respond accordingly
 		return send_error(400, server._default_error_pages, connection);
 	print_request(request);
-	LocationClass location = server.getLocation(request.getRequestLineInfos().target);//TODO
+	LocationClass location = server.getLocation(request.getRequestLineInfos().target);
+
+	location.printLocation();// testing
+
 	if (!location.methodIsAllowed(request.getMethod()))
 	{
 		std::cerr << "forbiden Http request method on location " << location.getUri() << std::endl;
 		return send_error(405, location.getErrorMap(), connection);
 	}
-	if (location.isRedirect())//TODO redirect request
+	if (location.isRedirect())
 	{
 		connection.sendResponse(answer_redirection(request, location).toString());// Send redirect response
 		return ;
@@ -262,7 +242,7 @@ void	answer_connection(ConnectionClass& connection)
 		default :
 			return send_error(501, location.getErrorMap(), connection);
 	}
-	if (!connection.isPersistent())
+	if (!connection.isPersistent() || location.getKeepaliveTimeout() == 0)
 		response.setConnectionStatus(false);
 	connection.sendResponse(response.toString());// Handles all of the response sending and adjust the connection accordingly (cf: pop request list close connection etc...)
 }

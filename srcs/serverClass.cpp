@@ -6,7 +6,7 @@
 /*   By: asablayr <marvin@42.fr>                    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2021/06/07 18:49:16 by asablayr          #+#    #+#             */
-/*   Updated: 2021/09/03 13:52:54 by asablayr         ###   ########.fr       */
+/*   Updated: 2021/09/05 16:33:54 by asablayr         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -154,6 +154,7 @@ LocationClass&	serverClass::getLocation(std::string const& uri) const
 	unsigned long	max_match = 0;
 	unsigned long	tmp = 0;
 	LocationClass* ret;
+	std::cout << "uri : " << uri << std::endl;
 	for (std::vector<LocationClass*>::const_iterator it = _location.begin(); it != _location.end(); it++)
 	{
 		if ((*it)->getParam() == "=")
@@ -175,10 +176,7 @@ LocationClass&	serverClass::getLocation(std::string const& uri) const
 		else if ((*it)->getParam() == "~*")
 		{
 			if (uri.find((*it)->getUri()) != std::string::npos)
-			{
-				std::cout << "bool : " << (*it)->isCGI() << "\tbin : " << (*it)->getCGI() << std::endl;
 				return **it;
-			}
 		}
 		else if ((*it)->getParam() == "^~" || (*it)->getParam() == "")
 		{
@@ -190,13 +188,35 @@ LocationClass&	serverClass::getLocation(std::string const& uri) const
 			}
 		}
 	}
-	std::cout << "location chosen : " << ret->getUri() << "\n";
+	std::cout << "location chosen : " << ret->getUri() << "\n"; // testing
 	return *ret;
 }
 
 long	serverClass::getKeepAliveTimeout(void) const
 {
-	return std::atoi(_keepalive_timeout.c_str());//TODO input parsed value
+	long			res = 0;
+	unsigned int	i = 0;
+
+	res = atoi(_keepalive_timeout.c_str());
+	while (_keepalive_timeout[i] >= '0' && _keepalive_timeout[i] <= '9')
+		i++;
+	if (_keepalive_timeout[i] == 0 || _keepalive_timeout[i] == 's')
+		return res;
+	else if (_keepalive_timeout[i] == 'm' && _keepalive_timeout[i + 1] == 's')
+		res /= 1000;
+	else if (_keepalive_timeout[i] == 'm')
+		res *= 60;
+	else if (_keepalive_timeout[i] == 'h')
+		res *= 360;
+	else if (_keepalive_timeout[i] == 'd')
+		res *= 360 * 24;
+	else if (_keepalive_timeout[i] == 'w')
+		res *= 360 * 24 * 7;
+	else if (_keepalive_timeout[i] == 'M')
+		res *= 360 * 24 * 30;
+	else if (_keepalive_timeout[i] == 'y')
+		res *= 360 * 24 * 365;
+	return res;
 }
 
 void			serverClass::setLocation(void)

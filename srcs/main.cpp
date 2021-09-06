@@ -6,7 +6,7 @@
 /*   By: asablayr <marvin@42.fr>                    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2021/06/06 15:27:02 by asablayr          #+#    #+#             */
-/*   Updated: 2021/08/27 19:05:09 by asablayr         ###   ########.fr       */
+/*   Updated: 2021/09/05 19:40:07 by asablayr         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -116,11 +116,11 @@ int main(int ac, char** av)
 				}
 			}
 		}
-		for (std::map<int, ConnectionClass>::iterator i = connection_map.begin(); i != connection_map.end(); i ++)
+		for (std::map<int, ConnectionClass>::iterator i = connection_map.begin(); i != connection_map.end(); i ++)// TODO unit test
 		{
 			if (!i->second.isPersistent())
 				continue;
-			if (time(0) - i->second.getTimer() > i->second._server->getKeepAliveTimeout())
+			if (time(0) - i->second.getTimer() > i->second._server->getKeepAliveTimeout())// TODO switch from sec to ms
 			{
 				if (FD_ISSET(i->first, &rfds))
 				{

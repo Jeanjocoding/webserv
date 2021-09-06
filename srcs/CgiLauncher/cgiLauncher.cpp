@@ -122,6 +122,13 @@ int		launchCgiScript(t_CgiParams& params, HttpRequest const& request, LocationCl
 			if (write(script_input_pipe[1], request.getContent(), request.getContentLength()) == -1)
 				perror("write");
 		}
+		else if (request.getMethod() == GET_METHOD && request.getRequestLineInfos().target.find("?") != std::string::npos)
+		{
+			std::string const tmp(request.getRequestLineInfos().target.find("?"), request.getRequestLineInfos().target.size());
+			if (!tmp.empty())
+				if (write(script_input_pipe[1], tmp.c_str(), tmp.size()) == -1)// TODO check the "-1"
+					perror("write");
+		}
 		close (script_input_pipe[1]);
 		close(script_output_pipe[1]);
 		while ((read_ret = read(script_output_pipe[0], read_buffer, 4096)) > 0)
