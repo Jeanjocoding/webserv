@@ -76,8 +76,7 @@ int		launchCgiScript(t_CgiParams& params, HttpRequest const& request, LocationCl
 	char 		**customEnv;
 	char	**args = new char*[2];
 
-	std::string	execname("/usr/local/bin/php-cgi");
-//	std::string	execname("/usr/local/bin/php-cgi");
+	std::string	execname(location.getCGI());
 	std::string	argname("php-cgi");
 
 	args[0] = new char[execname.length() + 1];
@@ -122,6 +121,14 @@ int		launchCgiScript(t_CgiParams& params, HttpRequest const& request, LocationCl
 		{
 			if (write(script_input_pipe[1], request.getContent(), request.getContentLength()) == -1)
 				perror("write");
+		}
+		else if (request.getMethod() == GET_METHOD && request.getRequestLineInfos().target.find("?") != std::string::npos)
+		{
+			std::string tmp(request.getRequestLineInfos().target.find("?"), request.getRequestLineInfos().target.size());
+			tmp.erase(0, 1);
+			if (!tmp.empty())
+				if (write(script_input_pipe[1], tmp.c_str(), tmp.size()) == -1)
+					perror("write");
 		}
 		close (script_input_pipe[1]);
 		close(script_output_pipe[1]);

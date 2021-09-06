@@ -6,7 +6,7 @@
 /*   By: asablayr <marvin@42.fr>                    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2021/06/12 14:11:07 by asablayr          #+#    #+#             */
-/*   Updated: 2021/09/03 13:44:06 by asablayr         ###   ########.fr       */
+/*   Updated: 2021/09/06 11:45:14 by asablayr         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -18,6 +18,12 @@
 #include <string>
 #include "contextClass.hpp"
 #include "http_method.hpp"
+
+# ifdef __APPLE__
+#  define DEFAULT_CGI_BIN_PATH "/usr/local/bin/php-cgi"
+# else
+#  define DEFAULT_CGI_BIN_PATH "/usr/bin/php-cgi"
+# endif
 
 class LocationClass : public contextClass
 {

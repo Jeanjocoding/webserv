@@ -6,7 +6,7 @@
 /*   By: asablayr <marvin@42.fr>                    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2021/07/15 13:31:12 by asablayr          #+#    #+#             */
-/*   Updated: 2021/09/04 16:08:51 by asablayr         ###   ########.fr       */
+/*   Updated: 2021/09/06 11:45:26 by asablayr         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -116,6 +116,11 @@ std::string	LocationClass::getIndex(void) const
 	return _index;
 }
 
+long		LocationClass::getKeepaliveTimeout(void) const
+{
+	return _keepalive_timeout;
+}
+
 std::string	LocationClass::getAutoIndex(void) const
 {
 	//TODO
@@ -144,7 +149,13 @@ std::string		LocationClass::getErrorPage(unsigned short error_code) const
 
 void	LocationClass::setErrorPages(std::map<unsigned short, std::string> const& error_map)
 {
-	_error_pages = error_map;
+	for (std::map<unsigned short, std::string>::const_iterator it = error_map.begin(); it != error_map.end(); it++)
+	{
+		if (_error_pages.find(it->first) == _error_pages.end())
+		{
+			_error_pages.insert(*it);
+		}
+	}
 }
 
 bool LocationClass::methodIsAllowed(unsigned int method) const
@@ -233,7 +244,7 @@ void	LocationClass::setKeepaliveTimeout(void)
 		_keepalive_timeout = 0;
 		return ;
 	}
-	_keepalive_timeout = atoi(it->second.c_str()) * 1000;
+	_keepalive_timeout = atoi(it->second.c_str());
 	unsigned int i = 0;
 	while (it->second[i] >= '0' && it->second[i] <= '9')
 		i++;
@@ -257,7 +268,7 @@ void	LocationClass::setKeepaliveTimeout(void)
 
 void	LocationClass::setKeepaliveTimeout(std::string const& val)
 {
-	_keepalive_timeout = atoi(val.c_str()) * 1000;
+	_keepalive_timeout = atoi(val.c_str());
 	unsigned int i = 0;
 	while (val[i] >= '0' && val[i] <= '9')
 		i++;
@@ -355,7 +366,7 @@ void	LocationClass::setCGI(void)
 	if (_directives.find("cgi_path") != _directives.end())
 		_cgi_path = _directives.find("cgi_path")->second;
 	else
-		_cgi_path = "/usr/bin/php-cgi";//TODO switch to os relative define
+		_cgi_path = DEFAULT_CGI_BIN_PATH;
 }
 
 void	LocationClass::setMethods(void)

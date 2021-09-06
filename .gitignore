@@ -2,4 +2,4 @@
 .*.swp
 objs/*
 webserv
-.DS_Store
+*.DS_Store

@@ -67,23 +67,33 @@ void	add_header_part(HttpResponse& response , char *str, size_t buffer_size ,siz
 
 void		setCgiParams(t_CgiParams& params, HttpRequest const& request, LocationClass const& location)
 {
-	std::string		tmp = location.getRoot();
+	std::string	tmp = location.getRoot();
 	std::string	target = request.getRequestLineInfos().target;
 
 	tmp.append(target);
-	if ( target.length() > 4 && target.find(".php") == (target.length() - 4))
+	if ( target.length() > 4 && (target.find(".php") == (target.length() - 4) || target.find(".bla") == (target.length() - 4)))// TODO no hard coding for the file extension
 	{
 		params.scriptFilename = tmp;
 		params.scriptName = target.substr(target.find_last_of('/'));
+	}
+	else if (target.find("?") != std::string::npos && (target.find("?") > target.find(".php") || target.find("?") > target.find(".bla")))// TODO no hard coding
+	{
+		params.scriptFilename = tmp;
+		params.scriptFilename.erase(params.scriptFilename.find("?"), params.scriptFilename.size());
+		params.scriptName = target.substr(target.find_last_of('/'));
+		params.scriptName.erase(params.scriptName.find("?"), params.scriptName.size());
+		params.queryString = std::string(target, target.find("?") + 1, target.size());
+		target.erase(target.find("?"), target.size());
 	}
 	else
 	{
 		params.scriptFilename = tmp.append(location.getIndex());
 		params.scriptName = location.getIndex();
 	}
-//	std::cout << "tmp: " << tmp << std::endl;
+	std::cout << "scriptFilename : " << params.scriptFilename << std::endl;// testing
+	std::cout << "scriptName : " << params.scriptName << std::endl;// testing
 	params.redirectStatus = "200";
-	params.requestMethod = "POST";
+	params.requestMethod = request.getRequestLineInfos().method;
 	if (request.getContentLength())
 	{
 		std::stringstream	stream;
