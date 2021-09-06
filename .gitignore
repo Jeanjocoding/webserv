@@ -1,6 +1,5 @@
 *.gch
 .*.swp
 objs/*
-test*
 webserv
 .DS_Store
