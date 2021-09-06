@@ -76,7 +76,7 @@ int		launchCgiScript(t_CgiParams& params, HttpRequest const& request, LocationCl
 	char 		**customEnv;
 	char	**args = new char*[2];
 
-	std::string	execname("/usr/local/bin/php-cgi"); //TODO switch to dynamic
+	std::string	execname(location.getCGI());
 	std::string	argname("php-cgi");
 
 	args[0] = new char[execname.length() + 1];

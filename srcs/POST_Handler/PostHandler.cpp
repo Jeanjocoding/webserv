@@ -67,7 +67,7 @@ void	add_header_part(HttpResponse& response , char *str, size_t buffer_size ,siz
 
 void		setCgiParams(t_CgiParams& params, HttpRequest const& request, LocationClass const& location)
 {
-	std::string		tmp = location.getRoot();
+	std::string	tmp = location.getRoot();
 	std::string	target = request.getRequestLineInfos().target;
 
 	tmp.append(target);
@@ -82,6 +82,8 @@ void		setCgiParams(t_CgiParams& params, HttpRequest const& request, LocationClas
 		params.scriptFilename.erase(params.scriptFilename.find("?"), params.scriptFilename.size());
 		params.scriptName = target.substr(target.find_last_of('/'));
 		params.scriptName.erase(params.scriptName.find("?"), params.scriptName.size());
+		params.queryString = std::string(target, target.find("?") + 1, target.size());
+		target.erase(target.find("?"), target.size());
 	}
 	else
 	{
