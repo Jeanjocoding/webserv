@@ -14,7 +14,7 @@
 #include <cstdio>
 #include <stdlib.h>
 #include "ConnectionClass.hpp"
-
+#include "webserv.hpp"
 
 ConnectionClass::ConnectionClass(void)
 {
@@ -37,6 +37,7 @@ ConnectionClass::ConnectionClass(void)
 
 ConnectionClass::ConnectionClass(ConnectionClass const& to_copy): _socketNbr(to_copy._socketNbr), _server(to_copy._server), _status(to_copy._status), _isPersistent(to_copy._isPersistent), _hasRestRequest(to_copy._hasRestRequest), _hasRestBuffer(to_copy._hasRestBuffer), _hasBegRest(to_copy._hasBegRest), _timer(to_copy._timer)
 {
+//	*this = to_copy;
 	_isHandlingBody = to_copy._isHandlingBody;
 	_isParsingContent = to_copy._isParsingContent;
 	_ContentLeftToRead = to_copy._ContentLeftToRead;
@@ -53,7 +54,7 @@ ConnectionClass::ConnectionClass(ConnectionClass const& to_copy): _socketNbr(to_
 		_incompleteRequest = new HttpRequest(*(to_copy._incompleteRequest));
 	_isPersistent = to_copy._isPersistent;
 	_isProcessingTrailers = to_copy._isProcessingTrailers;
-	return;	
+	return;
 }
 
 ConnectionClass::ConnectionClass(int socknum, serverClass* server): _socketNbr(socknum), _server(server)
@@ -274,6 +275,7 @@ int		ConnectionClass::_read_buffer(readingBuffer& buffer, std::vector<HttpReques
 	}
 	if (_isProcessingLastNL)
 	{
+//		print_request(currentRequest);
 		read_ret = _last_nl_procedure(buffer);
 		if (read_ret == 0 || read_ret == -1)
 			return (read_ret);
@@ -640,6 +642,7 @@ int		ConnectionClass::_read_line(readingBuffer& buffer, HttpRequest& currentRequ
 		buffer.deb += 2;
 		return (2);
 	}
+//	std::cout << "_hasRestBuffer: " << _hasRestBuffer << std::endl;
 	if (_hasRestBuffer && _restBuffer->length() && (*_restBuffer)[_restBuffer->length() - 1] == '\r' 
 		&& buffer.buf[buffer.deb] == '\n')
 	{
@@ -687,7 +690,7 @@ int		ConnectionClass::_read_line(readingBuffer& buffer, HttpRequest& currentRequ
 }
 
 /** read or recv do not guarantee that all the bytes asked will be read. This one does, or it returns an error */
-int		ConnectionClass::_guaranteedRead(int fd, int to_read, std::string& str_buffer)
+/*int		ConnectionClass::_guaranteedRead(int fd, int to_read, std::string& str_buffer)
 {
 	int 	read_ret;
 	int		bytes_read = 0;
@@ -696,7 +699,6 @@ int		ConnectionClass::_guaranteedRead(int fd, int to_read, std::string& str_buff
 
 	while (bytes_left)
 	{
-		/** POTENTIAL BLOCK HERE IF CONTENT-LENGTH HIGHER THAN CONTENT AND BLCOKING FDS */
 		read_ret = recv(fd, &(buffer[bytes_read]), bytes_left, 0);
 		if (read_ret == -1)
 		{
@@ -712,7 +714,7 @@ int		ConnectionClass::_guaranteedRead(int fd, int to_read, std::string& str_buff
 	buffer[bytes_read] = '\0';
 	str_buffer.append(buffer);
 	return (bytes_read);
-}
+}*/
 
 int		ConnectionClass::_read_line_trailer(readingBuffer& buffer, HttpRequest& currentRequest)
 {
@@ -961,18 +963,22 @@ int		ConnectionClass::_last_nl_procedure(readingBuffer& buffer)
 //	std::cout << "processing last nl" << std::endl;
 	if (_hasRestBuffer)
 	{
+//		std::cout << "rest buffer: " << *_restBuffer << std::endl;
 		std::memmove(buffer.buf, _restBuffer->c_str(), _restBuffer->length());
+		buffer.end += _restBuffer->length(); // cette ligne a résolu le bug
 		left_inbuf = buffer.end - buffer.deb;
 		delete _restBuffer;
 		_restBuffer = 0;
+		_hasRestBuffer = 0;
 	}
-//	_printBufferInfo(buffer, "in last nl deb");
+	_printBufferInfo(buffer, "in last nl deb");
+	std::cout << "left inbuf: "  << left_inbuf << std::endl;
 	if (left_inbuf < 2)
 	{
 		if (!_hasRead)
 		{
 			//besoin de protection?
-			ret_read = recv(_socketNbr, &(buffer.buf[buffer.deb]), 2 - left_inbuf, 0);
+			ret_read = recv(_socketNbr, &(buffer.buf[buffer.end]), 2 - left_inbuf, 0);
 			buffer.end += ret_read;
 			if (ret_read == 0 || ret_read == -1)
 				return (ret_read);
@@ -982,6 +988,7 @@ int		ConnectionClass::_last_nl_procedure(readingBuffer& buffer)
 		else
 			return (SAVE_REQUEST);
 	}
+	_printBufferInfo(buffer, "before error test in last nl");
 	if (buffer.buf[buffer.deb] != '\r' || buffer.buf[buffer.deb + 1] != '\n')
 		return (HTTP_ERROR);
 	buffer.deb += 2;
@@ -1592,10 +1599,10 @@ int				ConnectionClass::closeConnection(void)
 	shutdown(_socketNbr, SHUT_RD);
 //		perror("shutdown");
 	return_value = close(_socketNbr);
-	if (return_value == 0)
+/*	if (return_value == 0)
 		_status = CO_ISCLOSED;
 	else
-		perror("close");
+		perror("close");*/
 	return (return_value);
 }
 

@@ -11,7 +11,7 @@ int		append_to_buffer(char **buffer, long& buffer_size, char * to_append, int ap
 		std::memcpy(new_buf, *buffer, buffer_size);
 	std::memcpy(&new_buf[buffer_size], to_append, append_size);
 	if (buffer_size > 0)
-		delete *buffer;
+		delete [] *buffer;
 	buffer_size += append_size;
 	*buffer = new_buf;
 //	std::cout << "buffer after append: ";

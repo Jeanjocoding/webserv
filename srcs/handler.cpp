@@ -114,7 +114,8 @@ static HttpResponse answer_cgi_get(HttpRequest const& request, LocationClass con
 		return HttpResponse(404, location.getErrorPage(404));
 	launchCgiScript(params, request, location, &output, output_len);
 	add_header_part(response, output, output_len, body_begin);
-	response.setBody(&(output[body_begin]));
+//	write(1, output, output_len);
+	response.setBody(&(output[body_begin]), output_len - body_begin);
 	response.setHeader();
 	return response;
 }
@@ -129,7 +130,10 @@ static HttpResponse	answer_get(HttpRequest const& request, LocationClass const& 
 	std::cout << "answering get request\ntrying to get file : " << tmp << std::endl;
 
 	if (location.isCGI())
+	{
+		std::cout << "is cgi" << std::endl;
 		return answer_cgi_get(request, location);
+	}
 	if (request.getRequestLineInfos().target == location.getUri() + "/" ||
 		(request.getRequestLineInfos().target == location.getUri() && *(--request.getRequestLineInfos().target.end()) == '/'))// If index is requested
 	{
@@ -234,9 +238,9 @@ void	answer_connection(ConnectionClass& connection)
 		return ;
 	}
 	HttpRequest& request = connection._request_pipeline[0];
+	print_request(request);
 	if (!request.isValid())//TODO check why is invalid and respond accordingly
 		return send_error(400, server._default_error_pages, connection);
-	print_request(request);
 	LocationClass location = server.getLocation(request.getRequestLineInfos().target);//TODO
 	if (!location.methodIsAllowed(request.getMethod()))
 	{
