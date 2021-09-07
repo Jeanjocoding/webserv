@@ -6,7 +6,7 @@
 /*   By: asablayr <marvin@42.fr>                    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2021/06/06 21:54:40 by asablayr          #+#    #+#             */
-/*   Updated: 2021/09/06 11:48:48 by asablayr         ###   ########.fr       */
+/*   Updated: 2021/09/07 11:09:13 by asablayr         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -142,7 +142,7 @@ static HttpResponse	answer_get(HttpRequest const& request, LocationClass const& 
 		{
 			if (location.autoIndexIsOn())
 			{
-				response.setBody(location.getAutoIndex());//TODO to code
+				response.setBody(location.getAutoIndex().begin(), location.getAutoIndex().end());
 				response.setHeader(200);
 			}
 			else

@@ -6,23 +6,24 @@
 /*   By: asablayr <marvin@42.fr>                    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2021/07/15 13:31:12 by asablayr          #+#    #+#             */
-/*   Updated: 2021/09/06 11:45:26 by asablayr         ###   ########.fr       */
+/*   Updated: 2021/09/07 11:32:02 by asablayr         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include <iostream>
 #include <sstream>
 #include <cstdlib>
+#include <dirent.h>
 #include "LocationClass.hpp"
 
-LocationClass::LocationClass(): _uri("/"), _param(""), _root("."), _index(""), _autoindex(false)
+LocationClass::LocationClass(): _uri("/"), _param(""), _root("."), _index(""), _autoindex_bool(false)
 {
 	_methods[GET_METHOD] = true;
 	_methods[POST_METHOD] = true;
 	_methods[DELETE_METHOD] = true;
 }
 
-LocationClass::LocationClass(std::string const& params, std::string const& buff) : contextClass("location", buff), _uri("/"), _param(""), _server_name("webserv"), _root("."), _index("index.html"), _autoindex(false)
+LocationClass::LocationClass(std::string const& params, std::string const& buff) : contextClass("location", buff), _uri("/"), _param(""), _server_name("webserv"), _root("."), _index("index.html"), _autoindex_bool(false)
 {
 	std::istringstream iss(params);
 	std::string tmp;
@@ -46,7 +47,7 @@ LocationClass::LocationClass(std::string const& params, std::string const& buff)
 	setClientBodySizeMax();
 }
 
-LocationClass::LocationClass(LocationClass const& copy): contextClass(copy), _uri(copy._uri), _param(copy._param), _server_name(copy._server_name), _root(copy._root), _index(copy._index), _autoindex(copy._autoindex), _cgi_bool(copy._cgi_bool), _cgi_path(copy._cgi_path), _redirect_bool(copy._redirect_bool), _redirect_code(copy._redirect_code), _redirect_uri(copy._redirect_uri), _error_pages(copy._error_pages), _keepalive_timeout(copy._keepalive_timeout), _client_body_size_max(copy._client_body_size_max)
+LocationClass::LocationClass(LocationClass const& copy): contextClass(copy), _uri(copy._uri), _param(copy._param), _server_name(copy._server_name), _root(copy._root), _index(copy._index), _autoindex_bool(copy._autoindex_bool), _autoindex_str(copy._autoindex_str), _cgi_bool(copy._cgi_bool), _cgi_path(copy._cgi_path), _redirect_bool(copy._redirect_bool), _redirect_code(copy._redirect_code), _redirect_uri(copy._redirect_uri), _error_pages(copy._error_pages), _keepalive_timeout(copy._keepalive_timeout), _client_body_size_max(copy._client_body_size_max)
 {
 	_methods[GET_METHOD] = copy._methods[GET_METHOD];
 	_methods[POST_METHOD] = copy._methods[POST_METHOD];
@@ -66,7 +67,8 @@ LocationClass& LocationClass::operator = (LocationClass const& copy)
 	_server_name = copy._server_name;
 	_root = copy._root;
 	_index = copy._index;
-	_autoindex = copy._autoindex;
+	_autoindex_bool = copy._autoindex_bool;
+	_autoindex_str = copy._autoindex_str;
 	_cgi_bool = copy._cgi_bool;
 	_cgi_path = copy._cgi_path;
 	_redirect_bool = copy._redirect_bool;
@@ -119,12 +121,6 @@ std::string	LocationClass::getIndex(void) const
 long		LocationClass::getKeepaliveTimeout(void) const
 {
 	return _keepalive_timeout;
-}
-
-std::string	LocationClass::getAutoIndex(void) const
-{
-	//TODO
-	return std::string();
 }
 
 std::map<unsigned short, std::string>& LocationClass::getErrorMap(void)
@@ -193,7 +189,17 @@ std::string LocationClass::getRedirectUrl(void) const
 
 bool LocationClass::autoIndexIsOn(void) const
 {
-	return _autoindex;
+	return _autoindex_bool;
+}
+
+std::string	const& LocationClass::getAutoIndex(void) const
+{
+	return _autoindex_str;
+}
+
+std::string LocationClass::getAutoIndex(void)
+{
+	return _autoindex_str;
 }
 
 unsigned int LocationClass::matchUri(std::string const& s) const
@@ -337,9 +343,36 @@ void	LocationClass::setAutoindex(void)
 	if (it == _directives.end())
 		return ;
 	if (it->second == "on")
-		_autoindex = true;
+	{
+		DIR					*dir;
+		struct dirent		*ent;
+		std::string			tmp = _root;
+
+		if (tmp[tmp.size() - 1] != '/' && _uri[0] != '/')
+			tmp.append("/");
+		tmp.append(_uri);
+		if (tmp[tmp.size() - 1] != '/')
+			tmp.append("/");
+		if ((dir = opendir(tmp.c_str())) != NULL)
+		{
+			while ((ent = readdir(dir)) != NULL)
+			{
+				if (ent->d_name[0] != '.')
+				{
+					_autoindex_str.append("<a href=127.0.0.1:8001");// TODO change hard coded address
+					_autoindex_str.append(_uri);
+					_autoindex_str.append(ent->d_name);
+					_autoindex_str.append(">");
+					_autoindex_str.append(ent->d_name);
+					_autoindex_str.append("</a><br>\n");
+				}
+			}
+			closedir(dir);
+		}
+		_autoindex_bool = true;
+	}
 	else
-		_autoindex = false;
+		_autoindex_bool = false;
 }
 
 void	LocationClass::setRedirect(void)
@@ -424,7 +457,7 @@ void	LocationClass::printLocation(void) const
 	std::cout << "GET : " << _methods[GET_METHOD] << std::endl;
 	std::cout << "DELETE : " << _methods[DELETE_METHOD] << std::endl;
 	std::cout << "POST : " << _methods[POST_METHOD] << std::endl;
-	std::cout << "autoindex : " << _autoindex << std::endl;
+	std::cout << "autoindex : " << _autoindex_bool << std::endl;
 	std::cout << "isCgi : " << _cgi_bool << "\t cgi_path : " << _cgi_path << std::endl;
 	std::cout << "isRedirect : " << _redirect_bool << "\tredirect uri : " << _redirect_uri << std::endl;
 	std::cout << "keepalive_timeout : " << _keepalive_timeout << std::endl;

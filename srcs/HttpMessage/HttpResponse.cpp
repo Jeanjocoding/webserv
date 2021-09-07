@@ -6,7 +6,7 @@
 /*   By: asablayr <marvin@42.fr>                    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2021/08/02 16:27:33 by asablayr          #+#    #+#             */
-/*   Updated: 2021/08/27 11:50:58 by asablayr         ###   ########.fr       */
+/*   Updated: 2021/09/07 11:13:07 by asablayr         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -165,7 +165,7 @@ bool	HttpResponse::setBody(std::string const& body_path)
 	return true;
 }
 
-void	HttpResponse::setBody(std::string::iterator start, std::string::iterator end)
+void	HttpResponse::setBody(std::string::const_iterator start, std::string::const_iterator end)
 {
 	setContent(std::string(start, end));
 	setLength();

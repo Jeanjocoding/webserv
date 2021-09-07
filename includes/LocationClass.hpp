@@ -6,7 +6,7 @@
 /*   By: asablayr <marvin@42.fr>                    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2021/06/12 14:11:07 by asablayr          #+#    #+#             */
-/*   Updated: 2021/09/06 11:45:14 by asablayr         ###   ########.fr       */
+/*   Updated: 2021/09/07 10:32:47 by asablayr         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -55,7 +55,6 @@ class LocationClass : public contextClass
 			void									setClientBodySizeMax(void);
 			void									setClientBodySizeMax(std::string const& val);
 			void									setClientBodySizeMax(long val);
-			std::string								getAutoIndex(void) const;// generate and returns the auto index page as string
 			std::map<unsigned short, std::string>&	getErrorMap(void);// get the _error_pages attribute
 			std::map<unsigned short, std::string>	getErrorMap(void) const;// get the _error_pages attribute
 			std::string&							getErrorPage(unsigned short error_code);// get single error_page
@@ -68,6 +67,8 @@ class LocationClass : public contextClass
 			unsigned short							getRedirectCode(void) const;
 			std::string								getRedirectUrl(void) const;
 			bool									autoIndexIsOn(void) const;// check if auto index is on
+			std::string	const&						getAutoIndex(void) const;// returns the auto index page as string const&
+			std::string								getAutoIndex(void);// returns the auto index page as string
 			unsigned int 							matchUri(std::string const& s) const;// returns the number of character match
 
 			/*TESTING*/
@@ -90,7 +91,8 @@ class LocationClass : public contextClass
 			std::string								_root;
 			std::string								_index;
 			bool									_methods[3];
-			bool									_autoindex;
+			bool									_autoindex_bool;
+			std::string								_autoindex_str;
 			bool									_cgi_bool;
 			std::string								_cgi_path;
 			bool									_redirect_bool;

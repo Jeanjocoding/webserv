@@ -6,7 +6,7 @@
 /*   By: asablayr <marvin@42.fr>                    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2021/07/02 15:07:21 by asablayr          #+#    #+#             */
-/*   Updated: 2021/08/27 11:57:43 by asablayr         ###   ########.fr       */
+/*   Updated: 2021/09/07 11:16:07 by asablayr         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -20,7 +20,7 @@
 # ifdef __APPLE__
 #  define OS "MacOS"
 # else
-#  define OS "Ubuntu"//TODO check for real nginx value
+#  define OS "Ubuntu"
 # endif
 
 #include "HttpMessage.hpp"
@@ -43,7 +43,7 @@ public:
 	void						setHeader(unsigned short code);
 	void						setHeader(void);
 	bool						setBody(std::string const& body_path);
-	void						setBody(std::string::iterator start, std::string::iterator end);
+	void						setBody(std::string::const_iterator start, std::string::const_iterator end);
 	void						setBody(char *str, int len);
 	void						setLength(void);
 	void						setLength(unsigned long length);
