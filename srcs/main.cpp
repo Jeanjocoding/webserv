@@ -6,7 +6,7 @@
 /*   By: asablayr <marvin@42.fr>                    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2021/06/06 15:27:02 by asablayr          #+#    #+#             */
-/*   Updated: 2021/09/05 19:40:07 by asablayr         ###   ########.fr       */
+/*   Updated: 2021/09/07 17:11:19 by asablayr         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -125,7 +125,7 @@ int main(int ac, char** av)
 				if (FD_ISSET(i->first, &rfds))
 				{
 					connection_map[i->first].closeConnection();
-					FD_CLR(i->first, &wfds);
+					FD_CLR(i->first, &rfds);
 				}
 				else if (FD_ISSET(i->first, &wfds))
 				{
