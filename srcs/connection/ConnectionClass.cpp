@@ -1603,6 +1603,7 @@ int				ConnectionClass::closeConnection(void)
 		_status = CO_ISCLOSED;
 	else
 		perror("close");*/
+	_status = CO_ISCLOSED;
 	return (return_value);
 }
 
