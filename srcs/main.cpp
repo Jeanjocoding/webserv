@@ -85,7 +85,7 @@ int main(int ac, char** av)
 					}
 				}
 				if (check)
-					continue;
+					continue; 
 				if (connection_map[i].receiveRequest() <= 0) // close connection if error while receiving paquets
 					connection_map[i].closeConnection();
 				if (connection_map[i].getStatus() == CO_ISCLOSED) // erases if connection has encoutered an error
