@@ -6,7 +6,7 @@
 /*   By: asablayr <marvin@42.fr>                    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2021/07/04 19:45:13 by asablayr          #+#    #+#             */
-/*   Updated: 2021/08/16 15:27:48 by asablayr         ###   ########.fr       */
+/*   Updated: 2021/09/08 20:37:33 by asablayr         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -29,5 +29,7 @@
 # define DEFAULT_FASTCGI_PASS "false"
 # define DEFAULT_BODY_MAX "1000000"
 # define DEFAULT_KEEPALIVE_TIMEOUT "45"
+# define DEFAULT_SENDFILE "on"
+# define DEFAULT_UPLOAD_STORE "./upload/"
 
 #endif

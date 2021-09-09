@@ -6,7 +6,7 @@
 /*   By: asablayr <marvin@42.fr>                    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2021/06/12 14:11:07 by asablayr          #+#    #+#             */
-/*   Updated: 2021/09/07 10:32:47 by asablayr         ###   ########.fr       */
+/*   Updated: 2021/09/08 20:43:11 by asablayr         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -48,13 +48,17 @@ class LocationClass : public contextClass
 			std::string								getIndex(void) const;// get _index attribute
 			void									setIndex(std::string const& index);
 			long									getKeepaliveTimeout(void) const;
-			void									setKeepaliveTimeout(void);
 			void									setKeepaliveTimeout(std::string const& val);
 			void									setKeepaliveTimeout(long val);
 			long									getClientBodySizeMax(void) const;
-			void									setClientBodySizeMax(void);
 			void									setClientBodySizeMax(std::string const& val);
 			void									setClientBodySizeMax(long val);
+			std::string const&						getUploadStore(void) const;
+			std::string								getUploadStore(void);
+			void									setUploadStore(std::string const& path);
+			bool									getSendfile(void) const;
+			void									setSendfile(std::string const& sendfile_str);
+			void									setSendfile(bool sendfile_bool);
 			std::map<unsigned short, std::string>&	getErrorMap(void);// get the _error_pages attribute
 			std::map<unsigned short, std::string>	getErrorMap(void) const;// get the _error_pages attribute
 			std::string&							getErrorPage(unsigned short error_code);// get single error_page
@@ -84,6 +88,10 @@ class LocationClass : public contextClass
 			void									setCGI(void);
 			void									setErrorPages(void);
 			void									setMethods(void);
+			void									setKeepaliveTimeout(void);
+			void									setClientBodySizeMax(void);
+			void									setUploadStore(void);
+			void									setSendfile(void);
 
 			std::string								_uri;
 			std::string								_param;
@@ -101,6 +109,8 @@ class LocationClass : public contextClass
 			std::map<unsigned short, std::string>	_error_pages;
 			long									_keepalive_timeout;
 			long									_client_body_size_max;
+			std::string								_upload_store;
+			bool									_sendfile;
 
 };
 

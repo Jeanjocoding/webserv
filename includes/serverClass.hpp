@@ -6,7 +6,7 @@
 /*   By: asablayr <marvin@42.fr>                    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2021/06/07 10:16:05 by asablayr          #+#    #+#             */
-/*   Updated: 2021/08/31 18:27:35 by asablayr         ###   ########.fr       */
+/*   Updated: 2021/09/08 17:48:00 by asablayr         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -57,6 +57,8 @@ class serverClass
 			std::map<unsigned short, std::string>	_default_error_pages;
 			std::string								_client_body_size_max;
 			std::string								_keepalive_timeout;
+			std::string								_upload_store;
+			std::string								_sendfile;
 			std::vector<LocationClass*>				_location;
 
 			int										_server_socket;
