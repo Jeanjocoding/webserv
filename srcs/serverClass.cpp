@@ -6,7 +6,7 @@
 /*   By: asablayr <marvin@42.fr>                    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2021/06/07 18:49:16 by asablayr          #+#    #+#             */
-/*   Updated: 2021/09/08 20:57:01 by asablayr         ###   ########.fr       */
+/*   Updated: 2021/09/10 16:48:03 by asablayr         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -281,12 +281,19 @@ void serverClass::startServer()
 	hint.ai_next = NULL;
 
 	_addr = 0;
+	std::cout << "yo\n";
 	if (!_listen.empty())
 	{
-		_port = _host = _listen;
-		_port.erase(0, _port.find(":") + 1);
-		_host.erase(_host.find(_port) - 1, _port.size() + 1);
+		if (_listen.find(":") != std::string::npos)
+		{
+			_port = _host = _listen;
+			_port.erase(0, _port.find(":") + 1);
+			_host.erase(_host.find(_port) - 1, _port.size() + 1);
+		}
+		else
+			_port = _listen;
 	}
+	std::cout << "host : " << _host << " port : " << _port << std::endl;
 	retval = getaddrinfo(_host.c_str(), _port.c_str(), &hint, &_addr);
 	if (retval)
 	{

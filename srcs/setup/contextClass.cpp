@@ -6,7 +6,7 @@
 /*   By: asablayr <marvin@42.fr>                    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2021/06/12 15:24:19 by asablayr          #+#    #+#             */
-/*   Updated: 2021/09/08 17:45:58 by asablayr         ###   ########.fr       */
+/*   Updated: 2021/09/10 16:27:58 by asablayr         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -747,7 +747,7 @@ void contextClass::setAcceptedDirectives(void)
 	_accepted_directive_set["sendfile"]._syntax = SYNTAX_ON_OFF;
 	_accepted_directive_set["sendfile_max_chunk"]._syntax = SYNTAX_SIZE;
 	_accepted_directive_set["server"]._syntax = SYNTAX_BLOCK;
-	_accepted_directive_set["server_name"]._syntax = SYNTAX_NAME;
+	_accepted_directive_set["server_name"]._syntax = SYNTAX_STRING;
 	_accepted_directive_set["server_name_in_redirect"]._syntax = SYNTAX_ON_OFF;
 	_accepted_directive_set["server_names_hash_bucket_size"]._syntax = SYNTAX_SIZE;
 	_accepted_directive_set["server_names_hash_max_size"]._syntax = SYNTAX_SIZE;

@@ -6,7 +6,7 @@
 /*   By: asablayr <marvin@42.fr>                    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2021/07/04 17:42:52 by asablayr          #+#    #+#             */
-/*   Updated: 2021/08/27 16:28:32 by asablayr         ###   ########.fr       */
+/*   Updated: 2021/09/10 16:23:44 by asablayr         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -35,7 +35,7 @@ ConnectionClass::ConnectionClass(void)
 	return;
 }
 
-ConnectionClass::ConnectionClass(ConnectionClass const& to_copy): _socketNbr(to_copy._socketNbr), _server(to_copy._server), _status(to_copy._status), _isPersistent(to_copy._isPersistent), _hasRestRequest(to_copy._hasRestRequest), _hasRestBuffer(to_copy._hasRestBuffer), _hasBegRest(to_copy._hasBegRest), _timer(to_copy._timer)
+ConnectionClass::ConnectionClass(ConnectionClass const& to_copy): _socketNbr(to_copy._socketNbr), _servers(to_copy._servers), _status(to_copy._status), _isPersistent(to_copy._isPersistent), _hasRestRequest(to_copy._hasRestRequest), _hasRestBuffer(to_copy._hasRestBuffer), _hasBegRest(to_copy._hasBegRest), _timer(to_copy._timer)
 {
 //	*this = to_copy;
 	_isHandlingBody = to_copy._isHandlingBody;
@@ -57,7 +57,28 @@ ConnectionClass::ConnectionClass(ConnectionClass const& to_copy): _socketNbr(to_
 	return;
 }
 
-ConnectionClass::ConnectionClass(int socknum, serverClass* server): _socketNbr(socknum), _server(server)
+ConnectionClass::ConnectionClass(int socknum, serverClass* server): _socketNbr(socknum)
+{
+	_status = CO_ISOPEN;
+	_servers.push_back(server);
+	_hasRestBuffer = 0;
+	_hasRestRequest = 0;
+	_hasBegRest = 0;
+	_isHandlingBody = 0;
+	_isParsingContent = 0;
+	_ContentLeftToRead = 0;
+	_isChunking = 0;
+	_isReadingChunknbr = 0;
+	_leftChunkedToRead = 0;
+	_isPersistent = 1;
+	_isProcessingLastNL = 0;
+	_hasRead = 0;
+	_isProcessingTrailers = 0;
+	_timer = time(0);
+	return;	
+}
+
+ConnectionClass::ConnectionClass(int socknum): _socketNbr(socknum)
 {
 	_status = CO_ISOPEN;
 	_hasRestBuffer = 0;
@@ -92,7 +113,7 @@ ConnectionClass&	ConnectionClass::operator=(ConnectionClass const& to_copy)
 {
 	_socketNbr = to_copy._socketNbr;
 	_status = to_copy._status;
-	_server = to_copy._server;
+	_servers = to_copy._servers;
 	_isPersistent = to_copy._isPersistent;
 	_hasRestBuffer = to_copy._hasRestBuffer;
 	_hasRestRequest = to_copy._hasRestRequest;
@@ -1642,6 +1663,24 @@ header should imply otherwise." << std::endl;
 		i++;
 	}
 	std::cout <<  "              ------------------------------              " << std::endl;
+}
+
+void			ConnectionClass::setServers(std::vector<serverClass*> servers, int fd)
+{
+	for (std::vector<serverClass*>::iterator it = servers.begin(); it != servers.end(); it++)
+	{
+		std::cout << (*it)->_server_name << " : " << (*it)->_server_socket << std::endl;
+		if ((*it)->_server_socket == fd)
+			_servers.push_back(*it);
+	}
+}
+
+serverClass*	ConnectionClass::getServer(std::string server_name)
+{
+	for (std::vector<serverClass*>::iterator it = _servers.begin(); it != _servers.end(); it++)
+		if ((*it)->_server_name == server_name)
+			return *it;
+	return _servers[0];
 }
 
 int				ConnectionClass::getStatus(void) const
