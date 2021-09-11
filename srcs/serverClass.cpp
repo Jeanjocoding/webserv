@@ -6,7 +6,7 @@
 /*   By: asablayr <marvin@42.fr>                    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2021/06/07 18:49:16 by asablayr          #+#    #+#             */
-/*   Updated: 2021/09/06 18:48:50 by asablayr         ###   ########.fr       */
+/*   Updated: 2021/09/10 16:48:03 by asablayr         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -38,6 +38,8 @@ serverClass::serverClass()
 	_default_error_pages = baseErrorPages();
 	_client_body_size_max = DEFAULT_BODY_MAX;
 	_keepalive_timeout = DEFAULT_KEEPALIVE_TIMEOUT;
+	_sendfile = DEFAULT_SENDFILE;
+	_upload_store = DEFAULT_UPLOAD_STORE;
 	_addr = 0;
 }
 
@@ -55,6 +57,8 @@ serverClass::serverClass(serverClass const& to_copy)
 	_default_error_pages = to_copy._default_error_pages;
 	_client_body_size_max = to_copy._client_body_size_max;
 	_keepalive_timeout = to_copy._keepalive_timeout;
+	_sendfile = to_copy._sendfile;
+	_upload_store = to_copy._upload_store;
 
 	_server_socket = to_copy._server_socket;
 	_addr = 0;
@@ -83,6 +87,8 @@ serverClass& serverClass::operator = (serverClass const& to_copy)
 	_default_error_pages = to_copy._default_error_pages;
 	_client_body_size_max = to_copy._client_body_size_max;
 	_keepalive_timeout = to_copy._keepalive_timeout;
+	_sendfile = to_copy._sendfile;
+	_upload_store = to_copy._upload_store;
 
 	_server_socket = to_copy._server_socket;
 	_addr = 0;
@@ -111,6 +117,10 @@ std::string*	serverClass::operator [] (std::string setting_name)
 		return &_client_body_size_max;
 	else if (setting_name == "keepalive_timeout")
 		return &_keepalive_timeout;
+	else if (setting_name == "upload_store")
+		return &_upload_store;
+	else if (setting_name == "sendfile")
+		return &_sendfile;
 	else if (atoi(setting_name.c_str()))
 		return &_default_error_pages[atoi(setting_name.c_str())];
 	else
@@ -244,6 +254,10 @@ void			serverClass::setLocation(LocationClass& location) const
 		location.setKeepaliveTimeout(_keepalive_timeout);
 	if (location._directives.find("client_body_size_max") == location._directives.end())
 		location.setClientBodySizeMax(_client_body_size_max);
+	if (location._directives.find("upload_store") == location._directives.end())
+		location.setUploadStore(_upload_store);
+	if (location._directives.find("sendfile") == location._directives.end())
+		location.setSendfile(_sendfile);
 	location.setErrorPages(_default_error_pages);
 /*	if (location._directives.find("error_log") == location._directives.end())
 		location.setErrorLog(_root);
@@ -267,38 +281,46 @@ void serverClass::startServer()
 	hint.ai_next = NULL;
 
 	_addr = 0;
+	std::cout << "yo\n";
 	if (!_listen.empty())
 	{
-		_port = _host = _listen;
-		_port.erase(0, _port.find(":") + 1);
-		_host.erase(_host.find(_port) - 1, _port.size() + 1);
+		if (_listen.find(":") != std::string::npos)
+		{
+			_port = _host = _listen;
+			_port.erase(0, _port.find(":") + 1);
+			_host.erase(_host.find(_port) - 1, _port.size() + 1);
+		}
+		else
+			_port = _listen;
 	}
+	std::cout << "host : " << _host << " port : " << _port << std::endl;
 	retval = getaddrinfo(_host.c_str(), _port.c_str(), &hint, &_addr);
 	if (retval)
 	{
 		std::cerr << "getaddrinfo: " << gai_strerror(retval) << std::endl;
-//		exit(EXIT_FAILURE);
 		throw;
 	}
 	_server_socket = socket(_addr->ai_family, _addr->ai_socktype, _addr->ai_protocol);
 	if (_server_socket == -1)
 	{
 		std::cerr << "Failed to create socket. errno: " << errno << std::endl;
-		exit(EXIT_FAILURE);
+		throw;
 	}
 	optval = 1;
 	if (setsockopt(_server_socket, SOL_SOCKET, SO_REUSEADDR, &optval, sizeof(optval)) < 0)
+	{
 		perror("setsockopt");
+		throw;
+	}
 	if (bind(_server_socket, _addr->ai_addr, _addr->ai_addrlen) < 0)
 	{
 		std::cerr << "Failed to bind to port " << _port << ". errno: " << errno << std::endl;
-//		exit(EXIT_FAILURE);
 		throw "bind error";
 	}
 	if (listen(_server_socket, 10) < 0)
 	{
 		std::cerr << "Failed to grab connection. errno: " << errno << std::endl;
-		exit(EXIT_FAILURE);
+		throw;
 	}
 }
 

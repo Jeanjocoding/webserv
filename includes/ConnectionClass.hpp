@@ -89,7 +89,7 @@ public:
 
 	/* only useful constructor: initializes with socket fd */
 	ConnectionClass(int socknum, serverClass* server);
-
+	ConnectionClass(int socknum);
 
 	~ConnectionClass(void);
 
@@ -99,6 +99,8 @@ public:
 		- return value of the last "recv" call (to see if it failed or if the connection was closed)
 		- std::string containing the request*/
 //	std::pair<int, std::string>			receiveRequest(void);
+	void			setServers(std::vector<serverClass*> server_list, int fd);
+	serverClass*	getServer(std::string server_name);
 	int				receiveRequest(void);
 //	int				answerRequest(void);
 //	int				answerRequest(HttpRequest& request);//might be const
@@ -117,9 +119,9 @@ public:
 	//need to fix, probably an unwanted copy at some point.
 	ConnectionClass(void); 
 
-	std::vector<HttpRequest> _request_pipeline;//might try to switch back to private
+	std::vector<HttpRequest>	_request_pipeline;//might try to switch back to private
 	int				_socketNbr;
-	serverClass*	_server;
+	std::vector<serverClass*>	_servers;
 
 
 private:

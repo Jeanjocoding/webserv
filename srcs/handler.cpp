@@ -6,7 +6,7 @@
 /*   By: asablayr <marvin@42.fr>                    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2021/06/06 21:54:40 by asablayr          #+#    #+#             */
-/*   Updated: 2021/09/07 11:09:13 by asablayr         ###   ########.fr       */
+/*   Updated: 2021/09/10 16:22:27 by asablayr         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -204,14 +204,15 @@ static HttpResponse	answer_redirection(HttpRequest const& request, LocationClass
 
 void	answer_connection(ConnectionClass& connection)
 {
-	serverClass& server = *connection._server;
-	HttpResponse response;
 	if (connection._request_pipeline.empty())
 	{
 		connection.setStatus(CO_ISDONE);
 		return ;
 	}
 	HttpRequest& request = connection._request_pipeline[0];
+	serverClass& server = *(connection.getServer(request.getHeaders().find("Host")->second));
+	std::cout << "servername : " << server._server_name << " expected " << request.getHeaders().find("Host")->second << std::endl;
+	HttpResponse response;
 	print_request(request);
 	if (!request.isValid())//TODO check why is invalid and respond accordingly
 		return send_error(400, server._default_error_pages, connection);

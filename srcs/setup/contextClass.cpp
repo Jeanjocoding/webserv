@@ -6,7 +6,7 @@
 /*   By: asablayr <marvin@42.fr>                    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2021/06/12 15:24:19 by asablayr          #+#    #+#             */
-/*   Updated: 2021/09/01 12:26:05 by asablayr         ###   ########.fr       */
+/*   Updated: 2021/09/10 16:27:58 by asablayr         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -157,6 +157,8 @@ void contextClass::setDirectives(void)
 		_directive_set.push_back(_accepted_directive_set["index"]);
 		_directive_set.push_back(_accepted_directive_set["keepalive_timeout"]);
 		_directive_set.push_back(_accepted_directive_set["client_max_body_size"]);
+		_directive_set.push_back(_accepted_directive_set["upload_store"]);
+		_directive_set.push_back(_accepted_directive_set["sendfile"]);
 	}
     else if (_name == "location")
 	{
@@ -172,6 +174,8 @@ void contextClass::setDirectives(void)
 		_directive_set.push_back(_accepted_directive_set["keepalive_timeout"]);
 		_directive_set.push_back(_accepted_directive_set["cgi_path"]);
 		_directive_set.push_back(_accepted_directive_set["client_max_body_size"]);
+		_directive_set.push_back(_accepted_directive_set["upload_store"]);
+		_directive_set.push_back(_accepted_directive_set["sendfile"]);
 	}
     else
 	{
@@ -743,7 +747,7 @@ void contextClass::setAcceptedDirectives(void)
 	_accepted_directive_set["sendfile"]._syntax = SYNTAX_ON_OFF;
 	_accepted_directive_set["sendfile_max_chunk"]._syntax = SYNTAX_SIZE;
 	_accepted_directive_set["server"]._syntax = SYNTAX_BLOCK;
-	_accepted_directive_set["server_name"]._syntax = SYNTAX_NAME;
+	_accepted_directive_set["server_name"]._syntax = SYNTAX_STRING;
 	_accepted_directive_set["server_name_in_redirect"]._syntax = SYNTAX_ON_OFF;
 	_accepted_directive_set["server_names_hash_bucket_size"]._syntax = SYNTAX_SIZE;
 	_accepted_directive_set["server_names_hash_max_size"]._syntax = SYNTAX_SIZE;

@@ -6,7 +6,7 @@
 /*   By: asablayr <marvin@42.fr>                    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2021/06/06 15:27:02 by asablayr          #+#    #+#             */
-/*   Updated: 2021/09/07 17:11:19 by asablayr         ###   ########.fr       */
+/*   Updated: 2021/09/10 16:21:36 by asablayr         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -26,6 +26,7 @@
 int main(int ac, char** av)
 {
 	std::vector<serverClass*>			server_map;
+	std::vector<serverClass*> 			serv_up;
 	std::map<int, ConnectionClass>		connection_map;
 	fd_set								rfds, rfds_copy;
 	fd_set								wfds, wfds_copy;
@@ -43,14 +44,26 @@ int main(int ac, char** av)
 		{
 			(*it)->startServer();
 			std::cout << "server started on : " << (*it)->_listen << std::endl;
+			serv_up.push_back(*it);
 			FD_SET((*it)->_server_socket, &rfds);//add server socket to fd_set
 		}
 		catch (char const*)
 		{
-			for (std::vector<serverClass*>::iterator i = server_map.begin(); i != server_map.end(); i++)
-				delete *i;
-			exit(EXIT_FAILURE);
+			for (std::vector<serverClass*>::iterator i = serv_up.begin(); i != serv_up.end(); i++)
+			{
+				if ((*it)->_port == (*i)->_port)
+				{
+					(*it)->_server_socket = (*i)->_server_socket;
+					break ;
+				}
+			}
 		}
+	}
+	if (serv_up.empty())
+	{
+		for (std::vector<serverClass*>::iterator i = server_map.begin(); i != server_map.end(); i++)
+			delete *i;
+		exit(EXIT_FAILURE);
 	}
 	while (true)
 	{
@@ -78,6 +91,7 @@ int main(int ac, char** av)
 						else
 						{
 							connection_map[client_socket] = ConnectionClass(client_socket, *it);
+							connection_map[client_socket].setServers(server_map, i);
 							FD_SET(client_socket, &rfds);
 							check = true;
 						}
@@ -116,7 +130,7 @@ int main(int ac, char** av)
 				}
 			}
 		}
-		for (std::map<int, ConnectionClass>::iterator i = connection_map.begin(); i != connection_map.end(); i ++)// TODO unit test
+/*		for (std::map<int, ConnectionClass>::iterator i = connection_map.begin(); i != connection_map.end(); i ++)// TODO unit test
 		{
 			if (!i->second.isPersistent())
 				continue;
@@ -134,5 +148,5 @@ int main(int ac, char** av)
 				}
 			}
 		}
-	}
+*/	}
 }

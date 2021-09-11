@@ -6,7 +6,7 @@
 /*   By: asablayr <marvin@42.fr>                    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2021/07/15 13:31:12 by asablayr          #+#    #+#             */
-/*   Updated: 2021/09/07 11:32:02 by asablayr         ###   ########.fr       */
+/*   Updated: 2021/09/09 10:31:57 by asablayr         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -45,9 +45,11 @@ LocationClass::LocationClass(std::string const& params, std::string const& buff)
 	setCGI();
 	setKeepaliveTimeout();
 	setClientBodySizeMax();
+	setUploadStore();
+	setSendfile();
 }
 
-LocationClass::LocationClass(LocationClass const& copy): contextClass(copy), _uri(copy._uri), _param(copy._param), _server_name(copy._server_name), _root(copy._root), _index(copy._index), _autoindex_bool(copy._autoindex_bool), _autoindex_str(copy._autoindex_str), _cgi_bool(copy._cgi_bool), _cgi_path(copy._cgi_path), _redirect_bool(copy._redirect_bool), _redirect_code(copy._redirect_code), _redirect_uri(copy._redirect_uri), _error_pages(copy._error_pages), _keepalive_timeout(copy._keepalive_timeout), _client_body_size_max(copy._client_body_size_max)
+LocationClass::LocationClass(LocationClass const& copy): contextClass(copy), _uri(copy._uri), _param(copy._param), _server_name(copy._server_name), _root(copy._root), _index(copy._index), _autoindex_bool(copy._autoindex_bool), _autoindex_str(copy._autoindex_str), _cgi_bool(copy._cgi_bool), _cgi_path(copy._cgi_path), _redirect_bool(copy._redirect_bool), _redirect_code(copy._redirect_code), _redirect_uri(copy._redirect_uri), _error_pages(copy._error_pages), _keepalive_timeout(copy._keepalive_timeout), _client_body_size_max(copy._client_body_size_max), _upload_store(copy._upload_store), _sendfile(copy._sendfile)
 {
 	_methods[GET_METHOD] = copy._methods[GET_METHOD];
 	_methods[POST_METHOD] = copy._methods[POST_METHOD];
@@ -80,6 +82,8 @@ LocationClass& LocationClass::operator = (LocationClass const& copy)
 	_methods[GET_METHOD] = copy._methods[GET_METHOD];
 	_methods[POST_METHOD] = copy._methods[POST_METHOD];
 	_methods[DELETE_METHOD] = copy._methods[DELETE_METHOD];
+	_upload_store = copy._upload_store;
+	_sendfile = copy._sendfile;
 	return *this;
 }
 
@@ -200,6 +204,21 @@ std::string	const& LocationClass::getAutoIndex(void) const
 std::string LocationClass::getAutoIndex(void)
 {
 	return _autoindex_str;
+}
+
+std::string const& LocationClass::getUploadStore(void) const
+{
+	return _upload_store;
+}
+
+std::string LocationClass::getUploadStore(void)
+{
+	return _upload_store;
+}
+
+bool LocationClass::getSendfile(void) const
+{
+	return _sendfile;
 }
 
 unsigned int LocationClass::matchUri(std::string const& s) const
@@ -443,6 +462,47 @@ void	LocationClass::setErrorPages(void)
 	}
 }
 
+void	LocationClass::setUploadStore(void)
+{
+	std::map<std::string, std::string>::const_iterator it = _directives.find("upload_store");
+	if (it == _directives.end())
+		return ;
+	_upload_store = it->second;
+}
+
+void	LocationClass::setUploadStore(std::string const& path)
+{
+	_upload_store = path;
+}
+
+void	LocationClass::setSendfile(void)
+{
+	std::map<std::string, std::string>::const_iterator it = _directives.find("sendfile");
+	if (it != _directives.end() && it->second == "off")
+	{
+		_sendfile = false;
+		_methods[POST_METHOD] = false;
+	}
+	else
+		_sendfile = true;
+}
+
+void	LocationClass::setSendfile(std::string const& str)
+{
+	if (str == "off")
+	{
+		_sendfile = false;
+		_methods[POST_METHOD] = false;
+	}
+	else
+		_sendfile = true;
+}
+
+void	LocationClass::setSendfile(bool sendfile)
+{
+	_sendfile = sendfile;
+}
+
 /***********************************************************************************/
 /*							TESTING												   */
 /***********************************************************************************/
@@ -462,6 +522,8 @@ void	LocationClass::printLocation(void) const
 	std::cout << "isRedirect : " << _redirect_bool << "\tredirect uri : " << _redirect_uri << std::endl;
 	std::cout << "keepalive_timeout : " << _keepalive_timeout << std::endl;
 	std::cout << "client_body_size_max : " << _client_body_size_max << std::endl;
+	std::cout << "upload_store : " << _upload_store << std::endl;
+	std::cout << "sendfile : " << _sendfile << std::endl;
 	for (std::map<unsigned short, std::string>::const_iterator it = _error_pages.begin(); it != _error_pages.end(); it++)
 		std::cout << "_error_pages " << it->first << " : " << it->second << std::endl;
 }
