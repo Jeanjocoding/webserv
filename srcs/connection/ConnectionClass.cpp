@@ -35,6 +35,8 @@ ConnectionClass::ConnectionClass(void)
 	_hasToWriteOnPipe = 0;
 	_hasToReadOnPipe = 0;
 	_hasDoneCgi = 0;
+	_cgiOutput_len = 0;
+	_cgiOutput = 0;
 	return;
 }
 
@@ -63,6 +65,19 @@ ConnectionClass::ConnectionClass(ConnectionClass const& to_copy): _socketNbr(to_
 	_hasToWriteOnPipe = 0;
 	_hasToReadOnPipe = 0;
 	_hasDoneCgi = 0;
+/*	if (_cgiOutput_len)
+	{
+		delete [] _cgiOutput;
+		_cgiOutput_len = 0;
+		_cgiOutput = 0;
+	}*/
+	_cgiOutput_len = 0;
+	_cgiOutput = 0;
+	if (to_copy._cgiOutput_len)
+	{
+		append_to_buffer(&_cgiOutput, _cgiOutput_len, to_copy._cgiOutput, to_copy._cgiOutput_len);
+	}
+	_request_pipeline = to_copy._request_pipeline;
 	return;
 }
 
@@ -87,6 +102,8 @@ ConnectionClass::ConnectionClass(int socknum, serverClass* server): _socketNbr(s
 	_hasToWriteOnPipe = 0;
 	_hasToReadOnPipe = 0;
 	_hasDoneCgi = 0;
+	_cgiOutput_len = 0;
+	_cgiOutput = 0;
 	return;	
 }
 
@@ -110,17 +127,26 @@ ConnectionClass::ConnectionClass(int socknum): _socketNbr(socknum)
 	_hasToWriteOnPipe = 0;
 	_hasToReadOnPipe = 0;
 	_hasDoneCgi = 0;
+	_cgiOutput_len = 0;
+	_cgiOutput = 0;
 	return;	
 }
 
 ConnectionClass::~ConnectionClass(void)
 {
+	std::cout << "connection: destructor called" << std::endl;
 	if (_hasRestBuffer)
 		delete _restBuffer;
 	if (_hasRestRequest)
 		delete _incompleteRequest;
 	if (_hasBegRest)
 		delete _beginningRestBuffer;
+	if (_cgiOutput_len)
+	{
+		delete [] _cgiOutput;
+		_cgiOutput_len = 0;
+		_cgiOutput = 0;
+	}
 	return;
 }
 
@@ -145,7 +171,18 @@ ConnectionClass&	ConnectionClass::operator=(ConnectionClass const& to_copy)
 	_timer = to_copy._timer;
 	_hasToWriteOnPipe = to_copy._hasToWriteOnPipe;
 	_hasToReadOnPipe = to_copy._hasToReadOnPipe;
-	_hasDoneCgi = to_copy._hasDoneCgi;
+	_hasDoneCgi = to_copy._hasDoneCgi;	
+	if (_cgiOutput_len)
+	{
+		delete [] _cgiOutput;
+		_cgiOutput_len = 0;
+		_cgiOutput = 0;
+	}
+	if (to_copy._cgiOutput_len)
+	{
+		append_to_buffer(&_cgiOutput, _cgiOutput_len, to_copy._cgiOutput, to_copy._cgiOutput_len);
+	}
+	_request_pipeline = to_copy._request_pipeline;
 	return (*this);
 }
 

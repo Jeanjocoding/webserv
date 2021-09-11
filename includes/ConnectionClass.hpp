@@ -43,6 +43,7 @@
 #include "HttpRequest.hpp"
 #include "serverClass.hpp"
 #include "ConnectionUtils.hpp"
+#include "HttpResponse.hpp"
 
 #define	READING_BUF_SIZE  12289
 #define	SINGLE_READ_SIZE 4096
@@ -134,6 +135,9 @@ public:
 	std::vector<HttpRequest>	_request_pipeline;//might try to switch back to private
 	int				_socketNbr;
 	std::vector<serverClass*>	_servers;
+	HttpResponse			*_currentResponse;
+	char				*_cgiOutput;
+	long				_cgiOutput_len;
 
 
 private:

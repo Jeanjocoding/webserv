@@ -112,6 +112,7 @@ static HttpResponse answer_cgi_get(HttpRequest const& request, LocationClass con
 	body.open(params.scriptFilename.c_str());
 	if (!body.is_open())
 		return HttpResponse(404, location.getErrorPage(404));
+	
 	launchCgiScript(params, request, location, &output, output_len);
 	add_header_part(response, output, output_len, body_begin);
 //	write(1, output, output_len);
@@ -204,48 +205,70 @@ static HttpResponse	answer_redirection(HttpRequest const& request, LocationClass
 
 void	answer_connection(ConnectionClass& connection)
 {
+//	HttpRequest& request = connection._request_pipeline[0];
+	std::cout << "back in answer" << std::endl;
+	print_request(connection._request_pipeline[0]);
+	serverClass& server = *(connection.getServer(connection._request_pipeline[0].getHeaders().find("Host")->second));
+	LocationClass location = server.getLocation(connection._request_pipeline[0].getRequestLineInfos().target);
+	if (connection.HasToWriteOnPipe() || connection.HasToReadOnPipe())
+		return;
+	else if (connection.HasDoneCgi())
+	{
+			if (!connection.isPersistent() || location.getKeepaliveTimeout() == 0)
+				connection._currentResponse->setConnectionStatus(false);
+			size_t body_beginning = 0;
+			add_header_part((*connection._currentResponse), connection._cgiOutput, connection._cgiOutput_len, body_beginning);
+			connection._currentResponse->setBody(&(connection._cgiOutput[body_beginning]), connection._cgiOutput_len - body_beginning);
+			connection._currentResponse->setHeader();
+			if (!connection.isPersistent() || location.getKeepaliveTimeout() == 0)
+				connection._currentResponse->setConnectionStatus(false);
+			connection.sendResponse(connection._currentResponse->toString());// Handles all of the response sending and adjust the connection accordingly (cf: pop request list close connection etc...)
+			delete connection._currentResponse;
+			delete [] connection._cgiOutput;
+			connection._cgiOutput = 0;
+			connection._cgiOutput_len = 0;
+			connection.setHasDoneCgi(0);
+			return;
+	}
 	if (connection._request_pipeline.empty())
 	{
 		connection.setStatus(CO_ISDONE);
 		return ;
 	}
-	HttpRequest& request = connection._request_pipeline[0];
-	serverClass& server = *(connection.getServer(request.getHeaders().find("Host")->second));
-	std::cout << "servername : " << server._server_name << " expected " << request.getHeaders().find("Host")->second << std::endl;
-	HttpResponse response;
-	print_request(request);
-	if (!request.isValid())//TODO check why is invalid and respond accordingly
+	std::cout << "servername : " << server._server_name << " expected " << connection._request_pipeline[0].getHeaders().find("Host")->second << std::endl;
+	connection._currentResponse = new HttpResponse();
+	print_request(connection._request_pipeline[0]);
+	if (!connection._request_pipeline[0].isValid())//TODO check why is invalid and respond accordingly
 		return send_error(400, server._default_error_pages, connection);
-	print_request(request);
-	LocationClass location = server.getLocation(request.getRequestLineInfos().target);
+	print_request(connection._request_pipeline[0]);
 
-	location.printLocation();// testing
+//	location.printLocation();// testing
 
-	if (!location.methodIsAllowed(request.getMethod()))
+	if (!location.methodIsAllowed(connection._request_pipeline[0].getMethod()))
 	{
 		std::cerr << "forbiden Http request method on location " << location.getUri() << std::endl;
 		return send_error(405, location.getErrorMap(), connection);
 	}
 	if (location.isRedirect())
 	{
-		connection.sendResponse(answer_redirection(request, location).toString());// Send redirect response
+		connection.sendResponse(answer_redirection(connection._request_pipeline[0], location).toString());// Send redirect response
 		return ;
 	}
-	switch (request.getMethod())// Generate the HttpResponse depending on HttpMethod
+	switch (connection._request_pipeline[0].getMethod())// Generate the HttpResponse depending on HttpMethod
 	{
 		case GET_METHOD :
-			response = answer_get(request, location);
+			*connection._currentResponse = answer_get(connection._request_pipeline[0], location);
 			break;
 		case POST_METHOD :
-			response = answer_post(request, location);
-			break;
+			answer_post(connection._request_pipeline[0], location, connection);
+			return; // a modif
 		case DELETE_METHOD :
-			response = answer_delete(request, location);
+			*connection._currentResponse = answer_delete(connection._request_pipeline[0], location);
 			break;
 		default :
 			return send_error(501, location.getErrorMap(), connection);
 	}
 	if (!connection.isPersistent() || location.getKeepaliveTimeout() == 0)
-		response.setConnectionStatus(false);
-	connection.sendResponse(response.toString());// Handles all of the response sending and adjust the connection accordingly (cf: pop request list close connection etc...)
+		connection._currentResponse->setConnectionStatus(false);
+	connection.sendResponse(connection._currentResponse->toString());// Handles all of the response sending and adjust the connection accordingly (cf: pop request list close connection etc...)
 }
