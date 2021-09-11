@@ -117,7 +117,7 @@ int main(int ac, char** av)
 				{
 					connection_map[i].closeConnection();
 				}
-				std::cout << "pipeline length of map after receive: " << connection_map[i]._request_pipeline.size() << std::endl;
+//				std::cout << "pipeline length of map after receive: " << connection_map[i]._request_pipeline.size() << std::endl;
 				if (connection_map[i].getStatus() == CO_ISCLOSED) // erases if connection has encoutered an error
 				{
 					FD_CLR(i, &rfds);
@@ -140,25 +140,29 @@ int main(int ac, char** av)
 					input_pipe_map.erase(i);
 					continue;
 				}
-				std::cout << "in write loop for fd: " << i << std::endl; 
+//				std::cout << "in write loop for fd: " << i << std::endl;
+//				std::cout << "connection status: " << connection_map[i].getStatus() << std::endl;
 				if (!connection_map[i].HasToWriteOnPipe() && !connection_map[i].HasToReadOnPipe())
 					answer_connection(connection_map[i]);
 				if (connection_map[i].HasToWriteOnPipe() && !input_pipe_map.count(i))
 				{
 					input_pipe_map.insert(std::pair<int, ConnectionClass&>(connection_map[i].getInputFd(), connection_map[i]));
-					std::cout << "pipeline length of inserted map: " << connection_map[i]._request_pipeline.size() << std::endl;
+//					std::cout << "pipeline length of inserted map: " << connection_map[i]._request_pipeline.size() << std::endl;
 					FD_SET(connection_map[i].getInputFd(), &wfds);
 					continue;
 				}
-				connection_map[i].setStatus(CO_ISDONE);
+				if (!connection_map[i].HasToWriteOnPipe() && !connection_map[i].HasToReadOnPipe() && !connection_map[i].HasDoneCgi())
+					connection_map[i].setStatus(CO_ISDONE);
 				if (connection_map[i].getStatus() == CO_ISCLOSED || !connection_map[i].isPersistent()) // erase if connection is not persistent or respond has encountered an error
 				{
+//					std::cout << "clearing because closed" << std::endl;
 					connection_map[i].closeConnection();
 					FD_CLR(i, &wfds);
 					connection_map.erase(i);
 				}
 				else if (connection_map[i].getStatus() == CO_ISDONE) // all requests have been answered
 				{
+//					std::cout << "clearing because done" << std::endl;
 					FD_CLR(i, &wfds);
 					FD_SET(i, &rfds);
 				}

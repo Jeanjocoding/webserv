@@ -377,7 +377,7 @@ int		ConnectionClass::_read_buffer(readingBuffer& buffer, std::vector<HttpReques
 	_hasRead = 1;
 	if (read_ret == -1)
 	{	
-		perror("read"); // a faire partout pour le debugging?
+		perror("read in read_buffer"); // a faire partout pour le debugging?
 		return (-1);
 	}
 	if (read_ret == 0)
@@ -1611,7 +1611,8 @@ int			ConnectionClass::receiveRequest(void)
 		std::cout << "the connection has been closed" << std::endl;
 		return (0);
 	}
-	_status = CO_ISREADY;
+	if (_request_pipeline.size())
+		_status = CO_ISREADY;
 	return (1);
 }
 
@@ -1623,6 +1624,7 @@ int			ConnectionClass::sendResponse(std::string response)
 		closeConnection();
 		return (-1);
 	}
+//	std::cout << "erasing request that starts with: " << _request_pipeline[0].getStartLine() << std::endl;
 	_request_pipeline.erase(_request_pipeline.begin());
 	if (_request_pipeline.empty())
 	{
