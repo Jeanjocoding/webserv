@@ -32,6 +32,9 @@ ConnectionClass::ConnectionClass(void)
 	_isProcessingLastNL = 0;
 	_isProcessingTrailers = 0;
 	_timer = time(0);
+	_hasToWriteOnPipe = 0;
+	_hasToReadOnPipe = 0;
+	_hasDoneCgi = 0;
 	return;
 }
 
@@ -54,6 +57,12 @@ ConnectionClass::ConnectionClass(ConnectionClass const& to_copy): _socketNbr(to_
 		_incompleteRequest = new HttpRequest(*(to_copy._incompleteRequest));
 	_isPersistent = to_copy._isPersistent;
 	_isProcessingTrailers = to_copy._isProcessingTrailers;
+	_hasToWriteOnPipe = to_copy._hasToWriteOnPipe;
+	_hasToReadOnPipe = to_copy._hasToReadOnPipe;
+	_hasDoneCgi = to_copy._hasDoneCgi;
+	_hasToWriteOnPipe = 0;
+	_hasToReadOnPipe = 0;
+	_hasDoneCgi = 0;
 	return;
 }
 
@@ -75,6 +84,9 @@ ConnectionClass::ConnectionClass(int socknum, serverClass* server): _socketNbr(s
 	_hasRead = 0;
 	_isProcessingTrailers = 0;
 	_timer = time(0);
+	_hasToWriteOnPipe = 0;
+	_hasToReadOnPipe = 0;
+	_hasDoneCgi = 0;
 	return;	
 }
 
@@ -95,6 +107,9 @@ ConnectionClass::ConnectionClass(int socknum): _socketNbr(socknum)
 	_hasRead = 0;
 	_isProcessingTrailers = 0;
 	_timer = time(0);
+	_hasToWriteOnPipe = 0;
+	_hasToReadOnPipe = 0;
+	_hasDoneCgi = 0;
 	return;	
 }
 
@@ -128,6 +143,9 @@ ConnectionClass&	ConnectionClass::operator=(ConnectionClass const& to_copy)
 	if (to_copy._hasBegRest)
 		_beginningRestBuffer = new std::string(*(to_copy._beginningRestBuffer));
 	_timer = to_copy._timer;
+	_hasToWriteOnPipe = to_copy._hasToWriteOnPipe;
+	_hasToReadOnPipe = to_copy._hasToReadOnPipe;
+	_hasDoneCgi = to_copy._hasDoneCgi;
 	return (*this);
 }
 
@@ -1714,4 +1732,64 @@ time_t			ConnectionClass::getTimer(void) const
 void			ConnectionClass::resetTimer(void)
 {
 	_timer = time(0);
+}
+
+void			ConnectionClass::setHasToWriteOnPipe(int value)
+{
+	_hasToWriteOnPipe = value;
+}
+
+int			ConnectionClass::HasToWriteOnPipe()
+{
+	return (_hasToWriteOnPipe);
+}
+
+void			ConnectionClass::setHasToReadOnPipe(int value)
+{
+	_hasToReadOnPipe = value;
+}
+
+int			ConnectionClass::HasToReadOnPipe()
+{
+	return (_hasToReadOnPipe);
+}
+
+void			ConnectionClass::setHasDoneCgi(int value)
+{
+	_hasDoneCgi = value;
+}
+
+int			ConnectionClass::HasDoneCgi()
+{
+	return (_hasDoneCgi);
+}
+
+void			ConnectionClass::setInputFd(int value)
+{
+	_input_fd = value;
+}
+
+int			ConnectionClass::getInputFd()
+{
+	return (_input_fd);
+}
+
+void			ConnectionClass::setOutputFd(int value)
+{
+	_output_fd = value;
+}
+
+int			ConnectionClass::getOutputFd()
+{
+	return (_output_fd);
+}
+
+void			ConnectionClass::setChildPid(int value)
+{
+	_childPid = value;
+}
+
+int			ConnectionClass::getChildPid()
+{
+	return (_childPid);
 }

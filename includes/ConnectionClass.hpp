@@ -113,6 +113,18 @@ public:
 	int				getStatus(void) const;
 	void			setStatus(int state);
 	bool			isPersistent(void) const;
+	void			setHasToWriteOnPipe(int value);
+	int			HasToWriteOnPipe();
+	void			setHasToReadOnPipe(int value);
+	int			HasToReadOnPipe();
+	void			setHasDoneCgi(int value);
+	int			HasDoneCgi();
+	void			setInputFd(int value);
+	int			getInputFd();			
+	void			setOutputFd(int value);
+	int			getOutputFd();
+	void			setChildPid(int value);
+	int			getChildPid();
 	void		print_pipeline();
 
 	// this constructor should be private, but it doesn't work for now when it is.
@@ -155,6 +167,14 @@ private:
 
 	int				_isProcessingLastNL;
 	int				_isProcessingTrailers;
+
+	int				_hasToWriteOnPipe;
+	int				_hasToReadOnPipe;
+	int				_hasDoneCgi;
+
+	int				_input_fd;
+	int				_output_fd;
+	int				_childPid;
 
 	time_t			_timer;
 

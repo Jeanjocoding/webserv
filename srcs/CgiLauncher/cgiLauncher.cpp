@@ -62,7 +62,7 @@ int		setCgiParamsAsEnvironmentVariables(t_CgiParams& params, char **customEnv)
 
 
 
-int		launchCgiScript(t_CgiParams& params, HttpRequest const& request, LocationClass const& location, char **output, size_t& output_len)
+/*int		launchCgiScript(t_CgiParams& params, HttpRequest const& request, LocationClass const& location, char **output, size_t& output_len)
 {
 	int			script_output_pipe[2];
 	int			script_input_pipe[2];
@@ -147,5 +147,122 @@ int		launchCgiScript(t_CgiParams& params, HttpRequest const& request, LocationCl
 		wait_ret = wait(&wait_status);
 		output_len = buffer_size;
 	}
+	return (0);
+}*/
+
+int		ExecAndSetPipes(t_CgiParams& params, HttpRequest& request, LocationClass const& location, ConnectionClass& connection)
+{
+	int			script_output_pipe[2];
+	int			script_input_pipe[2];
+	int 		pid;
+	std::string	output_str;
+	int			read_ret;
+	int			wait_ret;
+	int			wait_status;
+	long			buffer_size = 0;
+	char		read_buffer[4096];
+	char 		**customEnv;
+	char	**args = new char*[2];
+
+	std::string	execname(location.getCGI());
+	std::string	argname("php-cgi");
+
+	args[0] = new char[execname.length() + 1];
+	std::strncpy(args[0], execname.c_str(), execname.length());
+	args[0][execname.length()] = '\0';
+	args[1] = (char*)0;
+	location.getUri(); // pour eviter pbs de compilation
+	if (pipe(script_output_pipe) < 0)
+	{
+		perror("pipe");
+		return (-1);
+	}
+	connection.setOutputFd(script_output_pipe[0]);
+	if (pipe(script_input_pipe) < 0)
+	{
+		perror("pipe");
+		return (-1);
+	}
+	connection.setInputFd(script_input_pipe[1]);
+	connection.setHasToWriteOnPipe(1);
+	if ((pid = fork()) < 0)
+	{
+		perror("fork");
+		return (-1);
+	}
+	else if (pid == 0)
+	{
+		close(script_output_pipe[0]);
+		dup2(script_output_pipe[1], 1);
+		close(script_output_pipe[1]);
+		close(script_input_pipe[1]);
+		dup2(script_input_pipe[0], 0);
+		close(script_input_pipe[0]);
+		allocateCustomEnv(&customEnv);
+		setCgiParamsAsEnvironmentVariables(params, customEnv);
+		if (execve(args[0], (char *const *) args, customEnv) == -1)
+			perror("execvezz");
+		std::cout << "execve failed" << std::endl;
+		return (-1);
+	}
+	else
+	{
+		close(script_input_pipe[0]);
+		close(script_output_pipe[1]);
+		connection.setChildPid(pid);
+		delete [] args[0];
+		delete [] args;
+		return (0);
+	}
+}
+
+int		cgiWriteOnPipe(ConnectionClass& connection)
+{
+		if (connection._request_pipeline[0].getMethod() == POST_METHOD && connection._request_pipeline[0].getContentLength())
+		{
+			if (write(connection.getInputFd(), connection._request_pipeline[0].getContent(), connection._request_pipeline[0].getContentLength()) == -1)
+			{
+				perror("write");
+				return (-1);
+			}
+		}
+		else if (connection._request_pipeline[0].getMethod() == GET_METHOD && connection._request_pipeline[0].getRequestLineInfos().target.find("?") != std::string::npos)
+		{
+			std::string tmp(connection._request_pipeline[0].getRequestLineInfos().target.find("?"), connection._request_pipeline[0].getRequestLineInfos().target.size());
+			tmp.erase(0, 1);
+			if (!tmp.empty())
+				if (write(connection.getInputFd(), tmp.c_str(), tmp.size()) == -1)
+				{
+					perror("write");
+					return (-1);
+				}
+		}
+		close (connection.getInputFd());
+		connection.setHasToWriteOnPipe(0);
+		connection.setHasToReadOnPipe(1);
+}
+
+int		cgiReadOnPipe(ConnectionClass& connection, char **output, int& output_len)
+{
+	int read_ret;
+	char read_buffer[4096];
+	int	buffer_size = 0;
+	int	wait_ret;
+	int	wait_status;
+
+	read_ret = read(connection.getOutputFd(), read_buffer, 4096)) > 0)
+		append_to_buffer(output, buffer_size, read_buffer, read_ret);
+	if (read_ret == -1)
+	{
+		perror("read in cgiReadonPipe");
+		return (-1);
+	}
+	else if (read_ret == 0)
+	{
+		connection.setHasToReadOnPipe(0);
+		close(connection.getOutputFd());
+		wait_ret = waitpid(connection.getChildPid(), &wait_status, 0);
+	}
+	output_len = buffer_size;
 	return (0);
 }
