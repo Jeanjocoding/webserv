@@ -6,7 +6,7 @@
 /*   By: asablayr <marvin@42.fr>                    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2021/06/06 21:54:40 by asablayr          #+#    #+#             */
-/*   Updated: 2021/09/11 20:50:18 by asablayr         ###   ########.fr       */
+/*   Updated: 2021/09/12 18:59:09 by asablayr         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -210,15 +210,14 @@ void	answer_connection(ConnectionClass& connection)
 		return ;
 	}
 	HttpRequest& request = connection._request_pipeline[0];
-	serverClass& server = (request.getHeaders().find("Host") == request.getHeaders().end()) ? *(connection.getServer("")) : *(connection.getServer(request.getHeaders().find("Host")->second));
-//	if (request.getHeaders().find("Host") != request.getHeaders().end())
-//		server = *(connection.getServer(request.getHeaders().find("Host")->second));
-//	std::cout << "servername : " << server._server_name << " expected " << request.getHeaders().find("Host")->second << std::endl;
+	serverClass& server = (request.getHeaders().find("Host") == request.getHeaders().end()) ? *(connection.getServer()) : *(connection.getServer(request.getHeaders().find("Host")->second));
 	HttpResponse response;
 	print_request(request);
+	std::cout << "server chosen : " << server._server_name << std::endl;
 	if (!request.isValid())//TODO check why is invalid and respond accordingly
 		return send_error(400, server._default_error_pages, connection);
 	LocationClass location = server.getLocation(request.getRequestLineInfos().target);
+	std::cout << "location chosen : " << location.getUri() << std::endl;
 	if (!location.methodIsAllowed(request.getMethod()))
 	{
 		std::cerr << "forbiden Http request method on location " << location.getUri() << std::endl;
@@ -245,5 +244,6 @@ void	answer_connection(ConnectionClass& connection)
 	}
 	if (!connection.isPersistent() || location.getKeepaliveTimeout() == 0)
 		response.setConnectionStatus(false);
+	std::cout << "response :\n" << response.toString() << std::endl;
 	connection.sendResponse(response.toString());// Handles all of the response sending and adjust the connection accordingly (cf: pop request list close connection etc...)
 }

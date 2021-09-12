@@ -6,7 +6,7 @@
 /*   By: asablayr <marvin@42.fr>                    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2021/07/15 13:31:12 by asablayr          #+#    #+#             */
-/*   Updated: 2021/09/09 10:31:57 by asablayr         ###   ########.fr       */
+/*   Updated: 2021/09/12 18:28:07 by asablayr         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -378,8 +378,10 @@ void	LocationClass::setAutoindex(void)
 			{
 				if (ent->d_name[0] != '.')
 				{
-					_autoindex_str.append("<a href=127.0.0.1:8001");// TODO change hard coded address
+					_autoindex_str.append("<a href=");// TODO change hard coded address
 					_autoindex_str.append(_uri);
+					if (*(_uri.end() - 1) != '/')
+						_autoindex_str.append(("/"));
 					_autoindex_str.append(ent->d_name);
 					_autoindex_str.append(">");
 					_autoindex_str.append(ent->d_name);

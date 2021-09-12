@@ -6,7 +6,7 @@
 /*   By: asablayr <marvin@42.fr>                    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2021/06/07 18:49:16 by asablayr          #+#    #+#             */
-/*   Updated: 2021/09/10 16:48:03 by asablayr         ###   ########.fr       */
+/*   Updated: 2021/09/12 11:47:05 by asablayr         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -162,7 +162,6 @@ LocationClass&	serverClass::getLocation(std::string const& uri) const
 	unsigned long	max_match = 0;
 	unsigned long	tmp = 0;
 	LocationClass* ret;
-	std::cout << "uri : " << uri << std::endl;
 	for (std::vector<LocationClass*>::const_iterator it = _location.begin(); it != _location.end(); it++)
 	{
 		if ((*it)->getParam() == "=")
@@ -196,7 +195,6 @@ LocationClass&	serverClass::getLocation(std::string const& uri) const
 			}
 		}
 	}
-	std::cout << "location chosen : " << ret->getUri() << "\n"; // testing
 	return *ret;
 }
 
@@ -281,7 +279,6 @@ void serverClass::startServer()
 	hint.ai_next = NULL;
 
 	_addr = 0;
-	std::cout << "yo\n";
 	if (!_listen.empty())
 	{
 		if (_listen.find(":") != std::string::npos)
@@ -293,7 +290,6 @@ void serverClass::startServer()
 		else
 			_port = _listen;
 	}
-	std::cout << "host : " << _host << " port : " << _port << std::endl;
 	retval = getaddrinfo(_host.c_str(), _port.c_str(), &hint, &_addr);
 	if (retval)
 	{

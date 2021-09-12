@@ -100,7 +100,7 @@ public:
 		- std::string containing the request*/
 //	std::pair<int, std::string>			receiveRequest(void);
 	void			setServers(std::vector<serverClass*> server_list, int fd);
-	serverClass*	getServer(std::string server_name);
+	serverClass*	getServer(std::string server_name = "");
 	int				receiveRequest(void);
 //	int				answerRequest(void);
 //	int				answerRequest(HttpRequest& request);//might be const
