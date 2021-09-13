@@ -28,6 +28,8 @@ int main(int ac, char** av)
 	std::vector<serverClass*>			server_map;
 	std::vector<serverClass*> 			serv_up;
 	std::map<int, ConnectionClass>		connection_map;
+	std::map<int, ConnectionClass&>		input_pipe_map;
+	std::map<int, ConnectionClass&>		output_pipe_map;
 	fd_set								rfds, rfds_copy;
 	fd_set								wfds, wfds_copy;
 
@@ -93,15 +95,30 @@ int main(int ac, char** av)
 							connection_map[client_socket] = ConnectionClass(client_socket, *it);
 							connection_map[client_socket].setServers(server_map, i);
 							FD_SET(client_socket, &rfds);
+//							std::cout << "connection with client socket: " << client_socket << std::endl;
 							check = true;
 						}
 						break;
 					}
 				}
 				if (check)
+					continue; 
+				if (output_pipe_map.count(i))
+				{
+					cgiReadOnPipe(output_pipe_map[i]);
+					if (!output_pipe_map[i].HasToReadOnPipe())
+					{
+						FD_CLR(output_pipe_map[i].getOutputFd(), &rfds);
+						output_pipe_map[i].setHasDoneCgi(1);
+						output_pipe_map.erase(i);
+					}
 					continue;
+				}
 				if (connection_map[i].receiveRequest() <= 0) // close connection if error while receiving paquets
+				{
 					connection_map[i].closeConnection();
+				}
+//				std::cout << "pipeline length of map after receive: " << connection_map[i]._request_pipeline.size() << std::endl;
 				if (connection_map[i].getStatus() == CO_ISCLOSED) // erases if connection has encoutered an error
 				{
 					FD_CLR(i, &rfds);
@@ -115,16 +132,38 @@ int main(int ac, char** av)
 			}
 			else if (FD_ISSET(i, &wfds_copy))
 			{
-				answer_connection(connection_map[i]);
-				connection_map[i].setStatus(CO_ISDONE);
+				if (input_pipe_map.count(i))
+				{
+					cgiWriteOnPipe(input_pipe_map[i]);
+					FD_SET(input_pipe_map[i].getOutputFd(), &rfds);
+					output_pipe_map.insert(std::pair<int, ConnectionClass&>(input_pipe_map[i].getOutputFd(), input_pipe_map[i]));
+					FD_CLR(input_pipe_map[i].getInputFd(), &wfds);
+					input_pipe_map.erase(i);
+					continue;
+				}
+//				std::cout << "in write loop for fd: " << i << std::endl;
+//				std::cout << "connection status: " << connection_map[i].getStatus() << std::endl;
+				if (!connection_map[i].HasToWriteOnPipe() && !connection_map[i].HasToReadOnPipe())
+					answer_connection(connection_map[i]);
+				if (connection_map[i].HasToWriteOnPipe() && !input_pipe_map.count(i))
+				{
+					input_pipe_map.insert(std::pair<int, ConnectionClass&>(connection_map[i].getInputFd(), connection_map[i]));
+//					std::cout << "pipeline length of inserted map: " << connection_map[i]._request_pipeline.size() << std::endl;
+					FD_SET(connection_map[i].getInputFd(), &wfds);
+					continue;
+				}
+				if (!connection_map[i].HasToWriteOnPipe() && !connection_map[i].HasToReadOnPipe() && !connection_map[i].HasDoneCgi())
+					connection_map[i].setStatus(CO_ISDONE);
 				if (connection_map[i].getStatus() == CO_ISCLOSED || !connection_map[i].isPersistent()) // erase if connection is not persistent or respond has encountered an error
 				{
+//					std::cout << "clearing because closed" << std::endl;
 					connection_map[i].closeConnection();
 					FD_CLR(i, &wfds);
 					connection_map.erase(i);
 				}
 				else if (connection_map[i].getStatus() == CO_ISDONE) // all requests have been answered
 				{
+//					std::cout << "clearing because done" << std::endl;
 					FD_CLR(i, &wfds);
 					FD_SET(i, &rfds);
 				}

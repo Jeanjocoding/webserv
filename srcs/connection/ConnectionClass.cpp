@@ -32,6 +32,11 @@ ConnectionClass::ConnectionClass(void)
 	_isProcessingLastNL = 0;
 	_isProcessingTrailers = 0;
 	_timer = time(0);
+	_hasToWriteOnPipe = 0;
+	_hasToReadOnPipe = 0;
+	_hasDoneCgi = 0;
+	_cgiOutput_len = 0;
+	_cgiOutput = 0;
 	return;
 }
 
@@ -54,6 +59,25 @@ ConnectionClass::ConnectionClass(ConnectionClass const& to_copy): _socketNbr(to_
 		_incompleteRequest = new HttpRequest(*(to_copy._incompleteRequest));
 	_isPersistent = to_copy._isPersistent;
 	_isProcessingTrailers = to_copy._isProcessingTrailers;
+	_hasToWriteOnPipe = to_copy._hasToWriteOnPipe;
+	_hasToReadOnPipe = to_copy._hasToReadOnPipe;
+	_hasDoneCgi = to_copy._hasDoneCgi;
+	_hasToWriteOnPipe = 0;
+	_hasToReadOnPipe = 0;
+	_hasDoneCgi = 0;
+/*	if (_cgiOutput_len)
+	{
+		delete [] _cgiOutput;
+		_cgiOutput_len = 0;
+		_cgiOutput = 0;
+	}*/
+	_cgiOutput_len = 0;
+	_cgiOutput = 0;
+	if (to_copy._cgiOutput_len)
+	{
+		append_to_buffer(&_cgiOutput, _cgiOutput_len, to_copy._cgiOutput, to_copy._cgiOutput_len);
+	}
+	_request_pipeline = to_copy._request_pipeline;
 	return;
 }
 
@@ -75,6 +99,11 @@ ConnectionClass::ConnectionClass(int socknum, serverClass* server): _socketNbr(s
 	_hasRead = 0;
 	_isProcessingTrailers = 0;
 	_timer = time(0);
+	_hasToWriteOnPipe = 0;
+	_hasToReadOnPipe = 0;
+	_hasDoneCgi = 0;
+	_cgiOutput_len = 0;
+	_cgiOutput = 0;
 	return;	
 }
 
@@ -95,17 +124,29 @@ ConnectionClass::ConnectionClass(int socknum): _socketNbr(socknum)
 	_hasRead = 0;
 	_isProcessingTrailers = 0;
 	_timer = time(0);
+	_hasToWriteOnPipe = 0;
+	_hasToReadOnPipe = 0;
+	_hasDoneCgi = 0;
+	_cgiOutput_len = 0;
+	_cgiOutput = 0;
 	return;	
 }
 
 ConnectionClass::~ConnectionClass(void)
 {
+//	std::cout << "connection: destructor called" << std::endl;
 	if (_hasRestBuffer)
 		delete _restBuffer;
 	if (_hasRestRequest)
 		delete _incompleteRequest;
 	if (_hasBegRest)
 		delete _beginningRestBuffer;
+	if (_cgiOutput_len)
+	{
+		delete [] _cgiOutput;
+		_cgiOutput_len = 0;
+		_cgiOutput = 0;
+	}
 	return;
 }
 
@@ -128,6 +169,20 @@ ConnectionClass&	ConnectionClass::operator=(ConnectionClass const& to_copy)
 	if (to_copy._hasBegRest)
 		_beginningRestBuffer = new std::string(*(to_copy._beginningRestBuffer));
 	_timer = to_copy._timer;
+	_hasToWriteOnPipe = to_copy._hasToWriteOnPipe;
+	_hasToReadOnPipe = to_copy._hasToReadOnPipe;
+	_hasDoneCgi = to_copy._hasDoneCgi;	
+	if (_cgiOutput_len)
+	{
+		delete [] _cgiOutput;
+		_cgiOutput_len = 0;
+		_cgiOutput = 0;
+	}
+	if (to_copy._cgiOutput_len)
+	{
+		append_to_buffer(&_cgiOutput, _cgiOutput_len, to_copy._cgiOutput, to_copy._cgiOutput_len);
+	}
+	_request_pipeline = to_copy._request_pipeline;
 	return (*this);
 }
 
@@ -322,7 +377,7 @@ int		ConnectionClass::_read_buffer(readingBuffer& buffer, std::vector<HttpReques
 	_hasRead = 1;
 	if (read_ret == -1)
 	{	
-		perror("read"); // a faire partout pour le debugging?
+		perror("read in read_buffer"); // a faire partout pour le debugging?
 		return (-1);
 	}
 	if (read_ret == 0)
@@ -360,43 +415,6 @@ int		ConnectionClass::_read_buffer(readingBuffer& buffer, std::vector<HttpReques
 
 	return (1);
 }
-
-/* 	this function launches a  rather slow procedure but that is used very rarely. it reads on the
-***	socket and append buffers to a std::string object until crlf is found. after, it moves
-***	the rest of the string (after the crlf)	in the readingBuffer. buf and set buffer.deb and buffer.end
-***	accordingly */
-/*int		ConnectionClass::_read_long_line(std::string& str, readingBuffer& buffer, int& length_parsed)
-{
-	char buf[SINGLE_READ_SIZE + 1];
-	int read_ret;
-	size_t	pos;
-
-	while ((read_ret = recv(_socketNbr, buf, SINGLE_READ_SIZE, 0)) > 0)
-	{
-		buf[read_ret] = '\0';
-		length_parsed += read_ret;
-		str.append(buf);
-		pos = str.find("\r\n", str.length() - (SINGLE_READ_SIZE + 2));
-		if (pos != str.npos)
-		{
-			std::memmove(buffer.buf, &(str.data()[pos + 2 ]), str.length() - (pos + 2)); // j'ajoute au buffer ce qu'il y avait après le crlf
-			buffer.deb = 0;
-			buffer.end = str.length() - (pos + 2);
-			str.erase(pos, str.length()); // j'enleve ce qu'il y avait après le crlf dans la string
-			return (1);
-		}
-		if (str.length() > MAX_LINE_LENGTH)
-		{
-			return (-1);
-		}
-	}
-	if (read_ret == -1)
-		return (-1);
-	if (read_ret == 0)
-		return (0);
-	std::cout << "unpredicted return in _read_long_line" << std::endl;
-	return (1);
-}*/
 
 int		ConnectionClass::_invalidRequestProcedure(HttpRequest& currentRequest, int errorCode)
 {
@@ -992,7 +1010,7 @@ int		ConnectionClass::_last_nl_procedure(readingBuffer& buffer)
 		_restBuffer = 0;
 		_hasRestBuffer = 0;
 	}
-	_printBufferInfo(buffer, "in last nl deb");
+//	_printBufferInfo(buffer, "in last nl deb");
 	std::cout << "left inbuf: "  << left_inbuf << std::endl;
 	if (left_inbuf < 2)
 	{
@@ -1556,7 +1574,8 @@ int			ConnectionClass::receiveRequest(void)
 		std::cout << "the connection has been closed" << std::endl;
 		return (0);
 	}
-	_status = CO_ISREADY;
+	if (_request_pipeline.size())
+		_status = CO_ISREADY;
 	return (1);
 }
 
@@ -1568,6 +1587,7 @@ int			ConnectionClass::sendResponse(std::string response)
 		closeConnection();
 		return (-1);
 	}
+//	std::cout << "erasing request that starts with: " << _request_pipeline[0].getStartLine() << std::endl;
 	_request_pipeline.erase(_request_pipeline.begin());
 	if (_request_pipeline.empty())
 	{
@@ -1610,13 +1630,14 @@ int				ConnectionClass::_emptyReadBuffers() const
  * procedure is supposed to minimize the risk of TCP connection reset */
 int				ConnectionClass::closeConnection(void)
 {
-	int empty_read_value;
+//	int empty_read_value;
 	int return_value;
 
 //	std::cout << "close connection is called" << std::endl;
 	shutdown(_socketNbr, SHUT_WR);
 //		perror("shutdown");
-	empty_read_value = _emptyReadBuffers();
+//	empty_read_value = _emptyReadBuffers();
+	usleep(30);
 	shutdown(_socketNbr, SHUT_RD);
 //		perror("shutdown");
 	return_value = close(_socketNbr);
@@ -1624,6 +1645,7 @@ int				ConnectionClass::closeConnection(void)
 		_status = CO_ISCLOSED;
 	else
 		perror("close");*/
+	_status = CO_ISCLOSED;
 	return (return_value);
 }
 
@@ -1713,4 +1735,64 @@ time_t			ConnectionClass::getTimer(void) const
 void			ConnectionClass::resetTimer(void)
 {
 	_timer = time(0);
+}
+
+void			ConnectionClass::setHasToWriteOnPipe(int value)
+{
+	_hasToWriteOnPipe = value;
+}
+
+int			ConnectionClass::HasToWriteOnPipe()
+{
+	return (_hasToWriteOnPipe);
+}
+
+void			ConnectionClass::setHasToReadOnPipe(int value)
+{
+	_hasToReadOnPipe = value;
+}
+
+int			ConnectionClass::HasToReadOnPipe()
+{
+	return (_hasToReadOnPipe);
+}
+
+void			ConnectionClass::setHasDoneCgi(int value)
+{
+	_hasDoneCgi = value;
+}
+
+int			ConnectionClass::HasDoneCgi()
+{
+	return (_hasDoneCgi);
+}
+
+void			ConnectionClass::setInputFd(int value)
+{
+	_input_fd = value;
+}
+
+int			ConnectionClass::getInputFd()
+{
+	return (_input_fd);
+}
+
+void			ConnectionClass::setOutputFd(int value)
+{
+	_output_fd = value;
+}
+
+int			ConnectionClass::getOutputFd()
+{
+	return (_output_fd);
+}
+
+void			ConnectionClass::setChildPid(int value)
+{
+	_childPid = value;
+}
+
+int			ConnectionClass::getChildPid()
+{
+	return (_childPid);
 }

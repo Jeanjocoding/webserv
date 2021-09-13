@@ -108,33 +108,35 @@ void		setCgiParams(t_CgiParams& params, HttpRequest const& request, LocationClas
 	params.serverName = location.getServerName(); // a modif
 }
 
-HttpResponse	answer_post(HttpRequest const& request, LocationClass const& location)
+HttpResponse	answer_post(HttpRequest const& request, LocationClass const& location, ConnectionClass& connection)
 {
-	HttpResponse	response;
+//	HttpResponse	response;
 
 	//TODO
-	char		*output;
+//	char		*output;
 	t_CgiParams	params;
-	size_t		body_beginning = 0;
-	size_t		output_len = 0;
+//	size_t		body_beginning = 0;
+//	size_t		output_len = 0;
 	std::ifstream body;
 
 	setCgiParams(params, request, location);
 	body.open(params.scriptFilename.c_str());
 	if (!body.is_open())
 	{
-		response = HttpResponse(404, location.getErrorPage(404));
+		delete connection._currentResponse;
+		connection._currentResponse = new HttpResponse(404, location.getErrorPage(404));
 		body.close();
-		return (response);
+		return (*(connection._currentResponse));
 	}
 	body.close();
-	launchCgiScript(params, request, location, &output, output_len);
+	ExecAndSetPipes(params, location, connection);
+//	launchCgiScript(params, request, location, &output, output_len);
 //	std::cout << "output: ";
 //	write(1, output, output_len);
-	add_header_part(response, output, output_len, body_beginning);
+/*	add_header_part(response, output, output_len, body_beginning);
 //	std::cout << "after header" << std::endl;
 	response.setBody(&(output[body_beginning]), output_len - body_beginning);
 	response.setHeader();
-	
-	return (response);
+	*/
+	return (*connection._currentResponse);
 }

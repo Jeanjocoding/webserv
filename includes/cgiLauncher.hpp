@@ -9,6 +9,7 @@
 # include <stdio.h>
 #include "HttpRequest.hpp"
 #include "LocationClass.hpp"
+#include "ConnectionClass.hpp"
 
 # define ENV_SIZE 30
 
@@ -108,6 +109,9 @@ typedef struct s_CgiParams
 }				t_CgiParams;
 
 int		setCgiParamsAsEnvironmentVariables(t_CgiParams& params);
-int		launchCgiScript(t_CgiParams& params, HttpRequest const& request, LocationClass const& location , char **output, size_t& output_len);
+//int		launchCgiScript(t_CgiParams& params, HttpRequest const& request, LocationClass const& location , char **output, size_t& output_len);
+int		ExecAndSetPipes(t_CgiParams& params, LocationClass const& location, ConnectionClass& connection);
+int		cgiWriteOnPipe(ConnectionClass& connection);
+int		cgiReadOnPipe(ConnectionClass& connection);
 
 #endif

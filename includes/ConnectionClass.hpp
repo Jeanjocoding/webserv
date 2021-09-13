@@ -43,6 +43,7 @@
 #include "HttpRequest.hpp"
 #include "serverClass.hpp"
 #include "ConnectionUtils.hpp"
+#include "HttpResponse.hpp"
 
 #define	READING_BUF_SIZE  12289
 #define	SINGLE_READ_SIZE 4096
@@ -113,6 +114,18 @@ public:
 	int				getStatus(void) const;
 	void			setStatus(int state);
 	bool			isPersistent(void) const;
+	void			setHasToWriteOnPipe(int value);
+	int			HasToWriteOnPipe();
+	void			setHasToReadOnPipe(int value);
+	int			HasToReadOnPipe();
+	void			setHasDoneCgi(int value);
+	int			HasDoneCgi();
+	void			setInputFd(int value);
+	int			getInputFd();			
+	void			setOutputFd(int value);
+	int			getOutputFd();
+	void			setChildPid(int value);
+	int			getChildPid();
 	void		print_pipeline();
 
 	// this constructor should be private, but it doesn't work for now when it is.
@@ -122,6 +135,9 @@ public:
 	std::vector<HttpRequest>	_request_pipeline;//might try to switch back to private
 	int				_socketNbr;
 	std::vector<serverClass*>	_servers;
+	HttpResponse			*_currentResponse;
+	char				*_cgiOutput;
+	long				_cgiOutput_len;
 
 
 private:
@@ -155,6 +171,14 @@ private:
 
 	int				_isProcessingLastNL;
 	int				_isProcessingTrailers;
+
+	int				_hasToWriteOnPipe;
+	int				_hasToReadOnPipe;
+	int				_hasDoneCgi;
+
+	int				_input_fd;
+	int				_output_fd;
+	int				_childPid;
 
 	time_t			_timer;
 
