@@ -105,11 +105,11 @@ int main(int ac, char** av)
 					continue; 
 				if (output_pipe_map.count(i))
 				{
-					cgiReadOnPipe(output_pipe_map[i]);
-					if (!output_pipe_map[i].HasToReadOnPipe())
+					cgiReadOnPipe((*(output_pipe_map.find(i))).second);
+					if (!((*(output_pipe_map.find(i))).second.HasToReadOnPipe()))
 					{
-						FD_CLR(output_pipe_map[i].getOutputFd(), &rfds);
-						output_pipe_map[i].setHasDoneCgi(1);
+						FD_CLR((*(output_pipe_map.find(i))).second.getOutputFd(), &rfds);
+						(*(output_pipe_map.find(i))).second.setHasDoneCgi(1);
 						output_pipe_map.erase(i);
 					}
 					continue;
@@ -134,10 +134,10 @@ int main(int ac, char** av)
 			{
 				if (input_pipe_map.count(i))
 				{
-					cgiWriteOnPipe(input_pipe_map[i]);
-					FD_SET(input_pipe_map[i].getOutputFd(), &rfds);
-					output_pipe_map.insert(std::pair<int, ConnectionClass&>(input_pipe_map[i].getOutputFd(), input_pipe_map[i]));
-					FD_CLR(input_pipe_map[i].getInputFd(), &wfds);
+					cgiWriteOnPipe((*(input_pipe_map.find(i))).second);
+					FD_SET((*(input_pipe_map.find(i))).second.getOutputFd(), &rfds);
+					output_pipe_map.insert(std::pair<int, ConnectionClass&>((*(input_pipe_map.find(i))).second.getOutputFd(), (*(input_pipe_map.find(i))).second));
+					FD_CLR((*(input_pipe_map.find(i))).second.getInputFd(), &wfds);
 					input_pipe_map.erase(i);
 					continue;
 				}
