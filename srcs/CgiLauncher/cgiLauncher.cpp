@@ -62,7 +62,7 @@ int		setCgiParamsAsEnvironmentVariables(t_CgiParams& params, char **customEnv)
 
 
 
-int		launchCgiScript(t_CgiParams& params, HttpRequest const& request, LocationClass const& location, char **output, size_t& output_len)
+/*int		launchCgiScript(t_CgiParams& params, HttpRequest const& request, LocationClass const& location, char **output, size_t& output_len)
 {
 	int			script_output_pipe[2];
 	int			script_input_pipe[2];
@@ -148,7 +148,7 @@ int		launchCgiScript(t_CgiParams& params, HttpRequest const& request, LocationCl
 		output_len = buffer_size;
 	}
 	return (0);
-}
+}*/
 
 int		ExecAndSetPipes(t_CgiParams& params, LocationClass const& location, ConnectionClass& connection)
 {
@@ -167,7 +167,7 @@ int		ExecAndSetPipes(t_CgiParams& params, LocationClass const& location, Connect
 	std::string	execname(location.getCGI());
 	std::string	argname("php-cgi");
 
-	std::cout << "in exec and set pipes" << std::endl;
+//	std::cout << "in exec and set pipes" << std::endl;
 	args[0] = new char[execname.length() + 1];
 	std::strncpy(args[0], execname.c_str(), execname.length());
 	args[0][execname.length()] = '\0';
@@ -219,9 +219,9 @@ int		ExecAndSetPipes(t_CgiParams& params, LocationClass const& location, Connect
 
 int		cgiWriteOnPipe(ConnectionClass& connection)
 {
-	std::cout << "in write on pipes" << std::endl;
-	std::cout << "pipeline length: " << connection._request_pipeline.size() << std::endl;
-	if (connection._request_pipeline[0].getMethod() == POST_METHOD && connection._request_pipeline[0].getContentLength())
+//	std::cout << "in write on pipes" << std::endl;
+//	std::cout << "pipeline length: " << connection._request_pipeline.size() << std::endl;
+	if (/*connection._request_pipeline[0].getMethod() == POST_METHOD && */connection._request_pipeline[0].getContentLength())
 	{
 		if (write(connection.getInputFd(), connection._request_pipeline[0].getContent(), connection._request_pipeline[0].getContentLength()) == -1)
 		{
@@ -229,7 +229,7 @@ int		cgiWriteOnPipe(ConnectionClass& connection)
 			return (-1);
 		}
 	}
-	else if (connection._request_pipeline[0].getMethod() == GET_METHOD && connection._request_pipeline[0].getRequestLineInfos().target.find("?") != std::string::npos)
+/*	else if (connection._request_pipeline[0].getMethod() == GET_METHOD && connection._request_pipeline[0].getRequestLineInfos().target.find("?") != std::string::npos)
 	{
 		std::string tmp(connection._request_pipeline[0].getRequestLineInfos().target.find("?"), connection._request_pipeline[0].getRequestLineInfos().target.size());
 		tmp.erase(0, 1);
@@ -239,7 +239,7 @@ int		cgiWriteOnPipe(ConnectionClass& connection)
 				perror("write");
 				return (-1);
 			}
-	}
+	}*/
 	close (connection.getInputFd());
 	connection.setHasToWriteOnPipe(0);
 	connection.setHasToReadOnPipe(1);
@@ -254,7 +254,7 @@ int		cgiReadOnPipe(ConnectionClass& connection)
 	int	wait_ret;
 	int	wait_status;
 
-	std::cout << "in read on pipe" << std::endl;
+//	std::cout << "in read on pipe" << std::endl;
 	read_ret = read(connection.getOutputFd(), read_buffer, 4096);
 //		connection._currentResponse->appendToContent(read_buffer, )
 	if (read_ret == -1)
@@ -272,10 +272,10 @@ int		cgiReadOnPipe(ConnectionClass& connection)
 	{
 		append_to_buffer(&connection._cgiOutput, connection._cgiOutput_len, read_buffer, read_ret);
 //		std::cout << std::endl << "body for now: " << std::endl;
-		write(1, connection._cgiOutput, connection._cgiOutput_len);
+//		write(1, connection._cgiOutput, connection._cgiOutput_len);
 		std::cout << std::endl;
 	}
 //	output_len = buffer_size;
-	std::cout << "exiting cgiRead.." << std::endl;
+//	std::cout << "exiting cgiRead.." << std::endl;
 	return (0);
 }

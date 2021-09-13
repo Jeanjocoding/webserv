@@ -95,6 +95,7 @@ int main(int ac, char** av)
 							connection_map[client_socket] = ConnectionClass(client_socket, *it);
 							connection_map[client_socket].setServers(server_map, i);
 							FD_SET(client_socket, &rfds);
+//							std::cout << "connection with client socket: " << client_socket << std::endl;
 							check = true;
 						}
 						break;

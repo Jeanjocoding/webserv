@@ -134,7 +134,7 @@ ConnectionClass::ConnectionClass(int socknum): _socketNbr(socknum)
 
 ConnectionClass::~ConnectionClass(void)
 {
-	std::cout << "connection: destructor called" << std::endl;
+//	std::cout << "connection: destructor called" << std::endl;
 	if (_hasRestBuffer)
 		delete _restBuffer;
 	if (_hasRestRequest)
@@ -415,43 +415,6 @@ int		ConnectionClass::_read_buffer(readingBuffer& buffer, std::vector<HttpReques
 
 	return (1);
 }
-
-/* 	this function launches a  rather slow procedure but that is used very rarely. it reads on the
-***	socket and append buffers to a std::string object until crlf is found. after, it moves
-***	the rest of the string (after the crlf)	in the readingBuffer. buf and set buffer.deb and buffer.end
-***	accordingly */
-/*int		ConnectionClass::_read_long_line(std::string& str, readingBuffer& buffer, int& length_parsed)
-{
-	char buf[SINGLE_READ_SIZE + 1];
-	int read_ret;
-	size_t	pos;
-
-	while ((read_ret = recv(_socketNbr, buf, SINGLE_READ_SIZE, 0)) > 0)
-	{
-		buf[read_ret] = '\0';
-		length_parsed += read_ret;
-		str.append(buf);
-		pos = str.find("\r\n", str.length() - (SINGLE_READ_SIZE + 2));
-		if (pos != str.npos)
-		{
-			std::memmove(buffer.buf, &(str.data()[pos + 2 ]), str.length() - (pos + 2)); // j'ajoute au buffer ce qu'il y avait après le crlf
-			buffer.deb = 0;
-			buffer.end = str.length() - (pos + 2);
-			str.erase(pos, str.length()); // j'enleve ce qu'il y avait après le crlf dans la string
-			return (1);
-		}
-		if (str.length() > MAX_LINE_LENGTH)
-		{
-			return (-1);
-		}
-	}
-	if (read_ret == -1)
-		return (-1);
-	if (read_ret == 0)
-		return (0);
-	std::cout << "unpredicted return in _read_long_line" << std::endl;
-	return (1);
-}*/
 
 int		ConnectionClass::_invalidRequestProcedure(HttpRequest& currentRequest, int errorCode)
 {
@@ -1047,7 +1010,7 @@ int		ConnectionClass::_last_nl_procedure(readingBuffer& buffer)
 		_restBuffer = 0;
 		_hasRestBuffer = 0;
 	}
-	_printBufferInfo(buffer, "in last nl deb");
+//	_printBufferInfo(buffer, "in last nl deb");
 	std::cout << "left inbuf: "  << left_inbuf << std::endl;
 	if (left_inbuf < 2)
 	{
@@ -1667,13 +1630,14 @@ int				ConnectionClass::_emptyReadBuffers() const
  * procedure is supposed to minimize the risk of TCP connection reset */
 int				ConnectionClass::closeConnection(void)
 {
-	int empty_read_value;
+//	int empty_read_value;
 	int return_value;
 
 //	std::cout << "close connection is called" << std::endl;
 	shutdown(_socketNbr, SHUT_WR);
 //		perror("shutdown");
-	empty_read_value = _emptyReadBuffers();
+//	empty_read_value = _emptyReadBuffers();
+	usleep(30);
 	shutdown(_socketNbr, SHUT_RD);
 //		perror("shutdown");
 	return_value = close(_socketNbr);

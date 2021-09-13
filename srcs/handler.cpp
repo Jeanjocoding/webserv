@@ -99,13 +99,13 @@ static void	send_error(unsigned short error_nb, std::map<unsigned short, std::st
 	connection.sendResponse(response.toString());
 }
 
-static HttpResponse answer_cgi_get(HttpRequest const& request, LocationClass const& location)
+static HttpResponse answer_cgi_get(HttpRequest const& request, LocationClass const& location, ConnectionClass& connection)
 {
 	HttpResponse	response;
-	char*			output;
+//	char*			output;
 	t_CgiParams		params;
-	size_t			body_begin = 0;
-	size_t			output_len = 0;
+//	size_t			body_begin = 0;
+//	size_t			output_len = 0;
 	std::ifstream	body;
 
 	setCgiParams(params, request, location);//TODO check with mate
@@ -113,15 +113,16 @@ static HttpResponse answer_cgi_get(HttpRequest const& request, LocationClass con
 	if (!body.is_open())
 		return HttpResponse(404, location.getErrorPage(404));
 	
-	launchCgiScript(params, request, location, &output, output_len);
-	add_header_part(response, output, output_len, body_begin);
+	ExecAndSetPipes(params, location, connection);
+//	launchCgiScript(params, request, location, &output, output_len);
+//	add_header_part(response, output, output_len, body_begin);
 //	write(1, output, output_len);
-	response.setBody(&(output[body_begin]), output_len - body_begin);
-	response.setHeader();
+//	response.setBody(&(output[body_begin]), output_len - body_begin);
+//	response.setHeader();
 	return response;
 }
 
-static HttpResponse	answer_get(HttpRequest const& request, LocationClass const& location)
+static HttpResponse	answer_get(HttpRequest const& request, LocationClass const& location, ConnectionClass& connection)
 {
 	HttpResponse	response;
 	std::string		tmp = location.getRoot();// Put the root working directory in tmp
@@ -131,14 +132,14 @@ static HttpResponse	answer_get(HttpRequest const& request, LocationClass const& 
 	std::cout << "answering get request\ntrying to get file : " << tmp << std::endl; //testing
 
 	if (location.isCGI())// If cgi is requested
-		return answer_cgi_get(request, location); //Return response returned by answer_cgi
+		return answer_cgi_get(request, location, connection); //Return response returned by answer_cgi
 	if (request.getRequestLineInfos().target == location.getUri() + "/" ||
 		(request.getRequestLineInfos().target == location.getUri() && *(--request.getRequestLineInfos().target.end()) == '/'))// If index is requested
 	{
 		tmp.append(location.getIndex());// Append the name of the index file
 		std::ifstream body;
 		body.open(tmp.c_str());
-		std::cout << "tmp : " << tmp << std::endl;
+//		std::cout << "tmp : " << tmp << std::endl;
 		if (!body.is_open())
 		{
 			if (location.autoIndexIsOn())
@@ -206,8 +207,11 @@ static HttpResponse	answer_redirection(HttpRequest const& request, LocationClass
 void	answer_connection(ConnectionClass& connection)
 {
 //	HttpRequest& request = connection._request_pipeline[0];
-	std::cout << "back in answer" << std::endl;
-	print_request(connection._request_pipeline[0]);
+//	std::cout << "back in answer" << std::endl;
+/*	if (connection._request_pipeline.size())
+		print_request(connection._request_pipeline[0]);
+	else
+		std::cout << "there is no request in pipeline, going to crash" << std::endl; */
 	serverClass& server = *(connection.getServer(connection._request_pipeline[0].getHeaders().find("Host")->second));
 	LocationClass location = server.getLocation(connection._request_pipeline[0].getRequestLineInfos().target);
 	if (connection.HasToWriteOnPipe() || connection.HasToReadOnPipe())
@@ -237,10 +241,10 @@ void	answer_connection(ConnectionClass& connection)
 	}
 	std::cout << "servername : " << server._server_name << " expected " << connection._request_pipeline[0].getHeaders().find("Host")->second << std::endl;
 	connection._currentResponse = new HttpResponse();
-	print_request(connection._request_pipeline[0]);
+//	print_request(connection._request_pipeline[0]);
 	if (!connection._request_pipeline[0].isValid())//TODO check why is invalid and respond accordingly
 		return send_error(400, server._default_error_pages, connection);
-	print_request(connection._request_pipeline[0]);
+//	print_request(connection._request_pipeline[0]);
 
 //	location.printLocation();// testing
 
@@ -257,7 +261,9 @@ void	answer_connection(ConnectionClass& connection)
 	switch (connection._request_pipeline[0].getMethod())// Generate the HttpResponse depending on HttpMethod
 	{
 		case GET_METHOD :
-			*connection._currentResponse = answer_get(connection._request_pipeline[0], location);
+			*connection._currentResponse = answer_get(connection._request_pipeline[0], location, connection);
+			if (location.isCGI())
+				return;
 			break;
 		case POST_METHOD :
 			answer_post(connection._request_pipeline[0], location, connection);
