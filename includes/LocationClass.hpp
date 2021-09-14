@@ -6,7 +6,7 @@
 /*   By: asablayr <marvin@42.fr>                    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2021/06/12 14:11:07 by asablayr          #+#    #+#             */
-/*   Updated: 2021/09/08 20:43:11 by asablayr         ###   ########.fr       */
+/*   Updated: 2021/09/13 20:40:30 by asablayr         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -73,6 +73,8 @@ class LocationClass : public contextClass
 			bool									autoIndexIsOn(void) const;// check if auto index is on
 			std::string	const&						getAutoIndex(void) const;// returns the auto index page as string const&
 			std::string								getAutoIndex(void);// returns the auto index page as string
+			void									setAutoindex(std::string const& autoindex_str);
+			void									setAutoindex(bool autoindex_bool);
 			unsigned int 							matchUri(std::string const& s) const;// returns the number of character match
 
 			/*TESTING*/
