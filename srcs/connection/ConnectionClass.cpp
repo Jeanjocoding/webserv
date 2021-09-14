@@ -1594,13 +1594,13 @@ int			ConnectionClass::sendResponse(std::string response)
 	}
 //	std::cout << "erasing request that starts with: " << _request_pipeline[0].getStartLine() << std::endl;
 	_request_pipeline.erase(_request_pipeline.begin());
-	std::cout << "persistence in send response: " << _isPersistent << std::endl;
+//	std::cout << "persistence in send response: " << _isPersistent << std::endl;
 	if (_request_pipeline.empty())
 	{
 		if (isPersistent())
 			setStatus(CO_ISDONE);
-		else
-			closeConnection();
+//		else
+//			closeConnection();
 	}
 	resetTimer();
 	return (0);

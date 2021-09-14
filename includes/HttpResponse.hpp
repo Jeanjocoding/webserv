@@ -52,6 +52,8 @@ public:
 	void						setServerName(std::string const& name);
 	void						setConnectionStatus(std::string const& connection_status = "keep-alive");
 	void						setConnectionStatus(bool connection_status);
+	bool						isError(void) const;
+	void						setError(bool val);
 
 private:
 
@@ -69,6 +71,7 @@ private:
 	std::string			_connection;
 
 	long				_contentLength;
+	bool				_isError;
 
 };
 

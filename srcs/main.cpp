@@ -122,7 +122,7 @@ int main(int ac, char** av)
 				}
 				if (connection_map[i].receiveRequest() <= 0) // close connection if error while receiving paquets
 				{
-					std::cout << "close cuz recv request" << std::endl;
+//					std::cout << "close cuz recv request" << std::endl;
 					connection_map[i].closeConnection();
 				}
 //				std::cout << "pipeline length of map after receive: " << connection_map[i]._request_pipeline.size() << std::endl;
@@ -139,7 +139,7 @@ int main(int ac, char** av)
 			}
 			else if (FD_ISSET(i, &wfds_copy))
 			{
-				std::cout << "write on fd: " << i << ", total nbr of connections: " << connection_map.size() << std::endl;
+//				std::cout << "write on fd: " << i << ", total nbr of connections: " << connection_map.size() << std::endl;
 				if (input_pipe_map.count(i))
 				{
 					cgiWriteOnPipe((*(input_pipe_map.find(i))).second);
@@ -163,10 +163,12 @@ int main(int ac, char** av)
 				if (!connection_map[i].HasToWriteOnPipe() && !connection_map[i].HasToReadOnPipe() && !connection_map[i].HasDoneCgi())
 					connection_map[i].setStatus(CO_ISDONE);
 	//			std::cout << "clos persistance: " << connection_map[i].isPersistent() << std::endl;
-				if (connection_map[i].getStatus() == CO_ISCLOSED || !connection_map[i].isPersistent()) // erase if connection is not persistent or respond has encountered an error
+				if ((connection_map[i].getStatus() == CO_ISCLOSED || !connection_map[i].isPersistent())
+					&& (!connection_map[i].HasToWriteOnPipe() && !connection_map[i].HasToReadOnPipe() && !connection_map[i].HasDoneCgi())) // erase if connection is not persistent or respond has encountered an error
 				{
-					if (!connection_map[i].isPersistent())
-						std::cout << "close cuz not persistent" << std::endl;
+		//			if (!connection_map[i].isPersistent())
+//						std::cout << "close cuz not persistent" << std::endl;
+//					std::cout << "connec status: " << connection_map[i].getStatus() << std::endl;
 					if (connection_map[i].getStatus() != CO_ISCLOSED)
 						connection_map[i].closeConnection();
 					FD_CLR(i, &wfds);
@@ -180,6 +182,7 @@ int main(int ac, char** av)
 				}
 			}
 		}
+		std::cout << "timeout check is launched" << std::endl;
 		for (std::map<int, ConnectionClass>::iterator i = connection_map.begin(); i != connection_map.end(); i ++)// TODO unit test
 		{
 			if (!i->second.isPersistent())

@@ -108,10 +108,16 @@ static HttpResponse answer_cgi_get(HttpRequest const& request, LocationClass con
 //	size_t			output_len = 0;
 	std::ifstream	body;
 
+//	std::cout << "in answer cgi get" << std::endl;
 	setCgiParams(params, request, location);//TODO check with mate
 	body.open(params.scriptFilename.c_str());
 	if (!body.is_open())
-		return HttpResponse(404, location.getErrorPage(404));
+	{
+		HttpResponse rep(404, location.getErrorPage(404));
+		rep.setError(1);
+		return	(rep);
+	}
+
 	
 	ExecAndSetPipes(params, location, connection);
 //	launchCgiScript(params, request, location, &output, output_len);
@@ -261,8 +267,9 @@ void	answer_connection(ConnectionClass& connection)
 	switch (connection._request_pipeline[0].getMethod())// Generate the HttpResponse depending on HttpMethod
 	{
 		case GET_METHOD :
+			/* leak probable: */
 			*connection._currentResponse = answer_get(connection._request_pipeline[0], location, connection);
-			if (location.isCGI())
+			if (location.isCGI() && !connection._currentResponse->isError())
 				return;
 			break;
 		case POST_METHOD :

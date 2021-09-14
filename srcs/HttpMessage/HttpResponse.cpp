@@ -19,11 +19,13 @@ HttpResponse::HttpResponse(void): HttpMessage()
 {
 	//TODO
 //	_contentLength = 0;
+	_isError = 0;
 }
 
 HttpResponse::HttpResponse(HttpResponse const& copy) : HttpMessage(copy)
 {
 	_header = copy._header;
+	_isError = copy._isError;
 	//TODO
 }
 
@@ -51,6 +53,7 @@ HttpResponse&	HttpResponse::operator = (HttpResponse const& copy)
 {
 	HttpMessage::operator = (copy);
 	_header = copy._header;
+	_isError = copy._isError;
 	//TODO
 	return (*this);
 }
@@ -228,4 +231,14 @@ void	HttpResponse::setConnectionStatus(bool connection_status)
 		_connection = "keep-alive";
 	else
 		_connection = "close";
+}
+
+bool	HttpResponse::isError(void) const
+{
+	return (_isError);
+}
+
+void	HttpResponse::setError(bool val)
+{
+	_isError = val;
 }
