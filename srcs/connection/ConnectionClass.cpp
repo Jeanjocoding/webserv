@@ -6,7 +6,7 @@
 /*   By: asablayr <marvin@42.fr>                    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2021/07/04 17:42:52 by asablayr          #+#    #+#             */
-/*   Updated: 2021/09/10 16:23:44 by asablayr         ###   ########.fr       */
+/*   Updated: 2021/09/14 14:20:45 by asablayr         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -1691,7 +1691,6 @@ void			ConnectionClass::setServers(std::vector<serverClass*> servers, int fd)
 {
 	for (std::vector<serverClass*>::iterator it = servers.begin(); it != servers.end(); it++)
 	{
-		std::cout << (*it)->_server_name << " : " << (*it)->_server_socket << std::endl;
 		if ((*it)->_server_socket == fd)
 			_servers.push_back(*it);
 	}
