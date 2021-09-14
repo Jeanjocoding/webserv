@@ -6,7 +6,7 @@
 /*   By: asablayr <marvin@42.fr>                    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2021/06/06 15:27:02 by asablayr          #+#    #+#             */
-/*   Updated: 2021/09/10 19:25:14 by asablayr         ###   ########.fr       */
+/*   Updated: 2021/09/14 14:43:00 by asablayr         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -23,29 +23,16 @@
 #include "serverClass.hpp"
 #include "ConnectionClass.hpp"
 
-int main(int ac, char** av)
+static void	start_servers(std::vector<serverClass*> server_map, fd_set& rfds)
 {
-	std::vector<serverClass*>			server_map;
 	std::vector<serverClass*> 			serv_up;
-	std::map<int, ConnectionClass>		connection_map;
-	std::map<int, ConnectionClass&>		input_pipe_map;
-	std::map<int, ConnectionClass&>		output_pipe_map;
-	fd_set								rfds, rfds_copy;
-	fd_set								wfds, wfds_copy;
 
-	if (ac == 2)//&& av[1] == *.conf
-		server_map = setup_server(av[1]);
-	else
-		server_map = setup_server(DEFAULT_CONF_FILE);
-
-	FD_ZERO(&rfds);//memset fd_set
-	FD_ZERO(&wfds);//memset fd_set
 	for (std::vector<serverClass*>::iterator it = server_map.begin(); it != server_map.end(); it++)
 	{
 		try 
 		{
-			(*it)->startServer();
-			std::cout << "server started on : " << (*it)->_listen << std::endl;
+			(*it)->startServer();//binds set to listen etc...
+			std::cout << "server " << (*it)->_server_name << " started on : " << (*it)->_listen << std::endl;
 			serv_up.push_back(*it);
 			FD_SET((*it)->_server_socket, &rfds);//add server socket to fd_set
 		}
@@ -63,17 +50,36 @@ int main(int ac, char** av)
 	}
 	if (serv_up.empty())
 	{
-		for (std::vector<serverClass*>::iterator i = server_map.begin(); i != server_map.end(); i++)
+		for (std::vector<serverClass*>::iterator i = server_map.begin(); i != server_map.end(); i = server_map.begin())
 			delete *i;
 		exit(EXIT_FAILURE);
 	}
+}
+
+int main(int ac, char** av)
+{
+	std::vector<serverClass*>			server_map;
+	std::map<int, ConnectionClass>		connection_map;
+	std::map<int, ConnectionClass&>		input_pipe_map;
+	std::map<int, ConnectionClass&>		output_pipe_map;
+	fd_set								rfds, rfds_copy;
+	fd_set								wfds, wfds_copy;
+
+	if (ac == 2)//&& av[1] == *.conf
+		server_map = setup_server(av[1]);
+	else
+		server_map = setup_server(DEFAULT_CONF_FILE);
+
+	FD_ZERO(&rfds);//memset fd_set
+	FD_ZERO(&wfds);//memset fd_set
+	start_servers(server_map, rfds);
 	while (true)
 	{
 		rfds_copy = rfds;
 		wfds_copy = wfds;
 		if (select(FD_SETSIZE, &rfds_copy, &wfds_copy, NULL, NULL) < 0)
 		{
-			std::perror("select eror");
+			std::perror("select error");
 			for (std::vector<serverClass*>::iterator i = server_map.begin(); i != server_map.end(); i++)
 				delete *i;
 			exit(EXIT_FAILURE);
@@ -95,7 +101,6 @@ int main(int ac, char** av)
 							connection_map[client_socket] = ConnectionClass(client_socket, *it);
 							connection_map[client_socket].setServers(server_map, i);
 							FD_SET(client_socket, &rfds);
-//							std::cout << "connection with client socket: " << client_socket << std::endl;
 							check = true;
 						}
 						break;
