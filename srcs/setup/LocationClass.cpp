@@ -6,7 +6,7 @@
 /*   By: asablayr <marvin@42.fr>                    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2021/07/15 13:31:12 by asablayr          #+#    #+#             */
-/*   Updated: 2021/09/12 18:28:07 by asablayr         ###   ########.fr       */
+/*   Updated: 2021/09/13 20:45:11 by asablayr         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -354,6 +354,24 @@ void	LocationClass::setClientBodySizeMax(std::string const& val)
 void	LocationClass::setClientBodySizeMax(long val)
 {
 	_client_body_size_max = val;
+}
+
+void	LocationClass::setAutoindex(std::string const& autoindex_str)
+{
+	_autoindex_str = autoindex_str;
+	if (autoindex_str == "on")
+		_autoindex_bool = true;
+	else
+		_autoindex_bool = false;
+}
+
+void	LocationClass::setAutoindex(bool autoindex_bool)
+{
+		_autoindex_bool = autoindex_bool;
+	if (autoindex_bool == true)
+		_autoindex_bool = "on";
+	else
+		_autoindex_bool = "off";
 }
 
 void	LocationClass::setAutoindex(void)

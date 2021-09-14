@@ -6,7 +6,7 @@
 /*   By: asablayr <marvin@42.fr>                    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2021/06/07 18:49:16 by asablayr          #+#    #+#             */
-/*   Updated: 2021/09/12 11:47:05 by asablayr         ###   ########.fr       */
+/*   Updated: 2021/09/13 20:37:19 by asablayr         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -40,6 +40,7 @@ serverClass::serverClass()
 	_keepalive_timeout = DEFAULT_KEEPALIVE_TIMEOUT;
 	_sendfile = DEFAULT_SENDFILE;
 	_upload_store = DEFAULT_UPLOAD_STORE;
+	_autoindex = DEFAULT_AUTOINDEX;
 	_addr = 0;
 }
 
@@ -59,6 +60,7 @@ serverClass::serverClass(serverClass const& to_copy)
 	_keepalive_timeout = to_copy._keepalive_timeout;
 	_sendfile = to_copy._sendfile;
 	_upload_store = to_copy._upload_store;
+	_autoindex = to_copy._autoindex;
 
 	_server_socket = to_copy._server_socket;
 	_addr = 0;
@@ -89,6 +91,7 @@ serverClass& serverClass::operator = (serverClass const& to_copy)
 	_keepalive_timeout = to_copy._keepalive_timeout;
 	_sendfile = to_copy._sendfile;
 	_upload_store = to_copy._upload_store;
+	_autoindex = to_copy._autoindex;
 
 	_server_socket = to_copy._server_socket;
 	_addr = 0;
@@ -121,6 +124,8 @@ std::string*	serverClass::operator [] (std::string setting_name)
 		return &_upload_store;
 	else if (setting_name == "sendfile")
 		return &_sendfile;
+	else if (setting_name == "autoindex")
+		return &_autoindex;
 	else if (atoi(setting_name.c_str()))
 		return &_default_error_pages[atoi(setting_name.c_str())];
 	else
@@ -256,6 +261,8 @@ void			serverClass::setLocation(LocationClass& location) const
 		location.setUploadStore(_upload_store);
 	if (location._directives.find("sendfile") == location._directives.end())
 		location.setSendfile(_sendfile);
+	if (location._directives.find("autoindex") == location._directives.end())
+		location.setAutoindex(_autoindex);
 	location.setErrorPages(_default_error_pages);
 /*	if (location._directives.find("error_log") == location._directives.end())
 		location.setErrorLog(_root);
@@ -333,16 +340,12 @@ std::map<unsigned short, std::string>	serverClass::baseErrorPages(void)
 
 unsigned long	serverClass::caseSensitiveReMatch(std::string const& s1, std::string const& s2) const
 {//TODO
-	std::string s = s1;
-	s = s2;
-	return 0;
+	return caseSensitiveMatch(s1, s2);
 }
 
 unsigned long	serverClass::caseInsensitiveReMatch(std::string const& s1, std::string const& s2) const
 {//TODO
-	std::string s = s1;
-	s = s2;
-	return 0;
+	return caseSensitiveMatch(s1, s2);
 }
 
 unsigned long	serverClass::caseSensitiveMatch(std::string const& s1, std::string const& s2) const

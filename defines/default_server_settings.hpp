@@ -6,7 +6,7 @@
 /*   By: asablayr <marvin@42.fr>                    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2021/07/04 19:45:13 by asablayr          #+#    #+#             */
-/*   Updated: 2021/09/10 19:29:14 by asablayr         ###   ########.fr       */
+/*   Updated: 2021/09/13 20:38:01 by asablayr         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -31,5 +31,6 @@
 # define DEFAULT_KEEPALIVE_TIMEOUT "45"
 # define DEFAULT_SENDFILE "on"
 # define DEFAULT_UPLOAD_STORE "./test_pages/test_upload/upload_dir/"
+# define DEFAULT_AUTOINDEX "off"
 
 #endif
