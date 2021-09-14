@@ -462,6 +462,7 @@ int		ConnectionClass::_parseProtocol(HttpRequest& currentRequest, std::string& p
 		_isPersistent = 0;
 	else
 		_isPersistent = 1;
+	std::cout << "parse protocol sets persisence to: " << _isPersistent << std::endl;
 	return (1);
 }
 
@@ -1633,7 +1634,7 @@ int				ConnectionClass::closeConnection(void)
 //	int empty_read_value;
 	int return_value;
 
-//	std::cout << "close connection is called" << std::endl;
+	std::cout << "close connection is called" << std::endl;
 	shutdown(_socketNbr, SHUT_WR);
 //		perror("shutdown");
 //	empty_read_value = _emptyReadBuffers();

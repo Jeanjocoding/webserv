@@ -87,7 +87,10 @@ void		setCgiParams(t_CgiParams& params, HttpRequest const& request, LocationClas
 	}
 	else
 	{
-		params.scriptFilename = tmp.append(location.getIndex());
+		if (tmp[tmp.size() - 1] == '/')
+			params.scriptFilename = tmp.append(location.getIndex());
+		else
+			params.scriptFilename = tmp.append("/" + location.getIndex());
 		params.scriptName = location.getIndex();
 	}
 	std::cout << "scriptFilename : " << params.scriptFilename << std::endl;// testing

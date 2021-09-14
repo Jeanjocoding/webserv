@@ -208,10 +208,10 @@ void	answer_connection(ConnectionClass& connection)
 {
 //	HttpRequest& request = connection._request_pipeline[0];
 //	std::cout << "back in answer" << std::endl;
-/*	if (connection._request_pipeline.size())
+	if (connection._request_pipeline.size())
 		print_request(connection._request_pipeline[0]);
 	else
-		std::cout << "there is no request in pipeline, going to crash" << std::endl; */
+		std::cout << "there is no request in pipeline, going to crash" << std::endl;
 	serverClass& server = *(connection.getServer(connection._request_pipeline[0].getHeaders().find("Host")->second));
 	LocationClass location = server.getLocation(connection._request_pipeline[0].getRequestLineInfos().target);
 	if (connection.HasToWriteOnPipe() || connection.HasToReadOnPipe())
@@ -223,7 +223,7 @@ void	answer_connection(ConnectionClass& connection)
 			size_t body_beginning = 0;
 			add_header_part((*connection._currentResponse), connection._cgiOutput, connection._cgiOutput_len, body_beginning);
 			connection._currentResponse->setBody(&(connection._cgiOutput[body_beginning]), connection._cgiOutput_len - body_beginning);
-			connection._currentResponse->setHeader();
+			connection._currentResponse->setHeader(200);
 			if (!connection.isPersistent() || location.getKeepaliveTimeout() == 0)
 				connection._currentResponse->setConnectionStatus(false);
 			connection.sendResponse(connection._currentResponse->toString());// Handles all of the response sending and adjust the connection accordingly (cf: pop request list close connection etc...)
@@ -267,7 +267,10 @@ void	answer_connection(ConnectionClass& connection)
 			break;
 		case POST_METHOD :
 			answer_post(connection._request_pipeline[0], location, connection);
-			return; // a modif
+			if (connection.HasToWriteOnPipe())
+				return; // a modif
+			else
+				break;
 		case DELETE_METHOD :
 			*connection._currentResponse = answer_delete(connection._request_pipeline[0], location);
 			break;
