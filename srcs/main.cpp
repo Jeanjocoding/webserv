@@ -64,6 +64,7 @@ int main(int ac, char** av)
 	std::map<int, ConnectionClass&>		output_pipe_map;
 	fd_set								rfds, rfds_copy;
 	fd_set								wfds, wfds_copy;
+//	int								receive_return;
 
 	if (ac == 2)//&& av[1] == *.conf
 		server_map = setup_server(av[1]);

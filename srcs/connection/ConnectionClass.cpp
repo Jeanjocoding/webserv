@@ -462,7 +462,7 @@ int		ConnectionClass::_parseProtocol(HttpRequest& currentRequest, std::string& p
 		_isPersistent = 0;
 	else
 		_isPersistent = 1;
-	std::cout << "parse protocol sets persisence to: " << _isPersistent << std::endl;
+//	std::cout << "parse protocol sets persisence to: " << _isPersistent << std::endl;
 	return (1);
 }
 
@@ -1575,8 +1575,12 @@ int			ConnectionClass::receiveRequest(void)
 		std::cout << "the connection has been closed" << std::endl;
 		return (0);
 	}
+//	std::cout << "persistence after reading: " << _isPersistent << std::endl;
 	if (_request_pipeline.size())
+	{
+//		std::cout << "persistence after reading: " << _isPersistent << std::endl;
 		_status = CO_ISREADY;
+	}
 	return (1);
 }
 
@@ -1590,6 +1594,7 @@ int			ConnectionClass::sendResponse(std::string response)
 	}
 //	std::cout << "erasing request that starts with: " << _request_pipeline[0].getStartLine() << std::endl;
 	_request_pipeline.erase(_request_pipeline.begin());
+	std::cout << "persistence in send response: " << _isPersistent << std::endl;
 	if (_request_pipeline.empty())
 	{
 		if (isPersistent())
@@ -1635,6 +1640,7 @@ int				ConnectionClass::closeConnection(void)
 	int return_value;
 
 	std::cout << "close connection is called" << std::endl;
+//	_request_pipeline[1000].~HttpRequest(); /*line only useful to provoke crashes */
 	shutdown(_socketNbr, SHUT_WR);
 //		perror("shutdown");
 //	empty_read_value = _emptyReadBuffers();
