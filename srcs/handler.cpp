@@ -78,8 +78,8 @@ void	print_request(HttpRequest& request)
 	if (request.isChunked() || request.getContentLength())
 		std::cout << "current content length: " << request.getCurrentContentLength() << std::endl;
 	std::cout << std::endl;
-	std::cout << "BODY: ";
-	write (1, request.getContent(), request.getCurrentContentLength());
+/*	std::cout << "BODY: ";
+	write (1, request.getContent(), request.getCurrentContentLength());*/
 //	std::string to_print(request.getContent(), request.getCurrentContentLength());
 //	std::cout << to_print << std::endl;
 	std::cout << std::endl;

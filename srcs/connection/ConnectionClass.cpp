@@ -375,6 +375,7 @@ int		ConnectionClass::_read_buffer(readingBuffer& buffer, std::vector<HttpReques
 	 */
 	read_ret = recv(_socketNbr, &(buffer.buf[buffer.end]), SINGLE_READ_SIZE, 0);
 	_hasRead = 1;
+	std::cout << "read size in request: " << read_ret << std::endl;
 	if (read_ret == -1)
 	{	
 		perror("read in read_buffer"); // a faire partout pour le debugging?
@@ -1234,6 +1235,7 @@ int		ConnectionClass::_read_request_content(HttpRequest& CurrentRequest, reading
 				read_ret = recv(_socketNbr, &(buffer.buf[buffer.deb]), _ContentLeftToRead, 0);
 			else
 				read_ret = recv(_socketNbr, &(buffer.buf[buffer.deb]), SINGLE_READ_SIZE, 0);
+			std::cout << "read size in read_content: " << read_ret << std::endl;
 			if (read_ret == 0 || read_ret == -1)
 				return (read_ret);
 			buffer.end += read_ret;
