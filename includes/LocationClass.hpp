@@ -6,7 +6,7 @@
 /*   By: asablayr <marvin@42.fr>                    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2021/06/12 14:11:07 by asablayr          #+#    #+#             */
-/*   Updated: 2021/09/13 20:40:30 by asablayr         ###   ########.fr       */
+/*   Updated: 2021/09/17 11:19:13 by asablayr         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -29,7 +29,6 @@ class LocationClass : public contextClass
 {
 	public:
 			LocationClass();
-//			LocationClass(serverClass const& server);
 			LocationClass(std::string const& context_name, std::string const& buff);
 			LocationClass(LocationClass const&);
 
@@ -71,8 +70,8 @@ class LocationClass : public contextClass
 			unsigned short							getRedirectCode(void) const;
 			std::string								getRedirectUrl(void) const;
 			bool									autoIndexIsOn(void) const;// check if auto index is on
-			std::string	const&						getAutoIndex(void) const;// returns the auto index page as string const&
-			std::string								getAutoIndex(void);// returns the auto index page as string
+			std::string								getAutoindex(void) const;// returns the auto index page as string
+			std::string								getAutoindex(std::string const& request_uri) const;// returns the auto index page for folder "request_uri" as string
 			void									setAutoindex(std::string const& autoindex_str);
 			void									setAutoindex(bool autoindex_bool);
 			unsigned int 							matchUri(std::string const& s) const;// returns the number of character match
@@ -86,6 +85,7 @@ class LocationClass : public contextClass
 			void									setRoot(void);
 			void									setIndex(void);
 			void									setAutoindex(void);
+			std::string								generateAutoindex(std::string const& request_uri) const;
 			void									setRedirect(void);
 			void									setCGI(void);
 			void									setErrorPages(void);

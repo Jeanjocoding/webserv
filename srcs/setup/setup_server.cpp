@@ -6,7 +6,7 @@
 /*   By: asablayr <marvin@42.fr>                    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2021/06/07 19:42:54 by asablayr          #+#    #+#             */
-/*   Updated: 2021/09/14 14:09:01 by asablayr         ###   ########.fr       */
+/*   Updated: 2021/09/17 17:47:07 by asablayr         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -67,6 +67,8 @@ std::vector<serverClass*>	setup_server(std::string conf_file)
 		input_context(main_context, *base_serv, server_map);
 		if (server_map.empty())
 			server_map.push_back(base_serv);
+		else
+			delete base_serv;
 	}
 	else
 	{

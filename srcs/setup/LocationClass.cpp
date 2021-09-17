@@ -6,7 +6,7 @@
 /*   By: asablayr <marvin@42.fr>                    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2021/07/15 13:31:12 by asablayr          #+#    #+#             */
-/*   Updated: 2021/09/13 20:45:11 by asablayr         ###   ########.fr       */
+/*   Updated: 2021/09/17 16:29:45 by asablayr         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -196,14 +196,14 @@ bool LocationClass::autoIndexIsOn(void) const
 	return _autoindex_bool;
 }
 
-std::string	const& LocationClass::getAutoIndex(void) const
+std::string LocationClass::getAutoindex(void) const
 {
-	return _autoindex_str;
+	return generateAutoindex(_uri);
 }
 
-std::string LocationClass::getAutoIndex(void)
+std::string LocationClass::getAutoindex(std::string const& request_uri) const
 {
-	return _autoindex_str;
+	return generateAutoindex(request_uri);
 }
 
 std::string const& LocationClass::getUploadStore(void) const
@@ -380,38 +380,54 @@ void	LocationClass::setAutoindex(void)
 	if (it == _directives.end())
 		return ;
 	if (it->second == "on")
-	{
-		DIR					*dir;
-		struct dirent		*ent;
-		std::string			tmp = _root;
-
-		if (tmp[tmp.size() - 1] != '/' && _uri[0] != '/')
-			tmp.append("/");
-		tmp.append(_uri);
-		if (tmp[tmp.size() - 1] != '/')
-			tmp.append("/");
-		if ((dir = opendir(tmp.c_str())) != NULL)
-		{
-			while ((ent = readdir(dir)) != NULL)
-			{
-				if (ent->d_name[0] != '.')
-				{
-					_autoindex_str.append("<a href=");// TODO change hard coded address
-					_autoindex_str.append(_uri);
-					if (*(_uri.end() - 1) != '/')
-						_autoindex_str.append(("/"));
-					_autoindex_str.append(ent->d_name);
-					_autoindex_str.append(">");
-					_autoindex_str.append(ent->d_name);
-					_autoindex_str.append("</a><br>\n");
-				}
-			}
-			closedir(dir);
-		}
-		_autoindex_bool = true;
-	}
+		_autoindex_bool = "on";
 	else
-		_autoindex_bool = false;
+		_autoindex_bool = "off";
+}
+
+std::string	LocationClass::generateAutoindex(std::string const& request_uri) const
+{
+	DIR					*dir;
+	struct dirent		*ent;
+	std::string			tmp;
+	std::string			autoindex;
+
+//	if (tmp[tmp.size() - 1] != '/' && _uri[0] != '/')
+//		tmp.append("/");
+	tmp.append(request_uri);
+//	if (tmp[tmp.size() - 1] != '/')
+//		tmp.append("/");
+//	std::cout << "root : " << _root << std::endl;
+	std::cout << "tmp : " << tmp << std::endl;
+	if ((dir = opendir(tmp.c_str())) != NULL)
+	{
+		autoindex.append("<html>\n<head><title>Index of ");
+		autoindex.append(_uri);
+		autoindex.append("</title></head>\n<body>\n<h1>Index of ");
+		autoindex.append(_uri);
+		autoindex.append("</h1>\n");
+		while ((ent = readdir(dir)) != NULL)
+		{
+			if (ent->d_name[0] != '.')
+			{
+				autoindex.append("<a href=");
+				autoindex.append(tmp);
+/*				autoindex.append(_root);
+				if (!_root.empty() && *(_root.end() - 1) != '/')
+					autoindex.append(("/"));
+				autoindex.append(request_uri);
+				if (!request_uri.empty() && *(request_uri.end() - 1) != '/')
+					autoindex.append(("/"));
+*/				autoindex.append(ent->d_name);
+				autoindex.append(">");
+				autoindex.append(ent->d_name);
+				autoindex.append("</a><br>\n");
+			}
+		autoindex.append("\n</body>\n</html>");
+		}
+		closedir(dir);
+	}
+	return autoindex;
 }
 
 void	LocationClass::setRedirect(void)
