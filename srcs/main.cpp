@@ -65,6 +65,8 @@ int main(int ac, char** av)
 	fd_set								rfds, rfds_copy;
 	fd_set								wfds, wfds_copy;
 	struct timeval				st_timeout;
+	int					close_return_value;
+	int					receive_return_value;
 //	int								receive_return;
 
 	if (ac == 2)//&& av[1] == *.conf
@@ -145,10 +147,26 @@ int main(int ac, char** av)
 					}
 					continue;
 				}
-				if (connection_map[i].receiveRequest() <= 0) // close connection if error while receiving paquets
+				if (connection_map[i].isClosing())
+				{
+					close_return_value = connection_map[i].closeReadConnection();
+					if (close_return_value == 1)
+					{
+						FD_CLR(i, &rfds);
+						connection_map.erase(i);
+					}
+					continue;
+
+				}
+				if ((receive_return_value = connection_map[i].receiveRequest()) <= 0) // close connection if error while receiving paquets
 				{
 //					std::cout << "close cuz recv request" << std::endl;
-					connection_map[i].closeConnection();
+					if (receive_return_value == 0 || receive_return_value == TCP_ERROR)
+						connection_map[i].simpleCloseConnection();
+					else if (receive_return_value == HTTP_ERROR)
+					{
+						connection_map[i].closeWriteConnection();
+					}
 				}
 //				std::cout << "pipeline length of map after receive: " << connection_map[i]._request_pipeline.size() << std::endl;
 				if (connection_map[i].getStatus() == CO_ISCLOSED) // erases if connection has encoutered an error
@@ -187,9 +205,12 @@ int main(int ac, char** av)
 				if (connection_map[i].getStatus() == CO_ISCLOSED || !connection_map[i].isPersistent())
 				{
 					if (connection_map[i].getStatus() != CO_ISCLOSED)
-						connection_map[i].closeConnection();
-					FD_CLR(i, &wfds);
-					connection_map.erase(i);
+					{
+						connection_map[i].closeWriteConnection();
+						FD_CLR(i, &wfds);
+						FD_SET(i, &rfds);
+					}
+//					connection_map.erase(i);
 				}
 				else if (connection_map[i].getStatus() == CO_ISDONE) // all requests have been answered
 				{
@@ -208,14 +229,15 @@ int main(int ac, char** av)
 				if (FD_ISSET(i->first, &rfds))
 				{
 					std::cout << "close cuz timeout" << std::endl;
-					connection_map[i->first].closeConnection();
-					FD_CLR(i->first, &rfds);
+					connection_map[i->first].closeWriteConnection();
+//					FD_CLR(i->first, &rfds);
 				}
 				else if (FD_ISSET(i->first, &wfds))
 				{
 					std::cout << "close cuz timeout" << std::endl;
-					connection_map[i->first].closeConnection();
+					connection_map[i->first].closeWriteConnection();
 					FD_CLR(i->first, &wfds);
+					FD_SET(i->first, &rfds);
 				}
 			}
 		}

@@ -214,10 +214,10 @@ void	answer_connection(ConnectionClass& connection)
 {
 //	HttpRequest& request = connection._request_pipeline[0];
 //	std::cout << "back in answer" << std::endl;
-	if (connection._request_pipeline.size())
+/*	if (connection._request_pipeline.size())
 		print_request(connection._request_pipeline[0]);
 	else
-		std::cout << "there is no request in pipeline, going to crash" << std::endl;
+		std::cout << "there is no request in pipeline, going to crash" << std::endl;*/
 	serverClass& server = *(connection.getServer(connection._request_pipeline[0].getHeaders().find("Host")->second));
 	LocationClass location = server.getLocation(connection._request_pipeline[0].getRequestLineInfos().target);
 	if (connection.HasToWriteOnPipe() || connection.HasToReadOnPipe())
