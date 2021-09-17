@@ -6,7 +6,7 @@
 /*   By: asablayr <marvin@42.fr>                    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2021/06/12 15:24:19 by asablayr          #+#    #+#             */
-/*   Updated: 2021/09/13 20:45:56 by asablayr         ###   ########.fr       */
+/*   Updated: 2021/09/16 23:25:03 by asablayr         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -156,7 +156,7 @@ void contextClass::setDirectives(void)
 		_directive_set.push_back(_accepted_directive_set["error_page"]);
 		_directive_set.push_back(_accepted_directive_set["index"]);
 		_directive_set.push_back(_accepted_directive_set["autoindex"]);
-		_directive_set.push_back(_accepted_directive_set["keepalive_timeout"]);
+//		_directive_set.push_back(_accepted_directive_set["keepalive_timeout"]);
 		_directive_set.push_back(_accepted_directive_set["client_max_body_size"]);
 		_directive_set.push_back(_accepted_directive_set["upload_store"]);
 		_directive_set.push_back(_accepted_directive_set["sendfile"]);
@@ -172,7 +172,7 @@ void contextClass::setDirectives(void)
 		_directive_set.push_back(_accepted_directive_set["error_page"]);
 		_directive_set.push_back(_accepted_directive_set["index"]);
 		_directive_set.push_back(_accepted_directive_set["autoindex"]);
-		_directive_set.push_back(_accepted_directive_set["keepalive_timeout"]);
+//		_directive_set.push_back(_accepted_directive_set["keepalive_timeout"]);
 		_directive_set.push_back(_accepted_directive_set["cgi_path"]);
 		_directive_set.push_back(_accepted_directive_set["client_max_body_size"]);
 		_directive_set.push_back(_accepted_directive_set["upload_store"]);

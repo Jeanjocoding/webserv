@@ -6,7 +6,7 @@
 /*   By: asablayr <marvin@42.fr>                    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2021/06/06 15:27:02 by asablayr          #+#    #+#             */
-/*   Updated: 2021/09/14 14:43:00 by asablayr         ###   ########.fr       */
+/*   Updated: 2021/09/17 17:42:18 by asablayr         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -50,7 +50,7 @@ static void	start_servers(std::vector<serverClass*> server_map, fd_set& rfds)
 	}
 	if (serv_up.empty())
 	{
-		for (std::vector<serverClass*>::iterator i = server_map.begin(); i != server_map.end(); i = server_map.begin())
+		for (std::vector<serverClass*>::iterator i = server_map.begin(); i != server_map.end(); i++)
 			delete *i;
 		exit(EXIT_FAILURE);
 	}
@@ -64,7 +64,7 @@ int main(int ac, char** av)
 	std::map<int, ConnectionClass&>		output_pipe_map;
 	fd_set								rfds, rfds_copy;
 	fd_set								wfds, wfds_copy;
-	struct timeval				st_timeout;
+	struct timeval						st_timeout;
 //	int								receive_return;
 
 	if (ac == 2)//&& av[1] == *.conf
@@ -75,7 +75,7 @@ int main(int ac, char** av)
 	FD_ZERO(&rfds);//memset fd_set
 	FD_ZERO(&wfds);//memset fd_set
 	start_servers(server_map, rfds);
-	st_timeout.tv_sec = 4;
+	st_timeout.tv_sec = std::atoi(server_map[0]->_keepalive_timeout.c_str());//set keepalive_timeout
 	st_timeout.tv_usec = 0;
 	while (true)
 	{
@@ -195,27 +195,6 @@ int main(int ac, char** av)
 				{
 					FD_CLR(i, &wfds);
 					FD_SET(i, &rfds);
-				}
-			}
-		}
-//		std::cout << "timeout check is launched" << std::endl;
-		for (std::map<int, ConnectionClass>::iterator i = connection_map.begin(); i != connection_map.end(); i ++)// TODO unit test
-		{
-			if (!i->second.isPersistent())
-				continue;
-			if (time(0) - i->second.getTimer() > i->second._servers[0]->getKeepAliveTimeout())// TODO switch server selection and unit from sec to ms
-			{
-				if (FD_ISSET(i->first, &rfds))
-				{
-					std::cout << "close cuz timeout" << std::endl;
-					connection_map[i->first].closeConnection();
-					FD_CLR(i->first, &rfds);
-				}
-				else if (FD_ISSET(i->first, &wfds))
-				{
-					std::cout << "close cuz timeout" << std::endl;
-					connection_map[i->first].closeConnection();
-					FD_CLR(i->first, &wfds);
 				}
 			}
 		}
