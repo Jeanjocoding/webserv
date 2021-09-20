@@ -1644,7 +1644,7 @@ int				ConnectionClass::_emptyReadBuffers() const
 
 int				ConnectionClass::simpleCloseConnection(void)
 {
-//	std::cout << "in simple close" << std::endl;	
+	std::cout << "basic closing procedure launched" << std::endl;	
 	if (close(_socketNbr) < 0)
 		perror("close");
 	_status = CO_ISCLOSED;
@@ -1660,12 +1660,21 @@ int				ConnectionClass::closeWriteConnection(void)
 //	int empty_read_value;
 //	int return_value;
 
-//	std::cout << "close write connection is called" << std::endl;
+	std::cout << "clean close attempt..." << std::endl;
 
 	_isClosing = 1;
 //	_request_pipeline[1000].~HttpRequest(); /*line only useful to provoke crashes */
 	if (shutdown(_socketNbr, SHUT_WR) < 0)
+	{
 		perror("shutdown");
+		std::cout << "clean close failure, socket closure forced" << std::endl;
+		if (close(_socketNbr) < 0)
+			perror("close");
+		_isClosing = 0;
+		_nbrReadsSinceClose = 0;
+		_status = CO_ISCLOSED;
+		return (-1);
+	}
 //	empty_read_value = _emptyReadBuffers();
 	return (1);
 }
@@ -1679,7 +1688,7 @@ int				ConnectionClass::closeReadConnection(void)
 	_nbrReadsSinceClose += 1;
 	if (read_ret == 0)
 	{
-//		std::cout << "we received the FIN packet (read_ret = 0)" << std::endl;
+		std::cout << "we received the FIN packet (read_ret = 0), connection is properly closed" << std::endl;
 //		if (shutdown(_socketNbr, SHUT_RD) < 0)
 //			perror("shutdown");
 		if (close(_socketNbr)  < 0)
@@ -1691,7 +1700,7 @@ int				ConnectionClass::closeReadConnection(void)
 	}
 	else if (read_ret < 0)
 	{
-//		std::cout << "read_ret returned negative value during closing process" << std::endl;
+		std::cout << "read_ret returned negative value during closing process: dirty close" << std::endl;
 		if (close(_socketNbr)  < 0)
 			perror("close");
 		_isClosing = 0;
@@ -1701,7 +1710,7 @@ int				ConnectionClass::closeReadConnection(void)
 	}
 	else if (_nbrReadsSinceClose > 5)
 	{
-//		std::cout << "client kept writing after 5 select loops" << std::endl;;
+		std::cout << "client kept writing after 5 select loops: forcing closure" << std::endl;;
 		if (close(_socketNbr)  < 0)
 			perror("close");
 		_isClosing = 0;
