@@ -1644,7 +1644,7 @@ int				ConnectionClass::_emptyReadBuffers() const
 
 int				ConnectionClass::simpleCloseConnection(void)
 {
-	std::cout << "in simple close" << std::endl;	
+//	std::cout << "in simple close" << std::endl;	
 	if (close(_socketNbr) < 0)
 		perror("close");
 	_status = CO_ISCLOSED;
@@ -1660,7 +1660,7 @@ int				ConnectionClass::closeWriteConnection(void)
 //	int empty_read_value;
 //	int return_value;
 
-	std::cout << "close write connection is called" << std::endl;
+//	std::cout << "close write connection is called" << std::endl;
 
 	_isClosing = 1;
 //	_request_pipeline[1000].~HttpRequest(); /*line only useful to provoke crashes */
@@ -1679,7 +1679,7 @@ int				ConnectionClass::closeReadConnection(void)
 	_nbrReadsSinceClose += 1;
 	if (read_ret == 0)
 	{
-		std::cout << "we received the FIN packet (read_ret = 0)" << std::endl;
+//		std::cout << "we received the FIN packet (read_ret = 0)" << std::endl;
 //		if (shutdown(_socketNbr, SHUT_RD) < 0)
 //			perror("shutdown");
 		if (close(_socketNbr)  < 0)
@@ -1691,7 +1691,7 @@ int				ConnectionClass::closeReadConnection(void)
 	}
 	else if (read_ret < 0)
 	{
-		std::cout << "read_ret returned negative value during closing process" << std::endl;
+//		std::cout << "read_ret returned negative value during closing process" << std::endl;
 		if (close(_socketNbr)  < 0)
 			perror("close");
 		_isClosing = 0;
@@ -1701,7 +1701,7 @@ int				ConnectionClass::closeReadConnection(void)
 	}
 	else if (_nbrReadsSinceClose > 5)
 	{
-		std::cout << "client kept writing after 5 select loops" << std::endl;;
+//		std::cout << "client kept writing after 5 select loops" << std::endl;;
 		if (close(_socketNbr)  < 0)
 			perror("close");
 		_isClosing = 0;
@@ -1711,7 +1711,7 @@ int				ConnectionClass::closeReadConnection(void)
 	}
 	else
 	{
-		std::cout << "we keep reading in the close process" << std::endl;
+//		std::cout << "we keep reading in the close process" << std::endl;
 		return (0);
 	}
 
