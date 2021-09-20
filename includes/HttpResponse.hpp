@@ -6,7 +6,7 @@
 /*   By: asablayr <marvin@42.fr>                    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2021/07/02 15:07:21 by asablayr          #+#    #+#             */
-/*   Updated: 2021/09/07 11:16:07 by asablayr         ###   ########.fr       */
+/*   Updated: 2021/09/20 15:31:01 by asablayr         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -70,7 +70,6 @@ private:
 	std::string			_content_type;
 	std::string			_connection;
 
-	long				_contentLength;
 	bool				_isError;
 
 };

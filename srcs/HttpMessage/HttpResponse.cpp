@@ -6,7 +6,7 @@
 /*   By: asablayr <marvin@42.fr>                    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2021/08/02 16:27:33 by asablayr          #+#    #+#             */
-/*   Updated: 2021/09/17 12:40:16 by asablayr         ###   ########.fr       */
+/*   Updated: 2021/09/20 15:44:45 by asablayr         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -18,15 +18,23 @@
 HttpResponse::HttpResponse(void): HttpMessage()
 {
 	//TODO
-//	_contentLength = 0;
+	_connection = "keepalive";
 	_isError = 0;
 }
 
 HttpResponse::HttpResponse(HttpResponse const& copy) : HttpMessage(copy)
 {
 	_header = copy._header;
+	_status_line = copy._status_line;
+	_http_version = copy._http_version;
+	_status_code = copy._status_code;
+	_status_message = copy._status_message;
+	_date = copy._date;
+	_server_name = copy._server_name;
+	_content_length = copy._content_length;
+	_content_type = copy._content_type;
+	_connection = copy._connection;
 	_isError = copy._isError;
-	//TODO
 }
 
 HttpResponse::~HttpResponse(void)
@@ -36,6 +44,7 @@ HttpResponse::~HttpResponse(void)
 
 HttpResponse::HttpResponse(unsigned short status_code, std::string body_path)
 {
+	setConnectionStatus();
 	if (status_code == 301 || status_code == 302)
 	{
 		setHeader(status_code);
@@ -53,14 +62,22 @@ HttpResponse&	HttpResponse::operator = (HttpResponse const& copy)
 {
 	HttpMessage::operator = (copy);
 	_header = copy._header;
+	_status_line = copy._status_line;
+	_http_version = copy._http_version;
+	_status_code = copy._status_code;
+	_status_message = copy._status_message;
+	_date = copy._date;
+	_server_name = copy._server_name;
+	_content_length = copy._content_length;
+	_content_type = copy._content_type;
+	_connection = copy._connection;
 	_isError = copy._isError;
-	//TODO
 	return (*this);
 }
 
 std::string		HttpResponse::toString(void) const
 {
-	std::string res = _header;
+	std::string res = headerToString();
 	res.append("\r\n");
 	res.append(_content, _currentContentLength);
 	return res;
@@ -113,7 +130,6 @@ void	HttpResponse::setStatusMessage(void)
 		_status_message = "HTTP Version Not Supported";
 	else 
 		_status_message = "";
-	setConnectionStatus(false);
 }
 
 void	HttpResponse::setHeader(unsigned short code)
@@ -124,35 +140,38 @@ void	HttpResponse::setHeader(unsigned short code)
 
 void	HttpResponse::setHeader(void)
 {
-	std::stringstream ss;
-
 	setDateTime();
 	setLength();
 	setServerName();//might put it in calling "parent" function
-	setConnectionStatus();//TODO
-	_header = "HTTP/1.1 ";
+}
+
+std::string	HttpResponse::headerToString(void) const
+{
+	std::stringstream ss;
+	std::string header;
+
+	header = "HTTP/1.1 ";
 	ss << _status_code;
-	_header.append(ss.str());
-	_header.append(" ");
-	_header.append(_status_message);
-	_header.append("\r\n");
-	_header.append("Date: ");
-	_header.append(_date);
-	_header.append("\r\n");
-	_header.append("Server: ");
-	_header.append(_server_name);
-	_header.append("\r\n");
-	_header.append("Content-Length: ");
-	ss.str("");
-	ss << _content_length;
-	_header.append(ss.str());
-	_header.append("\r\n");
-	_header.append("Content-Type: ");
-	_header.append("text/html; charset=iso-8859-1");//TODO write it dynamically
-	_header.append("\r\n");
-	_header.append("Connection: ");
-	_header.append(_connection);
-	_header.append("\r\n");
+	header.append(ss.str());
+	header.append(" ");
+	header.append(_status_message);
+	header.append("\r\n");
+	header.append("Date: ");
+	header.append(_date);
+	header.append("\r\n");
+	header.append("Server: ");
+	header.append(_server_name);
+	header.append("\r\n");
+	header.append("Content-Length: ");
+	header.append(_content_length);
+	header.append("\r\n");
+	header.append("Content-Type: ");
+	header.append("text/html; charset=iso-8859-1");//TODO write it dynamically
+	header.append("\r\n");
+	header.append("Connection: ");
+	header.append(_connection);
+	header.append("\r\n");
+	return header;
 }
 
 bool	HttpResponse::setBody(std::string const& body_path)
