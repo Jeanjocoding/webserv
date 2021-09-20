@@ -1691,7 +1691,7 @@ int				ConnectionClass::closeReadConnection(void)
 	}
 	else if (read_ret < 0)
 	{
-		std::cout << "read_ret returned negative value during closing process";
+		std::cout << "read_ret returned negative value during closing process" << std::endl;
 		if (close(_socketNbr)  < 0)
 			perror("close");
 		_isClosing = 0;

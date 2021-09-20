@@ -147,6 +147,7 @@ int main(int ac, char** av)
 					}
 					continue;
 				}
+				std::cout << "read on fd: " << i << ", total nbr of connections: " << connection_map.size() << std::endl;
 				if (connection_map[i].isClosing())
 				{
 					close_return_value = connection_map[i].closeReadConnection();
