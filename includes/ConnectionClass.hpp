@@ -107,7 +107,10 @@ public:
 //	int				answerRequest(HttpRequest& request);//might be const
 
 	int				sendResponse(std::string response);//move to private
-	int				closeConnection(void);
+	int				simpleCloseConnection(void);
+	int				closeWriteConnection(void);
+	int				closeReadConnection(void);
+	bool				isClosing(void) const;
 	HttpRequest const&	getRequest(unsigned int request_number = 0) const;
 	time_t			getTimer() const;
 	void			resetTimer();
@@ -179,6 +182,9 @@ private:
 	int				_input_fd;
 	int				_output_fd;
 	int				_childPid;
+
+	int				_isClosing;
+	int				_nbrReadsSinceClose;
 
 	time_t			_timer;
 

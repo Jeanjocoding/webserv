@@ -37,6 +37,8 @@ ConnectionClass::ConnectionClass(void)
 	_hasDoneCgi = 0;
 	_cgiOutput_len = 0;
 	_cgiOutput = 0;
+	_isClosing = 0;
+	_nbrReadsSinceClose = 0;
 	return;
 }
 
@@ -78,6 +80,8 @@ ConnectionClass::ConnectionClass(ConnectionClass const& to_copy): _socketNbr(to_
 		append_to_buffer(&_cgiOutput, _cgiOutput_len, to_copy._cgiOutput, to_copy._cgiOutput_len);
 	}
 	_request_pipeline = to_copy._request_pipeline;
+	_isClosing = to_copy._isClosing;
+	_nbrReadsSinceClose = to_copy._nbrReadsSinceClose;
 	return;
 }
 
@@ -104,6 +108,8 @@ ConnectionClass::ConnectionClass(int socknum, serverClass* server): _socketNbr(s
 	_hasDoneCgi = 0;
 	_cgiOutput_len = 0;
 	_cgiOutput = 0;
+	_isClosing = 0;
+	_nbrReadsSinceClose = 0;
 	return;	
 }
 
@@ -129,6 +135,8 @@ ConnectionClass::ConnectionClass(int socknum): _socketNbr(socknum)
 	_hasDoneCgi = 0;
 	_cgiOutput_len = 0;
 	_cgiOutput = 0;
+	_isClosing = 0;
+	_nbrReadsSinceClose = 0;
 	return;	
 }
 
@@ -183,6 +191,8 @@ ConnectionClass&	ConnectionClass::operator=(ConnectionClass const& to_copy)
 		append_to_buffer(&_cgiOutput, _cgiOutput_len, to_copy._cgiOutput, to_copy._cgiOutput_len);
 	}
 	_request_pipeline = to_copy._request_pipeline;
+	_isClosing = to_copy._isClosing;
+	_nbrReadsSinceClose = to_copy._nbrReadsSinceClose;
 	return (*this);
 }
 
@@ -1591,7 +1601,7 @@ int			ConnectionClass::sendResponse(std::string response)
 	if (send(_socketNbr, response.c_str(), response.length(), 0) == -1)
 	{
 		std::perror("send");
-		closeConnection();
+		simpleCloseConnection();
 		return (-1);
 	}
 //	std::cout << "erasing request that starts with: " << _request_pipeline[0].getStartLine() << std::endl;
@@ -1632,30 +1642,79 @@ int				ConnectionClass::_emptyReadBuffers() const
 		return (1);
 }
 
+int				ConnectionClass::simpleCloseConnection(void)
+{
+//	std::cout << "in simple close" << std::endl;	
+	if (close(_socketNbr) < 0)
+		perror("close");
+	_status = CO_ISCLOSED;
+	return (1);
+}
+
 /** this function tries to implement a "graceful close", as it is described in the RFC.
  * it first shuts down the write end of the socket, then it reads on the socket until there 
  * isn't anything left, then it shuts down the read end, and then it closes the socket. This 
  * procedure is supposed to minimize the risk of TCP connection reset */
-int				ConnectionClass::closeConnection(void)
+int				ConnectionClass::closeWriteConnection(void)
 {
 //	int empty_read_value;
-	int return_value;
+//	int return_value;
 
-	std::cout << "close connection is called" << std::endl;
+//	std::cout << "close write connection is called" << std::endl;
+
+	_isClosing = 1;
 //	_request_pipeline[1000].~HttpRequest(); /*line only useful to provoke crashes */
-	shutdown(_socketNbr, SHUT_WR);
-//		perror("shutdown");
+	if (shutdown(_socketNbr, SHUT_WR) < 0)
+		perror("shutdown");
 //	empty_read_value = _emptyReadBuffers();
-	usleep(30);
-	shutdown(_socketNbr, SHUT_RD);
-//		perror("shutdown");
-	return_value = close(_socketNbr);
-/*	if (return_value == 0)
+	return (1);
+}
+
+int				ConnectionClass::closeReadConnection(void)
+{
+	char buffer[SINGLE_READ_SIZE];
+	int read_ret;
+
+	read_ret = recv(_socketNbr, buffer, SINGLE_READ_SIZE, 0);
+	_nbrReadsSinceClose += 1;
+	if (read_ret == 0)
+	{
+//		std::cout << "we received the FIN packet (read_ret = 0)" << std::endl;
+//		if (shutdown(_socketNbr, SHUT_RD) < 0)
+//			perror("shutdown");
+		if (close(_socketNbr)  < 0)
+			perror("close");
+		_isClosing = 0;
+		_nbrReadsSinceClose = 0;
 		_status = CO_ISCLOSED;
+		return (1);
+	}
+	else if (read_ret < 0)
+	{
+//		std::cout << "read_ret returned negative value during closing process" << std::endl;
+		if (close(_socketNbr)  < 0)
+			perror("close");
+		_isClosing = 0;
+		_nbrReadsSinceClose = 0;
+		_status = CO_ISCLOSED;
+		return (1);
+	}
+	else if (_nbrReadsSinceClose > 5)
+	{
+//		std::cout << "client kept writing after 5 select loops" << std::endl;;
+		if (close(_socketNbr)  < 0)
+			perror("close");
+		_isClosing = 0;
+		_nbrReadsSinceClose = 0;
+		_status = CO_ISCLOSED;
+		return (1);
+	}
 	else
-		perror("close");*/
-	_status = CO_ISCLOSED;
-	return (return_value);
+	{
+//		std::cout << "we keep reading in the close process" << std::endl;
+		return (0);
+	}
+
 }
 
 void	ConnectionClass::print_pipeline()
@@ -1803,4 +1862,9 @@ void			ConnectionClass::setChildPid(int value)
 int			ConnectionClass::getChildPid()
 {
 	return (_childPid);
+}
+
+bool			ConnectionClass::isClosing(void) const
+{
+	return (_isClosing);
 }
