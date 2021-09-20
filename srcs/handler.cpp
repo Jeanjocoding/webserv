@@ -99,9 +99,9 @@ static void	send_error(unsigned short error_nb, std::map<unsigned short, std::st
 	connection.sendResponse(response.toString());
 }
 
-static HttpResponse answer_cgi_get(HttpRequest const& request, LocationClass const& location, ConnectionClass& connection)
+static HttpResponse& answer_cgi_get(HttpRequest const& request, LocationClass const& location, ConnectionClass& connection)
 {
-	HttpResponse	response;
+//	HttpResponse	response;
 //	char*			output;
 	t_CgiParams		params;
 //	size_t			body_begin = 0;
@@ -113,9 +113,10 @@ static HttpResponse answer_cgi_get(HttpRequest const& request, LocationClass con
 	body.open(params.scriptFilename.c_str());
 	if (!body.is_open())
 	{
-		HttpResponse rep(404, location.getErrorPage(404));
-		rep.setError(1);
-		return	(rep);
+		delete connection._currentResponse;
+		connection._currentResponse = new HttpResponse(404, location.getErrorPage(404));
+		connection._currentResponse->setError(1);
+		return	(*connection._currentResponse);
 	}
 
 	
@@ -125,12 +126,12 @@ static HttpResponse answer_cgi_get(HttpRequest const& request, LocationClass con
 //	write(1, output, output_len);
 //	response.setBody(&(output[body_begin]), output_len - body_begin);
 //	response.setHeader();
-	return response;
+	return  (*connection._currentResponse);
 }
 
-static HttpResponse	answer_get(HttpRequest const& request, LocationClass const& location, ConnectionClass& connection)
+static HttpResponse&	answer_get(HttpRequest const& request, LocationClass const& location, ConnectionClass& connection)
 {
-	HttpResponse	response;
+//	HttpResponse	response;
 	std::string		tmp = location.getRoot();// Put the root working directory in tmp
 	//TODO
 	
@@ -149,23 +150,29 @@ static HttpResponse	answer_get(HttpRequest const& request, LocationClass const& 
 			{
 				tmp.erase(tmp.rfind('/') + 1, tmp.size());
 				tmp = location.getAutoindex(tmp);
-				response.setBody(tmp.begin(), tmp.end());
-				response.setHeader(200);
+//				response.setBody(tmp.begin(), tmp.end());
+//				response.setHeader(200);
+				connection._currentResponse->setBody(tmp.begin(), tmp.end());
+				connection._currentResponse->setHeader(200);
 			}
 			else
-				response = HttpResponse(404, location.getErrorPage(404));
+			{
+				delete connection._currentResponse;
+				connection._currentResponse = new HttpResponse(404, location.getErrorPage(404));
+			}
 		}
 		else
 		{
 			try// Try to input requested file in response body
 			{
 				tmp = std::string(std::istreambuf_iterator<char>(body), std::istreambuf_iterator<char>());
-				response.setBody(tmp.begin(), tmp.end());
-				response.setHeader(200);
+				connection._currentResponse->setBody(tmp.begin(), tmp.end());
+				connection._currentResponse->setHeader(200);
 			}
 			catch (std::ios_base::failure const& e)// If requested file is a folder return 404
 			{
-				response = HttpResponse(404, location.getErrorPage(404));
+				delete connection._currentResponse;
+				connection._currentResponse = new HttpResponse(404, location.getErrorPage(404));
 			}
 		}
 	}
@@ -174,22 +181,26 @@ static HttpResponse	answer_get(HttpRequest const& request, LocationClass const& 
 		std::ifstream body;// Creates a buffer to put file content
 		body.open(tmp.c_str());//might put all this part in the HttpResponse object
 		if (!body.is_open())
-			response = HttpResponse(404, location.getErrorPage(404));// If requested file is not open return 404
+		{
+			delete connection._currentResponse;
+			connection._currentResponse = new HttpResponse(404, location.getErrorPage(404));// If requested file is not open return 404
+		}
 		else
 		{
 			try// Try to input requested file in response body
 			{
 				tmp = std::string(std::istreambuf_iterator<char>(body), std::istreambuf_iterator<char>());
-				response.setBody(tmp.begin(), tmp.end());
-				response.setHeader(200);
+				connection._currentResponse->setBody(tmp.begin(), tmp.end());
+				connection._currentResponse->setHeader(200);
 			}
 			catch (std::ios_base::failure const& e)// If requested file is a folder return 404
 			{
-				response = HttpResponse(404, location.getErrorPage(404));
+				delete connection._currentResponse;
+				connection._currentResponse = new HttpResponse(404, location.getErrorPage(404));// If requested file is not open return 404
 			}
 		}
 	}
-	return response;
+	return *connection._currentResponse;
 }
 
 static HttpResponse	answer_redirection(HttpRequest const& request, LocationClass const& location)
@@ -217,6 +228,14 @@ void	answer_connection(ConnectionClass& connection)
 	print_request(request);
 	serverClass& server = *(connection.getServer(request.getHeaders().find("Host")->second));
 	LocationClass location = server.getLocation(request.getRequestLineInfos().target);
+//	HttpRequest& request = connection._request_pipeline[0];
+//	std::cout << "back in answer" << std::endl;
+/*	if (connection._request_pipeline.size())
+		print_request(connection._request_pipeline[0]);
+	else
+		std::cout << "there is no request in pipeline, going to crash" << std::endl;*/
+//	serverClass& server = *(connection.getServer(connection._request_pipeline[0].getHeaders().find("Host")->second));
+//	LocationClass location = server.getLocation(connection._request_pipeline[0].getRequestLineInfos().target);
 	if (connection.HasToWriteOnPipe() || connection.HasToReadOnPipe())
 		return;
 	else if (connection.HasDoneCgi())
@@ -239,10 +258,14 @@ void	answer_connection(ConnectionClass& connection)
 	}
 	connection._currentResponse = new HttpResponse();
 	if (!request.isValid())//TODO check why is invalid and respond accordingly
+	{
+		delete connection._currentResponse;
 		return send_error(400, server._default_error_pages, connection);
+	}
 	if (!location.methodIsAllowed(request.getMethod()))
 	{
 		std::cerr << "forbiden Http request method on location " << location.getUri() << std::endl;
+		delete connection._currentResponse;
 		return send_error(405, location.getErrorMap(), connection);
 	}
 	if (location.isRedirect())
@@ -254,7 +277,7 @@ void	answer_connection(ConnectionClass& connection)
 	{
 		case GET_METHOD :
 			/* leak probable: */
-			*connection._currentResponse = answer_get(request, location, connection);
+			answer_get(connection._request_pipeline[0], location, connection);
 			if (location.isCGI() && !connection._currentResponse->isError())
 				return;
 			break;
@@ -266,11 +289,13 @@ void	answer_connection(ConnectionClass& connection)
 				break;
 		case DELETE_METHOD :
 			*connection._currentResponse = answer_delete(request, location);
-			break;
+			break; //uniformiser avec autres reponses pour ne plus retourner
 		default :
 			return send_error(501, location.getErrorMap(), connection);
 	}
 	if (!connection.isPersistent() || location.getKeepaliveTimeout() == 0)
-		connection._currentResponse->setConnectionStatus(false);
-	connection.sendResponse(connection._currentResponse->toString());// Handles all of the response sending and adjust the connection accordingly (cf: pop request list close connection etc...)
+	           connection._currentResponse->setConnectionStatus(false);
+        connection.sendResponse(connection._currentResponse->toString());// Handles all of the response sending and adjust the connection accordingly (cf: pop request list close connection etc...)
+	delete connection._currentResponse;
+//	std::cout << "response :\n" << response.toString() << std::endl;
 }
