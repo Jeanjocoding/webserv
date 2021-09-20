@@ -6,7 +6,7 @@
 /*   By: asablayr <marvin@42.fr>                    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2021/07/15 13:31:12 by asablayr          #+#    #+#             */
-/*   Updated: 2021/09/17 16:29:45 by asablayr         ###   ########.fr       */
+/*   Updated: 2021/09/20 11:45:32 by asablayr         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -405,26 +405,19 @@ std::string	LocationClass::generateAutoindex(std::string const& request_uri) con
 		autoindex.append(_uri);
 		autoindex.append("</title></head>\n<body>\n<h1>Index of ");
 		autoindex.append(_uri);
-		autoindex.append("</h1>\n");
+		autoindex.append("</h1>\n<hr><pre>");
 		while ((ent = readdir(dir)) != NULL)
 		{
 			if (ent->d_name[0] != '.')
 			{
 				autoindex.append("<a href=");
-				autoindex.append(tmp);
-/*				autoindex.append(_root);
-				if (!_root.empty() && *(_root.end() - 1) != '/')
-					autoindex.append(("/"));
-				autoindex.append(request_uri);
-				if (!request_uri.empty() && *(request_uri.end() - 1) != '/')
-					autoindex.append(("/"));
-*/				autoindex.append(ent->d_name);
+				autoindex.append(ent->d_name);
 				autoindex.append(">");
 				autoindex.append(ent->d_name);
-				autoindex.append("</a><br>\n");
+				autoindex.append("</a>\n");
 			}
-		autoindex.append("\n</body>\n</html>");
 		}
+		autoindex.append("</pre><hr></body>\n</html>");
 		closedir(dir);
 	}
 	return autoindex;
