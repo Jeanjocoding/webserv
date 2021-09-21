@@ -1406,6 +1406,54 @@ int		ConnectionClass::_save_only_request(HttpRequest& currentRequest)
 	return (SAVE_REQUEST);
 }
 
+int		ConnectionClass::_checkMaxBodyConformity(HttpRequest& currentRequest)
+{
+	std::multimap<std::string, std::string>	headers = currentRequest.getHeaders();
+	std::multimap<std::string, std::string>::iterator host_beg = headers.begin();
+	std::multimap<std::string, std::string>::iterator host_end = headers.end();
+	int	max_body;
+	LocationClass location;
+
+	if (!currentRequest.hasContent())
+		return (1);
+	while (host_beg != host_end)
+	{
+		if (caseInsensitiveComparison((*host_beg).first, "host"))
+		{
+			serverClass	*server = getServer((*host_beg).first);
+			std::string stripped_target = currentRequest.getRequestLineInfos().target.substr(0, currentRequest.getRequestLineInfos().target.find('?'));
+//			std::cout << "stripped target: " << stripped_target << std::endl;
+			location = server->getLocation(stripped_target);
+			max_body = location.getClientBodySizeMax();
+			std::cout << "max body: " << max_body << std::endl;
+			if (max_body == 0)
+				return 1;
+			else
+			{
+				if (currentRequest.getContentLength() > max_body)
+					return (0);
+				else
+					return (1);
+			}
+		}
+		host_beg++;
+	}
+	std::string stripped_target = currentRequest.getRequestLineInfos().target.substr(0, currentRequest.getRequestLineInfos().target.find('?'));
+//	std::cout << "stripped target: " << stripped_target << std::endl;
+	location = _servers[0]->getLocation(stripped_target);
+	max_body = location.getClientBodySizeMax();
+	std::cout << "max body: " << max_body << std::endl;
+	if (max_body == 0)
+		return 1;
+	else
+	{
+		if (currentRequest.getContentLength() > max_body)
+			return (0);
+		else
+			return (1);
+	}
+}
+
 /** get next request in the buffer or in the socket. if no_read_mode == NO_READ_MODE_ACTIVATED, it will 
  * not read on the socket after it runs out of data in the buffer, it will save everything and come back
  * next select iteration */ 
@@ -1485,6 +1533,8 @@ int		ConnectionClass::_get_next_request(readingBuffer &buffer, HttpRequest& curr
 	}
 	if (ret_read_line == 2) // this means we successfully read all the header part. we can now read body, if there is body
 	{
+		if (!_checkMaxBodyConformity(currentRequest))
+			return (_invalidRequestProcedure(currentRequest, 413));
 		if (currentRequest.getContentLength())
 		{
 			_isHandlingBody = 1;

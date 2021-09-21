@@ -568,3 +568,8 @@ void	LocationClass::printDirectives(void) const
 	for (std::multimap<std::string, std::string>::const_iterator it = _directives.begin(); it != _directives.end(); it++)
 		std::cout << "_directive " << it->first << " : " << it->second << std::endl;
 }
+
+long LocationClass::getClientBodySizeMax(void) const
+{
+	return (_client_body_size_max);
+}
