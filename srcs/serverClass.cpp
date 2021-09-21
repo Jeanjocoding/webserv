@@ -6,7 +6,7 @@
 /*   By: asablayr <marvin@42.fr>                    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2021/06/07 18:49:16 by asablayr          #+#    #+#             */
-/*   Updated: 2021/09/17 17:44:44 by asablayr         ###   ########.fr       */
+/*   Updated: 2021/09/21 21:54:40 by asablayr         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -255,7 +255,7 @@ void			serverClass::setLocation(LocationClass& location) const
 		location.setIndex(_index);
 	if (location._directives.find("keepalive_timeout") == location._directives.end())
 		location.setKeepaliveTimeout(_keepalive_timeout);
-	if (location._directives.find("client_body_size_max") == location._directives.end())
+	if (location._directives.find("client_max_body_size") == location._directives.end())
 		location.setClientBodySizeMax(_client_body_size_max);
 	if (location._directives.find("upload_store") == location._directives.end())
 		location.setUploadStore(_upload_store);
