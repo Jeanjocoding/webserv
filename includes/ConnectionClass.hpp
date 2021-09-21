@@ -224,6 +224,7 @@ private:
 	void		_print_content_info(readingBuffer& buffer, HttpRequest& currentRequest, std::string message);
 	void		_print_content_info(HttpRequest& currentRequest, std::string message);
 	int		_last_nl_procedure(readingBuffer& buffer);
+	int		_checkMaxBodyConformity(HttpRequest& currentRequest);
 };
 
 #endif
