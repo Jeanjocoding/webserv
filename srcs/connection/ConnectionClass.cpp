@@ -6,7 +6,7 @@
 /*   By: asablayr <marvin@42.fr>                    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2021/07/04 17:42:52 by asablayr          #+#    #+#             */
-/*   Updated: 2021/09/14 14:20:45 by asablayr         ###   ########.fr       */
+/*   Updated: 2021/09/21 22:29:02 by asablayr         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -1409,40 +1409,25 @@ int		ConnectionClass::_save_only_request(HttpRequest& currentRequest)
 int		ConnectionClass::_checkMaxBodyConformity(HttpRequest& currentRequest)
 {
 	std::multimap<std::string, std::string>	headers = currentRequest.getHeaders();
-	std::multimap<std::string, std::string>::iterator host_beg = headers.begin();
-	std::multimap<std::string, std::string>::iterator host_end = headers.end();
+	std::string tmp;
 	int	max_body;
 	LocationClass location;
 
 	if (!currentRequest.hasContent())
 		return (1);
-	while (host_beg != host_end)
-	{
+	for (std::multimap<std::string, std::string>::iterator host_beg = headers.begin(); host_beg != headers.end(); host_beg++)
+	{ 
 		if (caseInsensitiveComparison((*host_beg).first, "host"))
 		{
-			serverClass	*server = getServer((*host_beg).first);
-			std::string stripped_target = currentRequest.getRequestLineInfos().target.substr(0, currentRequest.getRequestLineInfos().target.find('?'));
-//			std::cout << "stripped target: " << stripped_target << std::endl;
-			location = server->getLocation(stripped_target);
-			max_body = location.getClientBodySizeMax();
-			std::cout << "max body: " << max_body << std::endl;
-			if (max_body == 0)
-				return 1;
-			else
-			{
-				if (currentRequest.getContentLength() > max_body)
-					return (0);
-				else
-					return (1);
-			}
+			tmp = (*host_beg).second;
 		}
-		host_beg++;
 	}
+	serverClass	*server = getServer(tmp);
 	std::string stripped_target = currentRequest.getRequestLineInfos().target.substr(0, currentRequest.getRequestLineInfos().target.find('?'));
-//	std::cout << "stripped target: " << stripped_target << std::endl;
-	location = _servers[0]->getLocation(stripped_target);
+//			std::cout << "stripped target: " << stripped_target << std::endl;
+	location = server->getLocation(stripped_target);
 	max_body = location.getClientBodySizeMax();
-	std::cout << "max body: " << max_body << std::endl;
+	std::cout << "max body: " << max_body << "\tcontent length : " << currentRequest.getContentLength() << std::endl;
 	if (max_body == 0)
 		return 1;
 	else

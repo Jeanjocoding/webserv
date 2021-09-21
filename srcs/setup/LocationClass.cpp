@@ -6,7 +6,7 @@
 /*   By: asablayr <marvin@42.fr>                    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2021/07/15 13:31:12 by asablayr          #+#    #+#             */
-/*   Updated: 2021/09/20 11:45:32 by asablayr         ###   ########.fr       */
+/*   Updated: 2021/09/21 22:04:07 by asablayr         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -323,7 +323,7 @@ void	LocationClass::setKeepaliveTimeout(long val)
 void	LocationClass::setClientBodySizeMax(void)
 {
 	unsigned int i = 0;
-	std::map<std::string, std::string>::const_iterator it = _directives.find("client_body_size_max");
+	std::map<std::string, std::string>::const_iterator it = _directives.find("client_max_body_size");
 	if (it == _directives.end())
 		return ;
 	_client_body_size_max = atoi(it->second.c_str());
