@@ -219,6 +219,7 @@ static HttpResponse	answer_redirection(HttpRequest const& request, LocationClass
 
 void	answer_connection(ConnectionClass& connection)
 {
+	std::cout << "pipeline size: " << connection._request_pipeline.size() << std::endl;
 	if (connection._request_pipeline.empty())
 	{
 		connection.setStatus(CO_ISDONE);
