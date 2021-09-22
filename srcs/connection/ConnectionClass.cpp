@@ -1606,12 +1606,12 @@ int			ConnectionClass::receiveRequest(void)
 	_hasRead = 0;
 	_initializeBuffer(buffer);
 	read_ret = _read_buffer(buffer, _request_pipeline); // fonction principale
-	if (read_ret == HTTP_ERROR)
+/*	if (read_ret == HTTP_ERROR)
 	{
 		std::cout << "an invalid request has been detected" << std::endl;
 		return (HTTP_ERROR);
-	}
-	else if (read_ret == TCP_ERROR)
+	}*/
+	if (read_ret == TCP_ERROR)
 	{
 		std::cout << "a TCP error has occured" << std::endl;
 		return (TCP_ERROR);
@@ -1679,10 +1679,10 @@ int				ConnectionClass::_emptyReadBuffers() const
 
 int				ConnectionClass::simpleCloseConnection(void)
 {
-	std::cout << "basic closing procedure launched" << std::endl;	
 	if (close(_socketNbr) < 0)
 		perror("close");
 	_status = CO_ISCLOSED;
+	std::cout << "basic closing procedure completed" << std::endl;	
 	return (1);
 }
 

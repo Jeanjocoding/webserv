@@ -78,7 +78,7 @@ int main(int ac, char** av)
 	FD_ZERO(&wfds);//memset fd_set
 	start_servers(server_map, rfds);
 	st_timeout.tv_sec = std::atoi(server_map[0]->_keepalive_timeout.c_str());//set keepalive_timeout
-	std::cout << "timeout: " << st_timeout.tv_sec;
+//	std::cout << "timeout: " << st_timeout.tv_sec;
 	st_timeout.tv_usec = 0;
 	while (true)
 	{
@@ -165,7 +165,7 @@ int main(int ac, char** av)
 //					std::cout << "close cuz recv request" << std::endl;
 					if (receive_return_value == 0 || receive_return_value == TCP_ERROR)
 						connection_map[i].simpleCloseConnection();
-					else if (receive_return_value == HTTP_ERROR)
+/*					else if (receive_return_value == HTTP_ERROR)
 					{
 						close_return_value = connection_map[i].closeWriteConnection();
 						if (close_return_value == -1)
@@ -174,7 +174,7 @@ int main(int ac, char** av)
 							connection_map.erase(i);
 							continue;
 						}
-					}
+					}*/
 				}
 //				std::cout << "pipeline length of map after receive: " << connection_map[i]._request_pipeline.size() << std::endl;
 				if (connection_map[i].getStatus() == CO_ISCLOSED) // erases if connection has encoutered an error
@@ -190,7 +190,7 @@ int main(int ac, char** av)
 			}
 			else if (FD_ISSET(i, &wfds_copy))
 			{
-				std::cout << "write on fd: " << i << ", total nbr of connections: " << connection_map.size() << std::endl;
+//				std::cout << "write on fd: " << i << ", total nbr of connections: " << connection_map.size() << std::endl;
 				if (input_pipe_map.count(i))
 				{
 					cgiWriteOnPipe((*(input_pipe_map.find(i))).second);
@@ -242,32 +242,44 @@ int main(int ac, char** av)
 		for (std::map<int, ConnectionClass>::iterator i = connection_map.begin(); i != connection_map.end(); i ++)// TODO unit test
 		{
 			iterations++;
-			if (i->second.isClosing())
-				continue;
+//			if (i->second.isClosing())
+//				continue;
 //			std::cout << "i in timeout check: " << i->first << ", map size: " << connection_map.size() << ", iterations: " << iterations << std::endl;
-			if (!i->second.isPersistent())
+			if (!i->second.isPersistent() && !i->second.isClosing())
 				continue;
 			if (time(0) - i->second.getTimer() > i->second._servers[0]->getKeepAliveTimeout())// TODO switch server selection and unit from sec to ms
 			{
 				if (FD_ISSET(i->first, &rfds))
 				{
-//					std::cout << "close cuz timeout in rfds" << std::endl;
-					close_return_value = connection_map[i->first].closeWriteConnection();
-					if (close_return_value == -1)
+					if (i->second.isClosing() && ((time(0) - i->second.getTimer()) > (i->second._servers[0]->getKeepAliveTimeout() * 2))) // si j'essaye de fermer depuis timeout * 2
 					{
+						std::cout << "clean closing was taking too much time on fd " << i->first <<", forcing closure" << std::endl;
+						i->second.simpleCloseConnection(); //je force fermeture
 						FD_CLR(i->first, &rfds);
 						connection_map.erase(i->first);
-						continue;
+						break;
+					}
+					else if (!i->second.isClosing())
+					{
+						std::cout << "close cuz timeout in rfds" << std::endl;
+						close_return_value = connection_map[i->first].closeWriteConnection();
+						if (close_return_value == -1)
+						{
+							FD_CLR(i->first, &rfds);
+							connection_map.erase(i->first);
+							continue;
+						}
 					}
 //					FD_CLR(i->first, &rfds);
 				}
 				else if (FD_ISSET(i->first, &wfds))
 				{
-	//				std::cout << "close cuz timeout in wfds" << std::endl;
+					std::cout << "close cuz timeout in wfds" << std::endl;
 					close_return_value = connection_map[i->first].closeWriteConnection();
 					if (close_return_value == -1)
 					{
 						FD_CLR(i->first, &wfds);
+//						FD_CLR(i->first, &rfds);
 						connection_map.erase(i->first);
 						continue;
 					}

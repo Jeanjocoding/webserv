@@ -228,6 +228,8 @@ void	answer_connection(ConnectionClass& connection)
 	HttpRequest& request = connection._request_pipeline[0];
 	print_request(request);
 	serverClass& server = *(connection.getServer(request.getHeaders().find("Host")->second));
+	if (!request.isValid())//TODO check why is invalid and respond accordingly
+		return send_error(request.getErrorCode(), server._default_error_pages, connection);
 	LocationClass location = server.getLocation(request.getRequestLineInfos().target);
 //	HttpRequest& request = connection._request_pipeline[0];
 //	std::cout << "back in answer" << std::endl;
@@ -258,11 +260,6 @@ void	answer_connection(ConnectionClass& connection)
 			return;
 	}
 	connection._currentResponse = new HttpResponse();
-	if (!request.isValid())//TODO check why is invalid and respond accordingly
-	{
-		delete connection._currentResponse;
-		return send_error(400, server._default_error_pages, connection);
-	}
 	if (!location.methodIsAllowed(request.getMethod()))
 	{
 		std::cerr << "forbiden Http request method on location " << location.getUri() << std::endl;
