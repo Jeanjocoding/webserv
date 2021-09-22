@@ -6,7 +6,7 @@
 /*   By: asablayr <marvin@42.fr>                    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2021/06/07 18:49:16 by asablayr          #+#    #+#             */
-/*   Updated: 2021/09/22 12:02:54 by asablayr         ###   ########.fr       */
+/*   Updated: 2021/09/22 14:42:48 by asablayr         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -116,7 +116,7 @@ std::string*	serverClass::operator [] (std::string setting_name)
 		return &_error_log;
 	else if (setting_name == "access_log")
 		return &_access_log;
-	else if (setting_name == "client_body_size_max")
+	else if (setting_name == "client_max_body_size")
 		return &_client_body_size_max;
 	else if (setting_name == "keepalive_timeout")
 		return &_keepalive_timeout;
