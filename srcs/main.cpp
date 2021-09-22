@@ -78,7 +78,7 @@ int main(int ac, char** av)
 	FD_ZERO(&wfds);//memset fd_set
 	start_servers(server_map, rfds);
 	st_timeout.tv_sec = std::atoi(server_map[0]->_keepalive_timeout.c_str());//set keepalive_timeout
-//	std::cout << "timeout: " << st_timeout.tv_sec;
+	std::cout << "timeout: " << st_timeout.tv_sec;
 	st_timeout.tv_usec = 0;
 	while (true)
 	{
@@ -210,23 +210,19 @@ int main(int ac, char** av)
 				}
 				connection_map[i].setStatus(CO_ISDONE);
 //				std::cout << "clos persistance: " << connection_map[i].isPersistent() << std::endl;
-				if (connection_map[i].getStatus() == CO_ISCLOSED || !connection_map[i].isPersistent())
+				if (connection_map[i].getStatus() != CO_ISCLOSED && !connection_map[i].isPersistent())
 				{
-					if (connection_map[i].getStatus() != CO_ISCLOSED)
+					close_return_value = connection_map[i].closeWriteConnection();
+					if (close_return_value == -1)
 					{
-						close_return_value = connection_map[i].closeWriteConnection();
-						if (close_return_value == -1)
-						{
-							FD_CLR(i, &wfds);
-							connection_map.erase(i);
-							continue;
-						}
-						else
-						{
-							FD_CLR(i, &wfds);
-							FD_SET(i, &rfds);
-						}
-						
+						FD_CLR(i, &wfds);
+						connection_map.erase(i);
+						continue;
+					}
+					else
+					{
+						FD_CLR(i, &wfds);
+						FD_SET(i, &rfds);
 					}
 //					connection_map.erase(i);
 				}
