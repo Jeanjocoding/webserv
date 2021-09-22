@@ -16,7 +16,8 @@ print("len : " + str(len(mega_Str)))
 #to_send = "GET /FZEFGEZ/RGERgergerG/gerge HTTP/1.1\r\nhello:     goodbye      \r\nConnection: c\r\n\r\nGET /FZEFGEZ/RGERgergerG/gerge HTTP/1.1\r\nhello:     2oodbye2  \r\n\r\nGET /FZEFGEZ/RGERgergerG/gerge HTTP/1.1\r\nhello:     3oodbye3\r\n\r\nGET /FZEFGEZ/RGERgergerG/gerge HTTP/1.1\r\nhello:     4ofbye4\r\n\r\nGET /FZEFGEZ/RGERgergerG/gerge HTTP/1.1\r\nhello:     5oodbye5      \r\n\r\n"
 #mega_Str = "0".zfill(1000);
 #to_send = "GET /FZEFGEZ/RGERgergerG/gerge HTTP/1.1\r\nhello:     goodbye      \r\nContent-Length: 1 \r\nConnection: c\r\n\r\n1GET /FZEFGEZ/RGERgergerG/gerge HTTP/1.1\r\nhello:     2oodbye2  \r\ncontent-length: 2    \r\n\r\n22GET /FZEFGEZ/RGERgergerG/erzfe HTTP/1.1\r\nTransfer-Encoding: gzip, chunked\r\nTrailer: bobo\r\n\r\n5\r\nhhhhh\r\nA\r\nbbbbbbbbbC\r\n3E8\r\n" + mega_Str + "\r\n0\r\nbobo: bonjour\r\n\r\nGET /FZEFGEZ/RGERgergerG/gerge HTTP/1.1\r\nhello:     3oodbye3\r\n\r\nGET /FZEFGEZ/RGERgergerG/gerge HTTP/1.1\r\nhello:     4ofbye4\r\n\r\nGET /FZEFGEZ/RGERgergerG/gerge HTTP/1.1\r\nhello:     5oodbye5      \r\nConnection: close\r\n\r\n"
-to_send = "GET /FZEFGEZ/RGERgergerG/gerge HTTP/1.1\r\nhello:     goodbye      \r\nContent-Length: 1 \r\nConnection: close\r\n\r\ns"
+#to_send = "PUT /FZEFGEZ/RGERgergerG/gerge HTTP/1.1\r\nhello:     goodbye      \r\nContent-Length: 1 \r\nConnection: close\r\n\r\ns"
+to_send = "PUT /FZEFGEZ/RGERgergerG/gerge HTTP/1.1\r\nhello:     goodbye      \r\nContent-Length: 1 \r\n\r\ns"
 #to_send = "GET /FZEFGEZ/RGERgergerG/gerge HTTP/1.1\r\nhello:     goodbye      \r\nContent-Length: 1 \r\nConnection: c\r\n\r\n1GET /FZEFGEZ/RGERgergerG/gerge HTTP/1.1\r\nhello:     2oodbye2  \r\ncontent-length: 2    \r\n\r\n22GET /FZEFGEZ/RGERgergerG/erzfe HTTP/1.1\r\nTransfer-Encoding: gzip, chunked\r\n\r\n5\r\nhhhhh\r\nA\r\nbbbbbbbbbC\r\na\r\n" + mega_Str + "\r\n0\r\n\r\nGET /FZEFGEZ/RGERgergerG/gerge HTTP/1.1\r\nhello:     3oodbye3\r\n\r\nGET /FZEFGEZ/RGERgergerG/gerge HTTP/1.1\r\nhello:     4ofbye4\r\n\r\nGET /FZEFGEZ/RGERgergerG/gerge HTTP/1.1\r\nhello:     5oodbye5      \r\n\r\n"
 #to_send = "GET /FZEFGEZ/RGERgergerG/gerge HTTP/1.1\r\nhello:     goodbye      \r\nContent-Length: 1 \r\nConnection: c\r\n\r\n1GET /FZEFGEZ/RGERgergerG/gerge HTTP/1.1\r\nhello:     2oodbye2  \r\ncontent-length: 2    \r\n\r\n22GET /FZEFGEZ/RGERgergerG/gerge HTTP/1.1\r\nhello:     3oodbye3\r\n\r\nGET /FZEFGEZ/RGERgergerG/gerge HTTP/1.1\r\nhello:     4ofbye4\r\n\r\nGET /FZEFGEZ/RGERgergerG/gerge HTTP/1.1\r\nhello:     5oodbye5      \r\n\r\n"
 #to_send = "GET /FZEFGEZ/RGERgergerG/gerge HTTP/1.1\r\nhello:     goodbye      \r\nContent-Length: 1 \r\nConnection: c\r\n\r\n"
@@ -33,6 +34,10 @@ to_send = "GET /FZEFGEZ/RGERgergerG/gerge HTTP/1.1\r\nhello:     goodbye      \r
 s.send(to_send.encode())
 resp = s.recv(1000);
 print("response from server: " + resp.decode("ascii"))
-time.sleep(100);
+#time.sleep(15);
+#s.send(to_send.encode())
+#resp = s.recv(1000);
+#print("response from server: " + resp.decode("ascii"))
+time.sleep (30);
 
 #s.close();

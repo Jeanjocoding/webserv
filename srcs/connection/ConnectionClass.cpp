@@ -516,8 +516,8 @@ int		ConnectionClass::_parse_first_line(const char *line, int len, HttpRequest& 
 		index++;
 	}
 	std::string protocol(line, lastWordIndex, protocol_length);
-	if (method != "GET" && method != "POST" && method != "DELETE")
-		return (_invalidRequestProcedure(currentRequest, 501));
+//	if (method != "GET" && method != "POST" && method != "DELETE")
+//		return (_invalidRequestProcedure(currentRequest, 501));
 	if (target.length() > MAX_URI_SIZE)
 		return (_invalidRequestProcedure(currentRequest, 414));
 	if (_parseProtocol(currentRequest, protocol) == HTTP_ERROR)
