@@ -6,7 +6,7 @@
 /*   By: asablayr <marvin@42.fr>                    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2021/06/06 15:27:02 by asablayr          #+#    #+#             */
-/*   Updated: 2021/09/17 17:42:18 by asablayr         ###   ########.fr       */
+/*   Updated: 2021/09/22 15:40:41 by asablayr         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -148,7 +148,6 @@ int main(int ac, char** av)
 					}
 					continue;
 				}
-//				std::cout << "read on fd: " << i << ", total nbr of connections: " << connection_map.size() << std::endl;
 				if (connection_map[i].isClosing())
 				{
 					close_return_value = connection_map[i].closeReadConnection();
@@ -176,7 +175,6 @@ int main(int ac, char** av)
 						}
 					}*/
 				}
-//				std::cout << "pipeline length of map after receive: " << connection_map[i]._request_pipeline.size() << std::endl;
 				if (connection_map[i].getStatus() == CO_ISCLOSED) // erases if connection has encoutered an error
 				{
 					FD_CLR(i, &rfds);
@@ -190,7 +188,6 @@ int main(int ac, char** av)
 			}
 			else if (FD_ISSET(i, &wfds_copy))
 			{
-//				std::cout << "write on fd: " << i << ", total nbr of connections: " << connection_map.size() << std::endl;
 				if (input_pipe_map.count(i))
 				{
 					cgiWriteOnPipe((*(input_pipe_map.find(i))).second);
@@ -209,7 +206,6 @@ int main(int ac, char** av)
 					continue;
 				}
 				connection_map[i].setStatus(CO_ISDONE);
-//				std::cout << "clos persistance: " << connection_map[i].isPersistent() << std::endl;
 				if (connection_map[i].getStatus() != CO_ISCLOSED && !connection_map[i].isPersistent())
 				{
 					close_return_value = connection_map[i].closeWriteConnection();
@@ -224,7 +220,6 @@ int main(int ac, char** av)
 						FD_CLR(i, &wfds);
 						FD_SET(i, &rfds);
 					}
-//					connection_map.erase(i);
 				}
 				else if (connection_map[i].getStatus() == CO_ISDONE) // all requests have been answered
 				{
@@ -233,11 +228,8 @@ int main(int ac, char** av)
 				}
 			}
 		}
-//		std::cout << "timeout check is launched" << std::endl;
-		int iterations = 0;
 		for (std::map<int, ConnectionClass>::iterator i = connection_map.begin(); i != connection_map.end(); i ++)// TODO unit test
 		{
-			iterations++;
 //			if (i->second.isClosing())
 //				continue;
 //			std::cout << "i in timeout check: " << i->first << ", map size: " << connection_map.size() << ", iterations: " << iterations << std::endl;

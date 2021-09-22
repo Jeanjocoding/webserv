@@ -139,7 +139,7 @@ std::string const& HttpRequest::getStartLine(void) const
 
 int			HttpRequest::getMethod(void) const
 {
-	return (_requestLine.int_method);//why request line ?
+	return (_method);//why request line ?
 }
 
 /*void		HttpRequest::setContentLength(long content_length)
