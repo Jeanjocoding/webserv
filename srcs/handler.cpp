@@ -252,7 +252,14 @@ void	answer_connection(ConnectionClass& connection)
 			return;
 	}
 	connection._currentResponse = new HttpResponse();
-	if (!location.methodIsAllowed(request.getMethod()))
+//	std::cout << "request get method: " << request.getMethod() << std::endl;
+	if (request.getMethod() == -1)
+	{
+		std::cerr << "Not implemented Http request method on location " << location.getUri() << std::endl;
+		delete connection._currentResponse;
+		return send_error(501, location.getErrorMap(), connection);
+	}
+	else if (!location.methodIsAllowed(request.getMethod()))
 	{
 		std::cerr << "forbiden Http request method on location " << location.getUri() << std::endl;
 		delete connection._currentResponse;

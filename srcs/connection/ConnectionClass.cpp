@@ -1603,6 +1603,7 @@ int			ConnectionClass::receiveRequest(void)
 	readingBuffer	buffer;
 	int		read_ret;
 
+	resetTimer();
 	_hasRead = 0;
 	_initializeBuffer(buffer);
 	read_ret = _read_buffer(buffer, _request_pipeline); // fonction principale
@@ -1695,14 +1696,14 @@ int				ConnectionClass::closeWriteConnection(void)
 //	int empty_read_value;
 //	int return_value;
 
-	std::cout << "clean close attempt..." << std::endl;
+	std::cout << "clean close attempt on " << _socketNbr << "..." << std::endl;
 
 	_isClosing = 1;
 //	_request_pipeline[1000].~HttpRequest(); /*line only useful to provoke crashes */
 	if (shutdown(_socketNbr, SHUT_WR) < 0)
 	{
 		perror("shutdown");
-		std::cout << "clean close failure, socket closure forced" << std::endl;
+		std::cout << "clean close failure, socket closure forced on " << _socketNbr << std::endl;
 		if (close(_socketNbr) < 0)
 			perror("close");
 		_isClosing = 0;
@@ -1723,7 +1724,7 @@ int				ConnectionClass::closeReadConnection(void)
 	_nbrReadsSinceClose += 1;
 	if (read_ret == 0)
 	{
-		std::cout << "we received the FIN packet (read_ret = 0), connection is properly closed" << std::endl;
+		std::cout << "we received the FIN packet (read_ret = 0), connection " << _socketNbr << " is properly closed" << std::endl;
 //		if (shutdown(_socketNbr, SHUT_RD) < 0)
 //			perror("shutdown");
 		if (close(_socketNbr)  < 0)
