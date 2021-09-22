@@ -6,7 +6,7 @@
 /*   By: asablayr <marvin@42.fr>                    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2021/06/07 18:49:16 by asablayr          #+#    #+#             */
-/*   Updated: 2021/09/21 21:54:40 by asablayr         ###   ########.fr       */
+/*   Updated: 2021/09/22 12:02:54 by asablayr         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -334,6 +334,7 @@ std::map<unsigned short, std::string>	serverClass::baseErrorPages(void)
 	res[400] = ERR_400_PATH;
 	res[404] = ERR_404_PATH;
 	res[405] = ERR_405_PATH;
+	res[413] = ERR_413_PATH;
 	res[501] = ERR_501_PATH;//TODO complete error map
 	return res;
 }

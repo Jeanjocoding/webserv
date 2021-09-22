@@ -6,7 +6,7 @@
 /*   By: asablayr <marvin@42.fr>                    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2021/08/02 16:27:33 by asablayr          #+#    #+#             */
-/*   Updated: 2021/09/20 15:44:45 by asablayr         ###   ########.fr       */
+/*   Updated: 2021/09/22 12:14:19 by asablayr         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -114,6 +114,11 @@ void	HttpResponse::setStatusMessage(void)
 		_status_message = "Not Found";
 	else if (_status_code == "405")
 		_status_message = "Method Not Allowed";
+	else if (_status_code == "413")
+	{
+		_status_message = "Request Entity Too Large";
+		setConnectionStatus(false);
+	}
 	else if (_status_code == "408")
 		_status_message = "Request Timeout";
 	else if (_status_code == "500")

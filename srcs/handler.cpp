@@ -6,7 +6,7 @@
 /*   By: asablayr <marvin@42.fr>                    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2021/06/06 21:54:40 by asablayr          #+#    #+#             */
-/*   Updated: 2021/09/17 16:16:23 by asablayr         ###   ########.fr       */
+/*   Updated: 2021/09/22 11:59:25 by asablayr         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -95,7 +95,7 @@ void	print_request(HttpRequest& request)
 static void	send_error(unsigned short error_nb, std::map<unsigned short, std::string> const& error_map, ConnectionClass& connection)
 {
 	HttpResponse response = HttpResponse(error_nb, error_map.find(error_nb)->second);
-	response.setConnectionStatus(false);
+//	response.setConnectionStatus(false);
 	connection.sendResponse(response.toString());
 }
 
@@ -231,14 +231,6 @@ void	answer_connection(ConnectionClass& connection)
 	if (!request.isValid())//TODO check why is invalid and respond accordingly
 		return send_error(request.getErrorCode(), server._default_error_pages, connection);
 	LocationClass location = server.getLocation(request.getRequestLineInfos().target);
-//	HttpRequest& request = connection._request_pipeline[0];
-//	std::cout << "back in answer" << std::endl;
-/*	if (connection._request_pipeline.size())
-		print_request(connection._request_pipeline[0]);
-	else
-		std::cout << "there is no request in pipeline, going to crash" << std::endl;*/
-//	serverClass& server = *(connection.getServer(connection._request_pipeline[0].getHeaders().find("Host")->second));
-//	LocationClass location = server.getLocation(connection._request_pipeline[0].getRequestLineInfos().target);
 	if (connection.HasToWriteOnPipe() || connection.HasToReadOnPipe())
 		return;
 	else if (connection.HasDoneCgi())
