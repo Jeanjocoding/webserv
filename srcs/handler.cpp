@@ -241,8 +241,6 @@ void	answer_connection(ConnectionClass& connection)
 			add_header_part((*connection._currentResponse), connection._cgiOutput, connection._cgiOutput_len, body_beginning);
 			connection._currentResponse->setBody(&(connection._cgiOutput[body_beginning]), connection._cgiOutput_len - body_beginning);
 			connection._currentResponse->setHeader(200);
-			if (!connection.isPersistent() || location.getKeepaliveTimeout() == 0)
-				connection._currentResponse->setConnectionStatus(false);
 			connection.sendResponse(connection._currentResponse->toString());// Handles all of the response sending and adjust the connection accordingly (cf: pop request list close connection etc...)
 			delete connection._currentResponse;
 			delete [] connection._cgiOutput;
