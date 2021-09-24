@@ -272,7 +272,7 @@ int		cgiReadOnPipe(ConnectionClass& connection)
 	else
 	{
 		append_to_buffer(&connection._cgiOutput, connection._cgiOutput_len, read_buffer, read_ret);
-//		std::cout << std::endl << "body for now: " << std::endl;
+//		std::cout << std::endl << "length read for now: " << connection._cgiOutput_len << std::endl;
 //		write(1, connection._cgiOutput, connection._cgiOutput_len);
 		std::cout << std::endl;
 	}

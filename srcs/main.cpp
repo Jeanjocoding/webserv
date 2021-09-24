@@ -178,6 +178,7 @@ int main(int ac, char** av)
 			}
 			else if (FD_ISSET(i, &wfds_copy))
 			{
+//				std::cout << "is in wfds" << std::endl;
 				if (input_pipe_map.count(i))
 				{
 					cgiWriteOnPipe((*(input_pipe_map.find(i))).second);

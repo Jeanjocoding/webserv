@@ -1634,6 +1634,7 @@ int			ConnectionClass::receiveRequest(void)
 
 int			ConnectionClass::sendResponse(std::string response)
 {
+//	std::cout << "in send response" << std::endl;
 	if (send(_socketNbr, response.c_str(), response.length(), 0) == -1)
 	{
 		std::perror("send");
@@ -1696,7 +1697,7 @@ int				ConnectionClass::closeWriteConnection(void)
 //	int empty_read_value;
 //	int return_value;
 
-	std::cout << "clean close attempt on " << _socketNbr << "..." << std::endl;
+//	std::cout << "clean close attempt on " << _socketNbr << "..." << std::endl;
 
 	_isClosing = 1;
 //	_request_pipeline[1000].~HttpRequest(); /*line only useful to provoke crashes */
@@ -1722,9 +1723,10 @@ int				ConnectionClass::closeReadConnection(void)
 
 	read_ret = recv(_socketNbr, buffer, SINGLE_READ_SIZE, 0);
 	_nbrReadsSinceClose += 1;
+//	std::cout << "nbr reads since close: " << _nbrReadsSinceClose << std::endl;
 	if (read_ret == 0)
 	{
-		std::cout << "we received the FIN packet (read_ret = 0), connection " << _socketNbr << " is properly closed" << std::endl;
+//		std::cout << "we received the FIN packet (read_ret = 0), connection " << _socketNbr << " is properly closed" << std::endl;
 //		if (shutdown(_socketNbr, SHUT_RD) < 0)
 //			perror("shutdown");
 		if (close(_socketNbr)  < 0)
@@ -1746,7 +1748,21 @@ int				ConnectionClass::closeReadConnection(void)
 	}
 	else if (_nbrReadsSinceClose > 5)
 	{
-		std::cout << "client kept writing after 5 select loops: forcing closure" << std::endl;;
+		std::cout << "client kept writing after 5 select loops: closing read end" << std::endl;;
+		if (shutdown(_socketNbr, SHUT_RD) < 0) // ferme cote lecture pour que client arrete d'envoyer et commence à lire
+			perror("shutdown");
+		std::cout << "start sleeping to give client time to read..." << std::endl;
+		usleep(1000000); // laisse le temps au client de lire la reponse. possible de le rendre plus elegant avec des timers
+		std::cout << "wake up" << std::endl;
+/*		if (close(_socketNbr)  < 0)
+			perror("close");
+		_isClosing = 0;
+		_nbrReadsSinceClose = 0;
+		_status = CO_ISCLOSED;*/
+		return (0);
+	}
+	else if (_nbrReadsSinceClose > 6)
+	{
 		if (close(_socketNbr)  < 0)
 			perror("close");
 		_isClosing = 0;

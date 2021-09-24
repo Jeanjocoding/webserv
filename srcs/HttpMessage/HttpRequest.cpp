@@ -17,6 +17,7 @@ HttpRequest::HttpRequest(void): HttpMessage()
 HttpRequest::HttpRequest(HttpRequest const& to_copy) : HttpMessage(to_copy)
 {
 	*this = to_copy;
+//	std::cout << "copy constructor called on request" << std::endl;
 }
 
 /*HttpRequest::HttpRequest(std::string str_message) : HttpMessage(str_message)
@@ -33,7 +34,8 @@ HttpRequest::~HttpRequest(void)
 
 HttpRequest&	HttpRequest::operator=(HttpRequest const& to_copy)
 {
-//	clear(); //POSSIBLE FUITE ICI DU A CE COMMENTAIRE
+//	std::cout << "operator= called, current length is: " << _currentContentLength << std::endl;
+	clear(); //POSSIBLE FUITE ICI DU A CE COMMENTAIRE
 	HttpMessage::operator=(to_copy)	;
 //	HttpMessage::_headers = to_copy._headers;
 	_isValid = to_copy._isValid;

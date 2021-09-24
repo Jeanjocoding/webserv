@@ -219,14 +219,15 @@ static HttpResponse	answer_redirection(HttpRequest const& request, LocationClass
 
 void	answer_connection(ConnectionClass& connection)
 {
-	std::cout << "pipeline size: " << connection._request_pipeline.size() << std::endl;
+//	std::cout << "pipeline size: " << connection._request_pipeline.size() << std::endl;
+
 	if (connection._request_pipeline.empty())
 	{
 		connection.setStatus(CO_ISDONE);
 		return ;
 	}
 	HttpRequest& request = connection._request_pipeline[0];
-	print_request(request);
+//	print_request(request);
 	serverClass& server = *(connection.getServer(request.getHeaders().find("Host")->second));
 	if (!request.isValid())//TODO check why is invalid and respond accordingly
 		return send_error(request.getErrorCode(), server._default_error_pages, connection);
