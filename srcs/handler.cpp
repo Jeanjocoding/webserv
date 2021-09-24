@@ -6,7 +6,7 @@
 /*   By: asablayr <marvin@42.fr>                    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2021/06/06 21:54:40 by asablayr          #+#    #+#             */
-/*   Updated: 2021/09/22 11:59:25 by asablayr         ###   ########.fr       */
+/*   Updated: 2021/09/23 15:24:02 by asablayr         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -131,12 +131,10 @@ static HttpResponse& answer_cgi_get(HttpRequest const& request, LocationClass co
 
 static HttpResponse&	answer_get(HttpRequest const& request, LocationClass const& location, ConnectionClass& connection)
 {
-//	HttpResponse	response;
 	std::string		tmp = location.getRoot();// Put the root working directory in tmp
-	//TODO
 	
 	tmp.append(request.getRequestLineInfos().target);// Append the requested  uri
-	if (location.isCGI())// If cgi is requested
+	if (location.isCGI() || request.getRequestLineInfos().target.find('?') != std::string::npos)// If cgi is requested
 		return answer_cgi_get(request, location, connection); //Return response returned by answer_cgi
 	if (request.getRequestLineInfos().target == location.getUri() + "/" ||
 		(request.getRequestLineInfos().target == location.getUri() && *(--request.getRequestLineInfos().target.end()) == '/'))// If index is requested
