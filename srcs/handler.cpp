@@ -227,7 +227,7 @@ void	answer_connection(ConnectionClass& connection)
 		return ;
 	}
 	HttpRequest& request = connection._request_pipeline[0];
-//	print_request(request);
+	print_request(request);
 	serverClass& server = *(connection.getServer(request.getHeaders().find("Host")->second));
 	if (!request.isValid())//TODO check why is invalid and respond accordingly
 		return send_error(request.getErrorCode(), server._default_error_pages, connection);
