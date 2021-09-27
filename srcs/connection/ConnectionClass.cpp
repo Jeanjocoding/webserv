@@ -1724,18 +1724,15 @@ int				ConnectionClass::closeReadConnection(void)
 	}
 	else if (_nbrReadsSinceClose == MAX_READ_BEFORE_FORCE_CLOSE)
 	{
-		std::cout << "client kept writing after 1000 select loops: closing read end" << std::endl;;
-		if (shutdown(_socketNbr, SHUT_RD) < 0) // ferme cote lecture pour que client arrete d'envoyer et commence à lire
-			perror("shutdown");
-//		read_ret = recv(_socketNbr, buffer, SINGLE_READ_SIZE, 0); //for testing purposes, needs to be removed
-/*		if (close(_socketNbr)  < 0)
+		std::cout << "client kept writing after 1000 select loops: closing socket" << std::endl;;
+		if (close(_socketNbr)  < 0)
 			perror("close");
 		_isClosing = 0;
 		_nbrReadsSinceClose = 0;
-		_status = CO_ISCLOSED;*/
-		return (0);
+		_status = CO_ISCLOSED;
+		return (1);
 	}
-	else if (_nbrReadsSinceClose > MAX_READ_BEFORE_FORCE_CLOSE)
+/*	else if (_nbrReadsSinceClose > MAX_READ_BEFORE_FORCE_CLOSE)
 	{
 		std::cout << "client keeps sending data, closing for now" << std::endl;
 		if (close(_socketNbr)  < 0)
@@ -1744,7 +1741,7 @@ int				ConnectionClass::closeReadConnection(void)
 		_nbrReadsSinceClose = 0;
 		_status = CO_ISCLOSED;
 		return (1);
-	}
+	}*/
 	else
 	{
 //		std::cout << "we keep reading in the close process" << std::endl;
