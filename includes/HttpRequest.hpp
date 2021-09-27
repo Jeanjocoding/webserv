@@ -10,6 +10,7 @@ typedef struct s_requestLineInfos
 	std::string		method;
 	int			int_method;
 	std::string		target;
+	std::string		query_string;
 	std::pair<int, int>	protocol;
 }		requestLineInfos;
 

@@ -96,7 +96,13 @@ void				HttpRequest::addRequestLine(std::string& method, std::string& target)
 		_requestLine.int_method = DELETE_METHOD;
 	else
 		_requestLine.int_method = -1;
-	_requestLine.target = target;
+	if (target.find("?") == std::string::npos)
+		_requestLine.target = target;
+	else
+	{
+		_requestLine.query_string = std::string(target, target.find("?") + 1);
+		_requestLine.target = std::string(target, 0, target.find("?"));
+	}
 }
 
 void				HttpRequest::setValidity(bool validity)
