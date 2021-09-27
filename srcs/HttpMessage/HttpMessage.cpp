@@ -53,7 +53,8 @@ HttpMessage&	HttpMessage::operator=(HttpMessage const& to_copy)
 	_trailing_headers = to_copy._trailing_headers;
 	_contentLength = to_copy._contentLength;
 	_currentContentLength = 0;
-	append_to_buffer(&_content, _currentContentLength, to_copy._content, to_copy._currentContentLength);
+	if (to_copy._currentContentLength)
+		append_to_buffer(&_content, _currentContentLength, to_copy._content, to_copy._currentContentLength);
 //	_body = to_copy._body;
 	return (*this);
 
