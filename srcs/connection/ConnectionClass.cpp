@@ -1634,6 +1634,7 @@ int			ConnectionClass::receiveRequest(void)
 
 int			ConnectionClass::sendResponse(std::string response)
 {
+//	std::cout << "in send response" << std::endl;
 	if (send(_socketNbr, response.c_str(), response.length(), 0) == -1)
 	{
 		std::perror("send");
@@ -1654,30 +1655,6 @@ int			ConnectionClass::sendResponse(std::string response)
 	return (0);
 }
 
-/** Empties the reading buffer before closing the connection */
-int				ConnectionClass::_emptyReadBuffers() const
-{
-	int read_ret;
-	int total_read = 0;
-	char trashbuf[EMPTYBUF_READ_SIZE];
-
-	while ((read_ret = recv(_socketNbr, trashbuf, EMPTYBUF_READ_SIZE, 0)) == EMPTYBUF_READ_SIZE)
-	{
-		total_read += read_ret;
-		if (total_read > MAX_READ_BEFORE_FORCE_CLOSE)
-			return (FORCE_CLOSE_NEEDED);
-	}
-	if (read_ret == 0)
-		return (0);
-	else if (read_ret == -1)
-	{
-//		perror("recv");
-		return (-1);
-	}
-	else
-		return (1);
-}
-
 int				ConnectionClass::simpleCloseConnection(void)
 {
 	if (close(_socketNbr) < 0)
@@ -1696,7 +1673,7 @@ int				ConnectionClass::closeWriteConnection(void)
 //	int empty_read_value;
 //	int return_value;
 
-	std::cout << "clean close attempt on " << _socketNbr << "..." << std::endl;
+//	std::cout << "clean close attempt on " << _socketNbr << "..." << std::endl;
 
 	_isClosing = 1;
 //	_request_pipeline[1000].~HttpRequest(); /*line only useful to provoke crashes */
@@ -1717,11 +1694,12 @@ int				ConnectionClass::closeWriteConnection(void)
 
 int				ConnectionClass::closeReadConnection(void)
 {
-	char buffer[SINGLE_READ_SIZE];
+	char buffer[EMPTYBUF_READ_SIZE];
 	int read_ret;
 
-	read_ret = recv(_socketNbr, buffer, SINGLE_READ_SIZE, 0);
+	read_ret = recv(_socketNbr, buffer, EMPTYBUF_READ_SIZE, 0);
 	_nbrReadsSinceClose += 1;
+//	std::cout << "nbr reads since close: " << _nbrReadsSinceClose << std::endl;
 	if (read_ret == 0)
 	{
 		std::cout << "we received the FIN packet (read_ret = 0), connection " << _socketNbr << " is properly closed" << std::endl;
@@ -1744,9 +1722,9 @@ int				ConnectionClass::closeReadConnection(void)
 		_status = CO_ISCLOSED;
 		return (1);
 	}
-	else if (_nbrReadsSinceClose > 5)
+	else if (_nbrReadsSinceClose == MAX_READ_BEFORE_FORCE_CLOSE)
 	{
-		std::cout << "client kept writing after 5 select loops: forcing closure" << std::endl;;
+		std::cout << "client kept writing after 1000 select loops: closing socket" << std::endl;;
 		if (close(_socketNbr)  < 0)
 			perror("close");
 		_isClosing = 0;
@@ -1754,6 +1732,16 @@ int				ConnectionClass::closeReadConnection(void)
 		_status = CO_ISCLOSED;
 		return (1);
 	}
+/*	else if (_nbrReadsSinceClose > MAX_READ_BEFORE_FORCE_CLOSE)
+	{
+		std::cout << "client keeps sending data, closing for now" << std::endl;
+		if (close(_socketNbr)  < 0)
+			perror("close");
+		_isClosing = 0;
+		_nbrReadsSinceClose = 0;
+		_status = CO_ISCLOSED;
+		return (1);
+	}*/
 	else
 	{
 //		std::cout << "we keep reading in the close process" << std::endl;

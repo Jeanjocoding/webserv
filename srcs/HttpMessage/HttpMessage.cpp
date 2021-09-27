@@ -26,6 +26,7 @@ HttpMessage::~HttpMessage(void)
 
 void		HttpMessage::clear(void)
 {
+//	std::cout << "clear called on httpmessage" << std::endl;
 	_headers.clear();
 	if (_currentContentLength)
 		delete [] _content;
@@ -41,7 +42,7 @@ HttpMessage&	HttpMessage::operator=(HttpMessage const& to_copy)
 {
 //	std::multimap<std::string, std::string>::const_iterator	itdeb = to_copy._headers.begin();
 //	std::multimap<std::string, std::string>::const_iterator	itend = to_copy._headers.end();
-
+//	clear();
 //	std::cout << "header size: " << to_copy._headers.size() << std::endl;
 	_headers = to_copy._headers;
 //	if (to_copy._headers.size())
@@ -144,6 +145,7 @@ void			HttpMessage::appendToContent(std::string& to_append)
 void			HttpMessage::appendToContent(char *str, int len)
 {
 	append_to_buffer(&_content, _currentContentLength, str, len);
+	std::cout << "current content length: " << _currentContentLength << std::endl;
 }
 
 long /*const&	*/		HttpMessage::getCurrentContentLength() const

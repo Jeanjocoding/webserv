@@ -161,19 +161,9 @@ int main(int ac, char** av)
 				}
 				if ((receive_return_value = connection_map[i].receiveRequest()) <= 0) // close connection if error while receiving paquets
 				{
-//					std::cout << "close cuz recv request" << std::endl;
+					std::cout << "close cuz recv request" << std::endl;
 					if (receive_return_value == 0 || receive_return_value == TCP_ERROR)
 						connection_map[i].simpleCloseConnection();
-/*					else if (receive_return_value == HTTP_ERROR)
-					{
-						close_return_value = connection_map[i].closeWriteConnection();
-						if (close_return_value == -1)
-						{
-							FD_CLR(i, &rfds);
-							connection_map.erase(i);
-							continue;
-						}
-					}*/
 				}
 				if (connection_map[i].getStatus() == CO_ISCLOSED) // erases if connection has encoutered an error
 				{
@@ -188,6 +178,7 @@ int main(int ac, char** av)
 			}
 			else if (FD_ISSET(i, &wfds_copy))
 			{
+//				std::cout << "is in wfds" << std::endl;
 				if (input_pipe_map.count(i))
 				{
 					cgiWriteOnPipe((*(input_pipe_map.find(i))).second);

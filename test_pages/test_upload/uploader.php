@@ -1,7 +1,7 @@
 
 <?php
-$uploaddir = '/Users/theophile/42/webserv/git_webserv/test_pages/test_upload/upload_dir/';
-//$uploaddir = '/home/user42/webserv/git_webserv/test_pages/test_upload/upload_dir/';
+//$uploaddir = '/Users/theophile/42/webserv/git_webserv/test_pages/test_upload/upload_dir/';
+$uploaddir = '/home/user42/webserv/git_webserv/test_pages/test_upload/upload_dir/';
 $uploadfile = $uploaddir . basename($_FILES['userfile']['name']);
 
 

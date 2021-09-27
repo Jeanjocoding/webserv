@@ -167,7 +167,8 @@ int		ExecAndSetPipes(t_CgiParams& params, LocationClass const& location, Connect
 	std::string	execname(location.getCGI());
 	std::string	argname("php-cgi");
 
-//	std::cout << "in exec and set pipes" << std::endl;
+	std::cout << "in exec and set pipes" << std::endl;
+	std::cout << "execname: " << execname << std::endl;
 	args[0] = new char[execname.length() + 1];
 	std::strncpy(args[0], execname.c_str(), execname.length());
 	args[0][execname.length()] = '\0';
@@ -219,7 +220,7 @@ int		ExecAndSetPipes(t_CgiParams& params, LocationClass const& location, Connect
 
 int		cgiWriteOnPipe(ConnectionClass& connection)
 {
-//	std::cout << "in write on pipes" << std::endl;
+	std::cout << "in write on pipes" << std::endl;
 //	std::cout << "pipeline length: " << connection._request_pipeline.size() << std::endl;
 	if (/*connection._request_pipeline[0].getMethod() == POST_METHOD && */connection._request_pipeline[0].getContentLength())
 	{
@@ -254,7 +255,7 @@ int		cgiReadOnPipe(ConnectionClass& connection)
 	int	wait_ret;
 	int	wait_status;
 
-//	std::cout << "in read on pipe" << std::endl;
+	std::cout << "in read on pipe" << std::endl;
 	read_ret = read(connection.getOutputFd(), read_buffer, 4096);
 //		connection._currentResponse->appendToContent(read_buffer, )
 	if (read_ret == -1)
@@ -271,7 +272,7 @@ int		cgiReadOnPipe(ConnectionClass& connection)
 	else
 	{
 		append_to_buffer(&connection._cgiOutput, connection._cgiOutput_len, read_buffer, read_ret);
-//		std::cout << std::endl << "body for now: " << std::endl;
+//		std::cout << std::endl << "length read for now: " << connection._cgiOutput_len << std::endl;
 //		write(1, connection._cgiOutput, connection._cgiOutput_len);
 		std::cout << std::endl;
 	}
