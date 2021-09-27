@@ -1655,30 +1655,6 @@ int			ConnectionClass::sendResponse(std::string response)
 	return (0);
 }
 
-/** Empties the reading buffer before closing the connection */
-int				ConnectionClass::_emptyReadBuffers() const
-{
-	int read_ret;
-	int total_read = 0;
-	char trashbuf[EMPTYBUF_READ_SIZE];
-
-	while ((read_ret = recv(_socketNbr, trashbuf, EMPTYBUF_READ_SIZE, 0)) == EMPTYBUF_READ_SIZE)
-	{
-		total_read += read_ret;
-		if (total_read > MAX_READ_BEFORE_FORCE_CLOSE)
-			return (FORCE_CLOSE_NEEDED);
-	}
-	if (read_ret == 0)
-		return (0);
-	else if (read_ret == -1)
-	{
-//		perror("recv");
-		return (-1);
-	}
-	else
-		return (1);
-}
-
 int				ConnectionClass::simpleCloseConnection(void)
 {
 	if (close(_socketNbr) < 0)
@@ -1718,15 +1694,15 @@ int				ConnectionClass::closeWriteConnection(void)
 
 int				ConnectionClass::closeReadConnection(void)
 {
-	char buffer[SINGLE_READ_SIZE];
+	char buffer[EMPTYBUF_READ_SIZE];
 	int read_ret;
 
-	read_ret = recv(_socketNbr, buffer, SINGLE_READ_SIZE, 0);
+	read_ret = recv(_socketNbr, buffer, EMPTYBUF_READ_SIZE, 0);
 	_nbrReadsSinceClose += 1;
 //	std::cout << "nbr reads since close: " << _nbrReadsSinceClose << std::endl;
 	if (read_ret == 0)
 	{
-//		std::cout << "we received the FIN packet (read_ret = 0), connection " << _socketNbr << " is properly closed" << std::endl;
+		std::cout << "we received the FIN packet (read_ret = 0), connection " << _socketNbr << " is properly closed" << std::endl;
 //		if (shutdown(_socketNbr, SHUT_RD) < 0)
 //			perror("shutdown");
 		if (close(_socketNbr)  < 0)
@@ -1746,14 +1722,12 @@ int				ConnectionClass::closeReadConnection(void)
 		_status = CO_ISCLOSED;
 		return (1);
 	}
-	else if (_nbrReadsSinceClose > 5)
+	else if (_nbrReadsSinceClose == MAX_READ_BEFORE_FORCE_CLOSE)
 	{
-		std::cout << "client kept writing after 5 select loops: closing read end" << std::endl;;
+		std::cout << "client kept writing after 1000 select loops: closing read end" << std::endl;;
 		if (shutdown(_socketNbr, SHUT_RD) < 0) // ferme cote lecture pour que client arrete d'envoyer et commence à lire
 			perror("shutdown");
-		std::cout << "start sleeping to give client time to read..." << std::endl;
-		usleep(1000000); // laisse le temps au client de lire la reponse. possible de le rendre plus elegant avec des timers
-		std::cout << "wake up" << std::endl;
+//		read_ret = recv(_socketNbr, buffer, SINGLE_READ_SIZE, 0); //for testing purposes, needs to be removed
 /*		if (close(_socketNbr)  < 0)
 			perror("close");
 		_isClosing = 0;
@@ -1761,8 +1735,9 @@ int				ConnectionClass::closeReadConnection(void)
 		_status = CO_ISCLOSED;*/
 		return (0);
 	}
-	else if (_nbrReadsSinceClose > 6)
+	else if (_nbrReadsSinceClose > MAX_READ_BEFORE_FORCE_CLOSE)
 	{
+		std::cout << "client keeps sending data, closing for now" << std::endl;
 		if (close(_socketNbr)  < 0)
 			perror("close");
 		_isClosing = 0;
