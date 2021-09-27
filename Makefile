@@ -47,7 +47,7 @@ OBJS = $(addprefix $(OBJS_PATH), $(TMP))
 INCS = $(addprefix $(HDRS_PATH), $(HDRS))
 
 CC = clang++
-C_FLAGS = -Wall -Werror -Wextra -std=c++98 -g -fsanitize=address
+C_FLAGS = -Wall -Werror -Wextra -std=c++98 -g #-fsanitize=address
 
 all : $(NAME)
 

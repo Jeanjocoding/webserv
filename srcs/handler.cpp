@@ -272,7 +272,7 @@ void	answer_connection(ConnectionClass& connection)
 		case GET_METHOD :
 			/* leak probable: */
 			answer_get(connection._request_pipeline[0], location, connection);
-			if (location.isCGI() && !connection._currentResponse->isError())
+			if ((location.isCGI() || request.getRequestLineInfos().target.find('?') != std::string::npos) && !connection._currentResponse->isError())
 				return;
 			break;
 		case POST_METHOD :
