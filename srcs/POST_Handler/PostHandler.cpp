@@ -70,20 +70,14 @@ void		setCgiParams(t_CgiParams& params, HttpRequest const& request, LocationClas
 	std::string	tmp = location.getRoot();
 	std::string	target = request.getRequestLineInfos().target;
 
+	std::cout << "query : " << request.getRequestLineInfos().query_string << std::endl;
 	tmp.append(target);
-	if ( target.length() > 4 && (target.find(".php") == (target.length() - 4) || target.find(".bla") == (target.length() - 4)))// TODO no hard coding for the file extension
+	if ((target.length() > 4 && (target.find(".php") == (target.length() - 4) || target.find(".bla") == (target.length() - 4)))// TODO no hard coding for the file extension
+		|| !request.getRequestLineInfos().query_string.empty())
 	{
 		params.scriptFilename = tmp;
 		params.scriptName = target.substr(target.find_last_of('/'));
-	}
-	else if (target.find("?") != std::string::npos && (target.find("?") > target.find(".php") || target.find("?") > target.find(".bla")))// TODO no hard coding
-	{
-		params.scriptFilename = tmp;
-		params.scriptFilename.erase(params.scriptFilename.find("?"), params.scriptFilename.size());
-		params.scriptName = target.substr(target.find_last_of('/'));
-		params.scriptName.erase(params.scriptName.find("?"), params.scriptName.size());
-		params.queryString = std::string(target, target.find("?") + 1, target.size());
-		target.erase(target.find("?"), target.size());
+		params.queryString = request.getRequestLineInfos().query_string;
 	}
 	else
 	{

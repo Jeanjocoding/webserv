@@ -6,7 +6,7 @@
 /*   By: asablayr <marvin@42.fr>                    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2021/06/06 21:54:40 by asablayr          #+#    #+#             */
-/*   Updated: 2021/09/23 15:24:02 by asablayr         ###   ########.fr       */
+/*   Updated: 2021/09/27 18:09:25 by asablayr         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -68,6 +68,7 @@ void	print_request(HttpRequest& request)
 	std::cout << std::endl;
 	std::cout << "START LINE: "  << request.getStartLine() << std::endl;
 	std::cout << "URI: " << request.getRequestLineInfos().target << std::endl;
+	std::cout << "QUER_STRING: " << request.getRequestLineInfos().query_string << std::endl;
 	std::cout << std::endl;
 	std::cout << "HEADERS: " << std::endl;
 	request.printHeaders();
@@ -134,7 +135,7 @@ static HttpResponse&	answer_get(HttpRequest const& request, LocationClass const&
 	std::string		tmp = location.getRoot();// Put the root working directory in tmp
 	
 	tmp.append(request.getRequestLineInfos().target);// Append the requested  uri
-	if (location.isCGI() || request.getRequestLineInfos().target.find('?') != std::string::npos)// If cgi is requested
+	if (location.isCGI() || !request.getRequestLineInfos().query_string.empty())// If cgi is requested
 		return answer_cgi_get(request, location, connection); //Return response returned by answer_cgi
 	if (request.getRequestLineInfos().target == location.getUri() + "/" ||
 		(request.getRequestLineInfos().target == location.getUri() && *(--request.getRequestLineInfos().target.end()) == '/'))// If index is requested
@@ -272,7 +273,7 @@ void	answer_connection(ConnectionClass& connection)
 		case GET_METHOD :
 			/* leak probable: */
 			answer_get(connection._request_pipeline[0], location, connection);
-			if ((location.isCGI() || request.getRequestLineInfos().target.find('?') != std::string::npos) && !connection._currentResponse->isError())
+			if ((location.isCGI() || !request.getRequestLineInfos().query_string.empty()) && !connection._currentResponse->isError())
 				return;
 			break;
 		case POST_METHOD :
