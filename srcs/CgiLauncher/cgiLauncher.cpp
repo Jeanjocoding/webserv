@@ -165,6 +165,7 @@ int		ExecAndSetPipes(t_CgiParams& params, LocationClass const& location, Connect
 	char	**args = new char*[2];
 
 	std::string	execname(location.getCGI());
+//	std::string	execname("/Users/tlucille/.brew/bin/php-cgi");
 	std::string	argname("php-cgi");
 
 	std::cout << "in exec and set pipes" << std::endl;
