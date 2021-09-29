@@ -32,7 +32,7 @@ bool								parse_conf_file(std::string& buff);
 void								handle_connection(ConnectionClass& connection);
 void								answer_connection(ConnectionClass& connection);
 void								print_request(HttpRequest& request);
-void								setCgiParams(t_CgiParams& params, HttpRequest const& request, LocationClass const& location);
+int 								setCgiParams(t_CgiParams& params, HttpRequest const& request, LocationClass const& location);
 void								add_header_part(HttpResponse& response, char* str, size_t buffer_size, size_t& body_beginning);
 
 #endif
