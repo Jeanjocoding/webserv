@@ -6,7 +6,7 @@
 /*   By: asablayr <marvin@42.fr>                    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2021/06/06 21:54:40 by asablayr          #+#    #+#             */
-/*   Updated: 2021/09/27 18:09:25 by asablayr         ###   ########.fr       */
+/*   Updated: 2021/09/29 11:52:37 by asablayr         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -227,7 +227,7 @@ void	answer_connection(ConnectionClass& connection)
 	}
 	HttpRequest& request = connection._request_pipeline[0];
 	print_request(request);
-	serverClass& server = *(connection.getServer(request.getHeaders().find("Host")->second));
+	serverClass& server = (request.getHeaders().find("Host") != request.getHeaders().end()) ? *(connection.getServer(request.getHeaders().find("Host")->second)) : *(connection.getServer());
 	if (!request.isValid())//TODO check why is invalid and respond accordingly
 		return send_error(request.getErrorCode(), server._default_error_pages, connection);
 	LocationClass location = server.getLocation(request.getRequestLineInfos().target);

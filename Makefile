@@ -6,7 +6,7 @@
 #    By: asablayr <marvin@42.fr>                    +#+  +:+       +#+         #
 #                                                 +#+#+#+#+#+   +#+            #
 #    Created: 2020/11/26 10:50:04 by asablayr          #+#    #+#              #
-#    Updated: 2021/08/27 12:24:09 by asablayr         ###   ########.fr        #
+#    Updated: 2021/09/29 12:05:24 by asablayr         ###   ########.fr        #
 #                                                                              #
 # **************************************************************************** #
 
@@ -51,7 +51,7 @@ C_FLAGS = -Wall -Werror -Wextra -std=c++98 -g #-fsanitize=address
 
 all : $(NAME)
 
-$(NAME): $(OBJS)
+$(NAME): dir $(OBJS)
 	$(CC) $(C_FLAGS) $(OBJS) -o $(NAME)
 
 $(OBJS_PATH)%.o: $(SRCS_PATH)%.cpp $(INCS)
@@ -59,8 +59,18 @@ $(OBJS_PATH)%.o: $(SRCS_PATH)%.cpp $(INCS)
 #	mkdir -p $(OBJS_PATH) $(OBJS_PATH)$(HTTPMSG_PATH)HttpMessage
 	$(CC) $(C_FLAGS) -c $< -o $@ -I $(HDRS_PATH) -I $(DEFS_PATH)
 
+dir:
+	mkdir -p $(OBJS_PATH)
+	mkdir -p $(OBJS_PATH)$(SETUP_PATH)
+	mkdir -p $(OBJS_PATH)$(CONNECTION_PATH)
+	mkdir -p $(OBJS_PATH)$(CGILAUNCHER_PATH)
+	mkdir -p $(OBJS_PATH)$(POSTHANDLER_PATH)
+	mkdir -p $(OBJS_PATH)$(DELETEHANDLER_PATH)
+	mkdir -p $(OBJS_PATH)$(HTTPMSG_PATH)
+	mkdir -p $(OBJS_PATH)$(UTILS_PATH)
+
 clean:
-	rm -rf $(OBJS)
+	rm -rf $(OBJS_PATH)
 
 fclean: clean
 	rm -rf $(NAME)
