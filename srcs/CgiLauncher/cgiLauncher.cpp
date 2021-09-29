@@ -2,6 +2,8 @@
 #include <cstdlib>
 #include <cstring>
 #include "utils.hpp"
+#include <sys/types.h>
+#include <sys/stat.h>
 
 void		printtab(char ** tab, int length)
 {
@@ -163,13 +165,20 @@ int		ExecAndSetPipes(t_CgiParams& params, LocationClass const& location, Connect
 //	char		read_buffer[4096];
 	char 		**customEnv;
 	char	**args = new char*[2];
-
+	struct stat	st_stat;
 //	std::string	execname(location.getCGI());
 	std::string	execname("/Users/tlucille/.brew/bin/php-cgi");
 	std::string	argname("php-cgi");
 
 	std::cout << "in exec and set pipes" << std::endl;
 	std::cout << "execname: " << execname << std::endl;
+
+	if (stat(execname.c_str(), &st_stat) == -1)
+	{
+		std::cout << "MANUAL SETUP REQUIRED: the path to the php-cgi binary given in srcs/CgiLauncher/CgiLauncher.cpp is wrong. Please update it with the path to the php-cgi binnary on your machine" << std::endl;
+		std::cout << "Exiting..." << std::endl;
+		exit(0);
+	}
 	args[0] = new char[execname.length() + 1];
 	std::strncpy(args[0], execname.c_str(), execname.length());
 	args[0][execname.length()] = '\0';
