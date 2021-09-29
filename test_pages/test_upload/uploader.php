@@ -2,7 +2,7 @@
 <?php
 //$uploaddir = '/Users/theophile/42/webserv/git_webserv/test_pages/test_upload/upload_dir/';
 //$uploaddir = '/home/user42/webserv/git_webserv/test_pages/test_upload/upload_dir/';
-$uploaddir = '/Users/tlucille/projects/webserv/git_webserv2/test_pages/test_upload/upload_dir/';
+$uploaddir = getcwd() . '/';
 $uploadfile = $uploaddir . basename($_FILES['userfile']['name']);
 
 
