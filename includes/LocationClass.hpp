@@ -6,7 +6,7 @@
 /*   By: asablayr <marvin@42.fr>                    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2021/06/12 14:11:07 by asablayr          #+#    #+#             */
-/*   Updated: 2021/09/17 11:19:13 by asablayr         ###   ########.fr       */
+/*   Updated: 2021/09/29 14:34:02 by asablayr         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -102,7 +102,6 @@ class LocationClass : public contextClass
 			std::string								_index;
 			bool									_methods[3];
 			bool									_autoindex_bool;
-			std::string								_autoindex_str;
 			bool									_cgi_bool;
 			std::string								_cgi_path;
 			bool									_redirect_bool;

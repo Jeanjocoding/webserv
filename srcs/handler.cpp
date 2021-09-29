@@ -6,7 +6,7 @@
 /*   By: asablayr <marvin@42.fr>                    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2021/06/06 21:54:40 by asablayr          #+#    #+#             */
-/*   Updated: 2021/09/29 11:52:37 by asablayr         ###   ########.fr       */
+/*   Updated: 2021/09/29 12:14:54 by asablayr         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -96,7 +96,6 @@ void	print_request(HttpRequest& request)
 static void	send_error(unsigned short error_nb, std::map<unsigned short, std::string> const& error_map, ConnectionClass& connection)
 {
 	HttpResponse response = HttpResponse(error_nb, error_map.find(error_nb)->second);
-//	response.setConnectionStatus(false);
 	connection.sendResponse(response.toString());
 }
 
@@ -110,7 +109,7 @@ static HttpResponse& answer_cgi_get(HttpRequest const& request, LocationClass co
 	std::ifstream	body;
 
 //	std::cout << "in answer cgi get" << std::endl;
-	setCgiParams(params, request, location);//TODO check with mate
+	setCgiParams(params, request, location);
 	body.open(params.scriptFilename.c_str());
 	if (!body.is_open())
 	{
@@ -149,8 +148,6 @@ static HttpResponse&	answer_get(HttpRequest const& request, LocationClass const&
 			{
 				tmp.erase(tmp.rfind('/') + 1, tmp.size());
 				tmp = location.getAutoindex(tmp);
-//				response.setBody(tmp.begin(), tmp.end());
-//				response.setHeader(200);
 				connection._currentResponse->setBody(tmp.begin(), tmp.end());
 				connection._currentResponse->setHeader(200);
 			}
