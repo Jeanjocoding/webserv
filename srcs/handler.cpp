@@ -107,7 +107,7 @@ static HttpResponse& answer_cgi_get(HttpRequest const& request, LocationClass co
 	int				retset;
 	struct stat		st_stat;
 
-
+	std::cout << "answer cgi get" << std::endl;
 	retset = setCgiParams(params, request, location);
 	if (retset == EXTENSION_NOT_VALID)
 	{
