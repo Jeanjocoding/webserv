@@ -17,6 +17,8 @@
 #include <vector>
 #include <cstdio>
 #include <vector>
+#include <sys/stat.h>
+#include <sys/types.h>
 
 #include "webserv.hpp"
 #include "ConnectionUtils.hpp"
@@ -101,31 +103,25 @@ static void	send_error(unsigned short error_nb, std::map<unsigned short, std::st
 
 static HttpResponse& answer_cgi_get(HttpRequest const& request, LocationClass const& location, ConnectionClass& connection)
 {
-//	HttpResponse	response;
-//	char*			output;
 	t_CgiParams		params;
-//	size_t			body_begin = 0;
-//	size_t			output_len = 0;
-	std::ifstream	body;
+	int				retset;
+	struct stat		st_stat;
 
-//	std::cout << "in answer cgi get" << std::endl;
-	setCgiParams(params, request, location);
-	body.open(params.scriptFilename.c_str());
-	if (!body.is_open())
+
+	retset = setCgiParams(params, request, location);
+	if (retset == EXTENSION_NOT_VALID)
+	{
+		delete connection._currentResponse;
+		connection._currentResponse = new HttpResponse(405, location.getErrorPage(405));
+		return (*(connection._currentResponse));
+	}
+	else if ( retset == FILE_NOT_FOUND || stat(params.scriptFilename.c_str(), &st_stat) == -1)
 	{
 		delete connection._currentResponse;
 		connection._currentResponse = new HttpResponse(404, location.getErrorPage(404));
-		connection._currentResponse->setError(1);
-		return	(*connection._currentResponse);
+		return (*(connection._currentResponse));
 	}
-
-	
 	ExecAndSetPipes(params, location, connection);
-//	launchCgiScript(params, request, location, &output, output_len);
-//	add_header_part(response, output, output_len, body_begin);
-//	write(1, output, output_len);
-//	response.setBody(&(output[body_begin]), output_len - body_begin);
-//	response.setHeader();
 	return  (*connection._currentResponse);
 }
 

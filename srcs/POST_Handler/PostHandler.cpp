@@ -3,6 +3,8 @@
 #include <sstream>
 #include <utility>
 #include <fstream>
+#include <sys/types.h>
+#include <sys/stat.h>
 
 // 	adds cgi headers to other headers and sets index of the beginning of the messager body
 
@@ -65,27 +67,47 @@ void	add_header_part(HttpResponse& response , char *str, size_t buffer_size ,siz
 //	response.printHeaders();
 }
 
-void		setCgiParams(t_CgiParams& params, HttpRequest const& request, LocationClass const& location)
+int		setCgiParams(t_CgiParams& params, HttpRequest const& request, LocationClass const& location)
 {
 	std::string	tmp = location.getRoot();
 	std::string	target = request.getRequestLineInfos().target;
+	struct stat	st_stat;
+	struct stat	st_stat2;
 
 	std::cout << "query : " << request.getRequestLineInfos().query_string << std::endl;
 	tmp.append(target);
-	if ((target.length() > 4 && (target.find(".php") == (target.length() - 4) || target.find(".bla") == (target.length() - 4)))// TODO no hard coding for the file extension
-		|| !request.getRequestLineInfos().query_string.empty())
-	{
-		params.scriptFilename = tmp;
-		params.scriptName = target.substr(target.find_last_of('/'));
-		params.queryString = request.getRequestLineInfos().query_string;
-	}
-	else
+	if (stat(tmp.c_str(), &st_stat) == -1)
+		return (FILE_NOT_FOUND);
+	else if (S_ISDIR(st_stat.st_mode))
 	{
 		if (tmp[tmp.size() - 1] == '/')
-			params.scriptFilename = tmp.append(location.getIndex());
+		{	
+			params.scriptFilename = tmp.append(location.getIndex());		
+			if (stat(params.scriptFilename.c_str(), &st_stat2) == -1)
+				return (FILE_NOT_FOUND);
+			if (S_ISDIR(st_stat2.st_mode))
+				return (EXTENSION_NOT_VALID);
+			if (!((params.scriptFilename.length() > 4 && (params.scriptFilename.find(".php") == (params.scriptFilename.length() - 4) || params.scriptFilename.find(".bla") == (params.scriptFilename.length() - 4)))// TODO no hard coding for the file extension
+				|| (request.getRequestLineInfos().int_method == GET_METHOD && !request.getRequestLineInfos().query_string.empty())))
+			{
+				return (EXTENSION_NOT_VALID);
+			}
+			
+		}
 		else
-			params.scriptFilename = tmp.append("/" + location.getIndex());
-		params.scriptName = location.getIndex();
+			return (FILE_NOT_FOUND);
+	}
+	else if (S_ISREG(st_stat.st_mode))
+	{
+		if ((target.length() > 4 && (target.find(".php") == (target.length() - 4) || target.find(".bla") == (target.length() - 4)))// TODO no hard coding for the file extension
+		|| (request.getRequestLineInfos().int_method == GET_METHOD && !request.getRequestLineInfos().query_string.empty()))
+		{
+			params.scriptFilename = tmp;
+				params.scriptName = target.substr(target.find_last_of('/'));
+			params.queryString = request.getRequestLineInfos().query_string;
+		}
+		else
+			return (EXTENSION_NOT_VALID);
 	}
 	std::cout << "scriptFilename : " << params.scriptFilename << std::endl;// testing
 	std::cout << "scriptName : " << params.scriptName << std::endl;// testing
@@ -103,6 +125,7 @@ void		setCgiParams(t_CgiParams& params, HttpRequest const& request, LocationClas
 	params.serverProtocol = "HTTP/1.1";
 	params.requestUri = target;
 	params.serverName = location.getServerName(); // a modif
+	return (0);
 }
 
 HttpResponse	answer_post(HttpRequest const& request, LocationClass const& location, ConnectionClass& connection)
@@ -114,10 +137,26 @@ HttpResponse	answer_post(HttpRequest const& request, LocationClass const& locati
 	t_CgiParams	params;
 //	size_t		body_beginning = 0;
 //	size_t		output_len = 0;
+	struct stat	st_stat;
 	std::ifstream body;
+	int				retset;
 
-	setCgiParams(params, request, location);
-	body.open(params.scriptFilename.c_str());
+
+	retset = setCgiParams(params, request, location);
+	if (retset == EXTENSION_NOT_VALID)
+	{
+		delete connection._currentResponse;
+		connection._currentResponse = new HttpResponse(405, location.getErrorPage(405));
+		return (*(connection._currentResponse));
+	}
+	else if ( retset == FILE_NOT_FOUND || stat(params.scriptFilename.c_str(), &st_stat) == -1)
+	{
+		delete connection._currentResponse;
+		connection._currentResponse = new HttpResponse(404, location.getErrorPage(404));
+		return (*(connection._currentResponse));
+	}
+
+/*	body.open(params.scriptFilename.c_str());
 	if (!body.is_open())
 	{
 		delete connection._currentResponse;
@@ -125,7 +164,7 @@ HttpResponse	answer_post(HttpRequest const& request, LocationClass const& locati
 		body.close();
 		return (*(connection._currentResponse));
 	}
-	body.close();
+	body.close();*/
 	ExecAndSetPipes(params, location, connection);
 //	launchCgiScript(params, request, location, &output, output_len);
 //	std::cout << "output: ";
