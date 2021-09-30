@@ -72,6 +72,7 @@ int		setCgiParams(t_CgiParams& params, HttpRequest const& request, LocationClass
 	std::string	tmp = location.getRoot();
 	std::string	target = request.getRequestLineInfos().target;
 	struct stat	st_stat;
+	struct stat	st_stat2;
 
 	std::cout << "query : " << request.getRequestLineInfos().query_string << std::endl;
 	tmp.append(target);
@@ -80,7 +81,19 @@ int		setCgiParams(t_CgiParams& params, HttpRequest const& request, LocationClass
 	else if (S_ISDIR(st_stat.st_mode))
 	{
 		if (tmp[tmp.size() - 1] == '/')
-			params.scriptFilename = tmp.append(location.getIndex());
+		{	
+			params.scriptFilename = tmp.append(location.getIndex());		
+			if (stat(params.scriptFilename.c_str(), &st_stat2) == -1)
+				return (FILE_NOT_FOUND);
+			if (S_ISDIR(st_stat2.st_mode))
+				return (EXTENSION_NOT_VALID);
+			if (!((params.scriptFilename.length() > 4 && (params.scriptFilename.find(".php") == (params.scriptFilename.length() - 4) || params.scriptFilename.find(".bla") == (params.scriptFilename.length() - 4)))// TODO no hard coding for the file extension
+				|| !request.getRequestLineInfos().query_string.empty()))
+			{
+				return (EXTENSION_NOT_VALID);
+			}
+			
+		}
 		else
 			return (FILE_NOT_FOUND);
 	}
