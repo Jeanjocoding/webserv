@@ -165,7 +165,12 @@ HttpResponse	answer_post(HttpRequest const& request, LocationClass const& locati
 		return (*(connection._currentResponse));
 	}
 	body.close();*/
-	ExecAndSetPipes(params, location, connection);
+	if (ExecAndSetPipes(params, location, connection) == -1)
+	{
+		delete connection._currentResponse;
+		connection._currentResponse = new HttpResponse(500, location.getErrorPage(500));
+		return (*(connection._currentResponse));
+	}
 //	launchCgiScript(params, request, location, &output, output_len);
 //	std::cout << "output: ";
 //	write(1, output, output_len);
