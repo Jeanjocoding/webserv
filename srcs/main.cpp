@@ -84,27 +84,6 @@ int main(int ac, char** av)
 	{
 		rfds_copy = rfds;
 		wfds_copy = wfds;
-/*		std::cout << "timeout check is launched" << std::endl;
-		for (std::map<int, ConnectionClass>::iterator i = connection_map.begin(); i != connection_map.end(); i ++)// TODO unit test
-		{
-			if (!i->second.isPersistent())
-				continue;
-			if (time(0) - i->second.getTimer() > i->second._servers[0]->getKeepAliveTimeout())// TODO switch server selection and unit from sec to ms
-			{
-				if (FD_ISSET(i->first, &rfds))
-				{
-					std::cout << "close cuz timeout" << std::endl;
-					connection_map[i->first].closeConnection();
-					FD_CLR(i->first, &rfds);
-				}
-				else if (FD_ISSET(i->first, &wfds))
-				{
-					std::cout << "close cuz timeout" << std::endl;
-					connection_map[i->first].closeConnection();
-					FD_CLR(i->first, &wfds);
-				}
-			}
-		}*/
 		if (select(FD_SETSIZE, &rfds_copy, &wfds_copy, NULL, &st_timeout) < 0)
 		{
 			std::perror("select error");
@@ -221,8 +200,6 @@ int main(int ac, char** av)
 		}
 		for (std::map<int, ConnectionClass>::iterator i = connection_map.begin(); i != connection_map.end(); i ++)// TODO unit test
 		{
-//			if (i->second.isClosing())
-//				continue;
 //			std::cout << "i in timeout check: " << i->first << ", map size: " << connection_map.size() << ", iterations: " << iterations << std::endl;
 			if (!i->second.isPersistent() && !i->second.isClosing())
 				continue;

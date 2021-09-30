@@ -34,19 +34,16 @@ int				_findStrIndex(std::string to_find, char *buf, size_t buffer_size)
 void	add_header_part(HttpResponse& response , char *str, size_t buffer_size ,size_t& body_beginning)
 {
 	body_beginning = _findStrIndex("\r\n\r\n", str, buffer_size);
-//	std::cout << "body beginning: " << body_beginning << std::endl;
 	std::string	header_part(str, body_beginning);
 	std::string	header_string;
 	size_t	next_crlf;
 	size_t	field_value_separator_index;
 	size_t pos = 0;
 
-//	std::cout << "header part: " << header_part << std::endl;
 	next_crlf = header_part.find("\r\n");
 	while (next_crlf < body_beginning)
 	{
 		header_string = header_part.substr(pos, next_crlf - pos);
-//		std::cout << "header string: " << header_string << std::endl;
 		field_value_separator_index = header_string.find(':');
 		std::pair<std::string, std::string> header_pair(header_string.substr(0, field_value_separator_index), header_string.substr(field_value_separator_index + 1)); //optimisable
 		response.addHeader(header_pair);
@@ -55,16 +52,13 @@ void	add_header_part(HttpResponse& response , char *str, size_t buffer_size ,siz
 		if (next_crlf == header_part.npos)
 		{
 			header_string = header_part.substr(pos, next_crlf - pos);
-//			std::cout << "header string: " << header_string << std::endl;
 			field_value_separator_index = header_string.find(':');
 			std::pair<std::string, std::string> header_pair(header_string.substr(0, field_value_separator_index), header_string.substr(field_value_separator_index + 1)); //optimisable
 			response.addHeader(header_pair);
 			break;	
 		}
-//		std::cout << "next crlf: " << next_crlf << ", body_beginning: " << body_beginning << std::endl; 
 	}
 	body_beginning += 4; // je saute les crlf pour arriver direct au début du body
-//	response.printHeaders();
 }
 
 int		setCgiParams(t_CgiParams& params, HttpRequest const& request, LocationClass const& location)
@@ -130,13 +124,7 @@ int		setCgiParams(t_CgiParams& params, HttpRequest const& request, LocationClass
 
 HttpResponse	answer_post(HttpRequest const& request, LocationClass const& location, ConnectionClass& connection)
 {
-//	HttpResponse	response;
-
-	//TODO
-//	char		*output;
 	t_CgiParams	params;
-//	size_t		body_beginning = 0;
-//	size_t		output_len = 0;
 	struct stat	st_stat;
 	std::ifstream body;
 	int				retset;
@@ -155,29 +143,11 @@ HttpResponse	answer_post(HttpRequest const& request, LocationClass const& locati
 		connection._currentResponse = new HttpResponse(404, location.getErrorPage(404));
 		return (*(connection._currentResponse));
 	}
-
-/*	body.open(params.scriptFilename.c_str());
-	if (!body.is_open())
-	{
-		delete connection._currentResponse;
-		connection._currentResponse = new HttpResponse(404, location.getErrorPage(404));
-		body.close();
-		return (*(connection._currentResponse));
-	}
-	body.close();*/
 	if (ExecAndSetPipes(params, location, connection) == -1)
 	{
 		delete connection._currentResponse;
 		connection._currentResponse = new HttpResponse(500, location.getErrorPage(500));
 		return (*(connection._currentResponse));
 	}
-//	launchCgiScript(params, request, location, &output, output_len);
-//	std::cout << "output: ";
-//	write(1, output, output_len);
-/*	add_header_part(response, output, output_len, body_beginning);
-//	std::cout << "after header" << std::endl;
-	response.setBody(&(output[body_beginning]), output_len - body_beginning);
-	response.setHeader();
-	*/
 	return (*connection._currentResponse);
 }
