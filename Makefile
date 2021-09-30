@@ -6,7 +6,7 @@
 #    By: asablayr <marvin@42.fr>                    +#+  +:+       +#+         #
 #                                                 +#+#+#+#+#+   +#+            #
 #    Created: 2020/11/26 10:50:04 by asablayr          #+#    #+#              #
-#    Updated: 2021/09/29 15:01:13 by asablayr         ###   ########.fr        #
+#    Updated: 2021/09/30 10:59:00 by asablayr         ###   ########.fr        #
 #                                                                              #
 # **************************************************************************** #
 
@@ -49,9 +49,9 @@ INCS = $(addprefix $(HDRS_PATH), $(HDRS))
 CC = clang++
 C_FLAGS = -Wall -Werror -Wextra -std=c++98 -g #-fsanitize=address
 
-all : $(NAME)
+all : dir $(NAME)
 
-$(NAME): dir $(OBJS)
+$(NAME): $(OBJS)
 	$(CC) $(C_FLAGS) $(OBJS) -o $(NAME)
 
 $(OBJS_PATH)%.o: $(SRCS_PATH)%.cpp $(INCS)
