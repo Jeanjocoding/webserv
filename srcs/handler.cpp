@@ -121,7 +121,12 @@ static HttpResponse& answer_cgi_get(HttpRequest const& request, LocationClass co
 		connection._currentResponse = new HttpResponse(404, location.getErrorPage(404));
 		return (*(connection._currentResponse));
 	}
-	ExecAndSetPipes(params, location, connection);
+	if (ExecAndSetPipes(params, location, connection) == -1)
+	{
+		delete connection._currentResponse;
+		connection._currentResponse = new HttpResponse(500, location.getErrorPage(500));
+		return (*(connection._currentResponse));
+	}
 	return  (*connection._currentResponse);
 }
 
