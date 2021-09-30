@@ -55,6 +55,7 @@ HttpRequest&	HttpRequest::operator=(HttpRequest const& to_copy)
 	_hasTrailers = to_copy._hasTrailers;
 	_trailers = to_copy._trailers;
 	_connectionOptions = to_copy._connectionOptions;
+	_location = to_copy._location;
 	return (*this);
 }
 
@@ -82,7 +83,7 @@ void		HttpRequest::clear(void)
 	_hasTrailers = 0;
 	_connectionOptions.clear();
 	_currentContentLength = 0;
-
+	_location = 0;
 }
 
 void				HttpRequest::addRequestLine(std::string& method, std::string& target)
@@ -217,6 +218,13 @@ bool			HttpRequest::isValid(void) const
 	return (_isValid);
 }
 
+bool			HttpRequest::isCGI(void) const
+{
+	if (_location->isCGI() || _method == POST_METHOD)
+		return true;
+	return (false);
+}
+
 /*void			HttpRequest::appendToContent(std::string& to_append)
 {
 	append_to_buffer(&_content, _currentContentLength, (char*)to_append.c_str(), to_append.length());
@@ -226,6 +234,16 @@ void			HttpRequest::appendToContent(char *str, int len)
 {
 	append_to_buffer(&_content, _currentContentLength, str, len);
 }*/
+
+void			HttpRequest::setLocation(LocationClass* location)
+{
+	_location = location;
+}
+
+LocationClass*	HttpRequest::getLocation(void)
+{
+	return _location;
+}
 
 void			HttpRequest::setHasTrailer(bool value)
 {

@@ -6,7 +6,7 @@
 /*   By: asablayr <marvin@42.fr>                    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2021/07/04 17:42:52 by asablayr          #+#    #+#             */
-/*   Updated: 2021/09/21 22:29:02 by asablayr         ###   ########.fr       */
+/*   Updated: 2021/09/30 21:09:00 by asablayr         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -1339,10 +1339,7 @@ int		ConnectionClass::_checkMaxBodyConformity(HttpRequest& currentRequest)
 	std::multimap<std::string, std::string>	headers = currentRequest.getHeaders();
 	std::string tmp;
 	int	max_body;
-	LocationClass location;
 
-	if (!currentRequest.hasContent())
-		return (1);
 	for (std::multimap<std::string, std::string>::iterator host_beg = headers.begin(); host_beg != headers.end(); host_beg++)
 	{ 
 		if (caseInsensitiveComparison((*host_beg).first, "host"))
@@ -1352,11 +1349,10 @@ int		ConnectionClass::_checkMaxBodyConformity(HttpRequest& currentRequest)
 	}
 	serverClass	*server = getServer(tmp);
 	std::string stripped_target = currentRequest.getRequestLineInfos().target.substr(0, currentRequest.getRequestLineInfos().target.find('?'));
-//			std::cout << "stripped target: " << stripped_target << std::endl;
-	location = server->getLocation(stripped_target);
-	max_body = location.getClientBodySizeMax();
+	currentRequest.setLocation(server->getLocationPtr(stripped_target));
+	max_body = currentRequest.getLocation()->getClientBodySizeMax();
 	std::cout << "max body: " << max_body << "\tcontent length : " << currentRequest.getContentLength() << std::endl;
-	if (max_body == 0)
+	if (!currentRequest.hasContent() || max_body == 0)
 		return 1;
 	else
 	{

@@ -6,7 +6,7 @@
 /*   By: asablayr <marvin@42.fr>                    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2021/06/07 18:49:16 by asablayr          #+#    #+#             */
-/*   Updated: 2021/09/22 14:42:48 by asablayr         ###   ########.fr       */
+/*   Updated: 2021/09/30 19:56:12 by asablayr         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -201,6 +201,47 @@ LocationClass&	serverClass::getLocation(std::string const& uri) const
 		}
 	}
 	return *ret;
+}
+
+LocationClass*	serverClass::getLocationPtr(std::string const& uri)
+{
+	unsigned long	max_match = 0;
+	unsigned long	tmp = 0;
+	LocationClass* ret;
+	for (std::vector<LocationClass*>::const_iterator it = _location.begin(); it != _location.end(); it++)
+	{
+		if ((*it)->getParam() == "=")
+		{
+			if ((*it)->getUri() == uri)
+				return *it;
+			else
+				continue ;
+		}
+		else if ((*it)->getParam() == "~")
+		{
+			tmp = caseSensitiveReMatch((*it)->getUri(), uri);
+			if (tmp > max_match)
+			{
+				max_match = tmp;
+				ret = *it;
+			}
+		}
+		else if ((*it)->getParam() == "~*")
+		{
+			if (uri.find((*it)->getUri()) != std::string::npos)
+				return *it;
+		}
+		else if ((*it)->getParam() == "^~" || (*it)->getParam() == "")
+		{
+			tmp = caseSensitiveMatch((*it)->getUri(), uri);
+			if (tmp > max_match)
+			{
+				max_match = tmp;
+				ret = *it;
+			}
+		}
+	}
+	return ret;
 }
 
 long	serverClass::getKeepAliveTimeout(void) const

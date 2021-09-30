@@ -6,7 +6,7 @@
 /*   By: asablayr <marvin@42.fr>                    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2021/06/06 21:54:40 by asablayr          #+#    #+#             */
-/*   Updated: 2021/09/29 12:14:54 by asablayr         ###   ########.fr       */
+/*   Updated: 2021/09/30 21:30:28 by asablayr         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -135,7 +135,7 @@ static HttpResponse&	answer_get(HttpRequest const& request, LocationClass const&
 	std::string		tmp = location.getRoot();// Put the root working directory in tmp
 	
 	tmp.append(request.getRequestLineInfos().target);// Append the requested  uri
-	if (location.isCGI() || !request.getRequestLineInfos().query_string.empty())// If cgi is requested
+	if (request.isCGI())// If cgi is requested
 		return answer_cgi_get(request, location, connection); //Return response returned by answer_cgi
 	if (request.getRequestLineInfos().target == location.getUri() + "/" ||
 		(request.getRequestLineInfos().target == location.getUri() && *(--request.getRequestLineInfos().target.end()) == '/'))// If index is requested
@@ -217,19 +217,17 @@ static HttpResponse	answer_redirection(HttpRequest const& request, LocationClass
 
 void	answer_connection(ConnectionClass& connection)
 {
-//	std::cout << "pipeline size: " << connection._request_pipeline.size() << std::endl;
-
 	if (connection._request_pipeline.empty())
 	{
 		connection.setStatus(CO_ISDONE);
 		return ;
 	}
 	HttpRequest& request = connection._request_pipeline[0];
-	print_request(request);
+	print_request(request);// Testing
 	serverClass& server = (request.getHeaders().find("Host") != request.getHeaders().end()) ? *(connection.getServer(request.getHeaders().find("Host")->second)) : *(connection.getServer());
 	if (!request.isValid())//TODO check why is invalid and respond accordingly
 		return send_error(request.getErrorCode(), server._default_error_pages, connection);
-	LocationClass location = server.getLocation(request.getRequestLineInfos().target);
+	LocationClass const& location = *(connection._request_pipeline[0].getLocation());
 	if (connection.HasToWriteOnPipe() || connection.HasToReadOnPipe())
 		return;
 	else if (connection.HasDoneCgi())
@@ -249,7 +247,6 @@ void	answer_connection(ConnectionClass& connection)
 			return;
 	}
 	connection._currentResponse = new HttpResponse();
-//	std::cout << "request get method: " << request.getMethod() << std::endl;
 	if (request.getMethod() == -1)
 	{
 		std::cerr << "Not implemented Http request method on location " << location.getUri() << std::endl;
@@ -272,7 +269,8 @@ void	answer_connection(ConnectionClass& connection)
 		case GET_METHOD :
 			/* leak probable: */
 			answer_get(connection._request_pipeline[0], location, connection);
-			if ((location.isCGI() || !request.getRequestLineInfos().query_string.empty()) && !connection._currentResponse->isError())
+		//	if (request.isCGI() && !connection._currentResponse->isError())
+			if (location.isCGI() && !connection._currentResponse->isError())
 				return;
 			break;
 		case POST_METHOD :

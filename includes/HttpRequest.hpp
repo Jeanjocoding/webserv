@@ -4,6 +4,7 @@
 #include <vector>
 #include "HttpMessage.hpp"
 #include "utils.hpp"
+#include "LocationClass.hpp"
 
 typedef struct s_requestLineInfos
 {
@@ -52,9 +53,12 @@ public:
 	std::vector<std::string>&	getModifyableTrailers();
 	void				setIsChunked(bool value);
 	bool				isChunked() const;
+	bool				isCGI() const;
 //	void				appendToContent(std::string& to_append);
 //	void				appendToContent(char *str, int len);
 	void				setHasTrailer(bool value);
+	void				setLocation(LocationClass* location);
+	LocationClass*		getLocation(void);
 	bool				HasTrailers() const;
 	std::vector<std::string>&	getModifyableConnectionOptions();
 //	long/* const&	*/		getCurrentContentLength() const;
@@ -82,6 +86,8 @@ private:
 
 	int				_parseMethodLine(void);
 	int				_parseHeaderBlock(std::string str_headers);
+
+	LocationClass*	_location;
 };
 
 #endif
