@@ -6,7 +6,7 @@
 /*   By: asablayr <marvin@42.fr>                    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2021/07/15 13:31:12 by asablayr          #+#    #+#             */
-/*   Updated: 2021/09/21 22:04:07 by asablayr         ###   ########.fr       */
+/*   Updated: 2021/09/29 14:35:00 by asablayr         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -49,7 +49,7 @@ LocationClass::LocationClass(std::string const& params, std::string const& buff)
 	setSendfile();
 }
 
-LocationClass::LocationClass(LocationClass const& copy): contextClass(copy), _uri(copy._uri), _param(copy._param), _server_name(copy._server_name), _root(copy._root), _index(copy._index), _autoindex_bool(copy._autoindex_bool), _autoindex_str(copy._autoindex_str), _cgi_bool(copy._cgi_bool), _cgi_path(copy._cgi_path), _redirect_bool(copy._redirect_bool), _redirect_code(copy._redirect_code), _redirect_uri(copy._redirect_uri), _error_pages(copy._error_pages), _keepalive_timeout(copy._keepalive_timeout), _client_body_size_max(copy._client_body_size_max), _upload_store(copy._upload_store), _sendfile(copy._sendfile)
+LocationClass::LocationClass(LocationClass const& copy): contextClass(copy), _uri(copy._uri), _param(copy._param), _server_name(copy._server_name), _root(copy._root), _index(copy._index), _autoindex_bool(copy._autoindex_bool), _cgi_bool(copy._cgi_bool), _cgi_path(copy._cgi_path), _redirect_bool(copy._redirect_bool), _redirect_code(copy._redirect_code), _redirect_uri(copy._redirect_uri), _error_pages(copy._error_pages), _keepalive_timeout(copy._keepalive_timeout), _client_body_size_max(copy._client_body_size_max), _upload_store(copy._upload_store), _sendfile(copy._sendfile)
 {
 	_methods[GET_METHOD] = copy._methods[GET_METHOD];
 	_methods[POST_METHOD] = copy._methods[POST_METHOD];
@@ -70,7 +70,6 @@ LocationClass& LocationClass::operator = (LocationClass const& copy)
 	_root = copy._root;
 	_index = copy._index;
 	_autoindex_bool = copy._autoindex_bool;
-	_autoindex_str = copy._autoindex_str;
 	_cgi_bool = copy._cgi_bool;
 	_cgi_path = copy._cgi_path;
 	_redirect_bool = copy._redirect_bool;
@@ -358,7 +357,6 @@ void	LocationClass::setClientBodySizeMax(long val)
 
 void	LocationClass::setAutoindex(std::string const& autoindex_str)
 {
-	_autoindex_str = autoindex_str;
 	if (autoindex_str == "on")
 		_autoindex_bool = true;
 	else
@@ -369,9 +367,9 @@ void	LocationClass::setAutoindex(bool autoindex_bool)
 {
 		_autoindex_bool = autoindex_bool;
 	if (autoindex_bool == true)
-		_autoindex_bool = "on";
+		_autoindex_bool = true;
 	else
-		_autoindex_bool = "off";
+		_autoindex_bool = false;
 }
 
 void	LocationClass::setAutoindex(void)
@@ -380,9 +378,9 @@ void	LocationClass::setAutoindex(void)
 	if (it == _directives.end())
 		return ;
 	if (it->second == "on")
-		_autoindex_bool = "on";
+		_autoindex_bool = true;
 	else
-		_autoindex_bool = "off";
+		_autoindex_bool = false;
 }
 
 std::string	LocationClass::generateAutoindex(std::string const& request_uri) const
