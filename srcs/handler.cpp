@@ -184,6 +184,7 @@ static HttpResponse&	answer_get(HttpRequest const& request, LocationClass const&
 		}
 		else
 		{
+//			std::cout << "body of: " << tmp << " is open" << std::endl;
 			try// Try to input requested file in response body
 			{
 				tmp = std::string(std::istreambuf_iterator<char>(body), std::istreambuf_iterator<char>());
