@@ -88,7 +88,7 @@ int		setCgiParams(t_CgiParams& params, HttpRequest const& request, LocationClass
 			if (S_ISDIR(st_stat2.st_mode))
 				return (EXTENSION_NOT_VALID);
 			if (!((params.scriptFilename.length() > 4 && (params.scriptFilename.find(".php") == (params.scriptFilename.length() - 4) || params.scriptFilename.find(".bla") == (params.scriptFilename.length() - 4)))// TODO no hard coding for the file extension
-				|| !request.getRequestLineInfos().query_string.empty()))
+				|| (request.getRequestLineInfos().int_method == GET_METHOD && !request.getRequestLineInfos().query_string.empty())))
 			{
 				return (EXTENSION_NOT_VALID);
 			}
@@ -100,7 +100,7 @@ int		setCgiParams(t_CgiParams& params, HttpRequest const& request, LocationClass
 	else if (S_ISREG(st_stat.st_mode))
 	{
 		if ((target.length() > 4 && (target.find(".php") == (target.length() - 4) || target.find(".bla") == (target.length() - 4)))// TODO no hard coding for the file extension
-		|| !request.getRequestLineInfos().query_string.empty())
+		|| (request.getRequestLineInfos().int_method == GET_METHOD && !request.getRequestLineInfos().query_string.empty()))
 		{
 			params.scriptFilename = tmp;
 				params.scriptName = target.substr(target.find_last_of('/'));
