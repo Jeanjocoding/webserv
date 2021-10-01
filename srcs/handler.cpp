@@ -6,7 +6,7 @@
 /*   By: asablayr <marvin@42.fr>                    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2021/06/06 21:54:40 by asablayr          #+#    #+#             */
-/*   Updated: 2021/10/01 10:48:46 by asablayr         ###   ########.fr       */
+/*   Updated: 2021/10/01 13:50:27 by asablayr         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -269,8 +269,7 @@ void	answer_connection(ConnectionClass& connection)
 		case GET_METHOD :
 			/* leak probable: */
 			answer_get(connection._request_pipeline[0], location, connection);
-		//	if (request.isCGI() && !connection._currentResponse->isError())
-			if (location.isCGI() && !connection._currentResponse->isError())
+			if (connection.HasToWriteOnPipe() && !connection._currentResponse->isError())
 				return;
 			break;
 		case POST_METHOD :
@@ -289,5 +288,4 @@ void	answer_connection(ConnectionClass& connection)
 		connection._currentResponse->setConnectionStatus(false);
 	connection.sendResponse(connection._currentResponse->toString());// Handles all of the response sending and adjust the connection accordingly (cf: pop request list close connection etc...)
 	delete connection._currentResponse;
-//	std::cout << "response :\n" << response.toString() << std::endl;
 }
