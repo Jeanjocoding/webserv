@@ -6,7 +6,7 @@
 /*   By: asablayr <marvin@42.fr>                    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2021/07/02 15:07:21 by asablayr          #+#    #+#             */
-/*   Updated: 2021/09/20 15:31:01 by asablayr         ###   ########.fr       */
+/*   Updated: 2021/10/01 11:29:00 by asablayr         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -32,6 +32,7 @@ public:
 	HttpResponse(void);
 	HttpResponse(HttpResponse const& to_copy);
 	HttpResponse(unsigned short code, std::string path_to_body);
+	HttpResponse(unsigned short code, std::string::const_iterator begin, std::string::const_iterator end);
 	virtual ~HttpResponse(void);
 
 	HttpResponse&				operator = (HttpResponse const& to_copy);
@@ -69,6 +70,7 @@ private:
 	std::string			_content_length;
 	std::string			_content_type;
 	std::string			_connection;
+	std::string			_location;
 
 	bool				_isError;
 

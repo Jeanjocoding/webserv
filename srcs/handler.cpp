@@ -6,7 +6,7 @@
 /*   By: asablayr <marvin@42.fr>                    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2021/06/06 21:54:40 by asablayr          #+#    #+#             */
-/*   Updated: 2021/09/30 21:30:28 by asablayr         ###   ########.fr       */
+/*   Updated: 2021/10/01 10:48:46 by asablayr         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -286,8 +286,8 @@ void	answer_connection(ConnectionClass& connection)
 			return send_error(501, location.getErrorMap(), connection);
 	}
 	if (!connection.isPersistent() || location.getKeepaliveTimeout() == 0)
-	           connection._currentResponse->setConnectionStatus(false);
-        connection.sendResponse(connection._currentResponse->toString());// Handles all of the response sending and adjust the connection accordingly (cf: pop request list close connection etc...)
+		connection._currentResponse->setConnectionStatus(false);
+	connection.sendResponse(connection._currentResponse->toString());// Handles all of the response sending and adjust the connection accordingly (cf: pop request list close connection etc...)
 	delete connection._currentResponse;
 //	std::cout << "response :\n" << response.toString() << std::endl;
 }

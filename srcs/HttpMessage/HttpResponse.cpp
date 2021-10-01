@@ -6,7 +6,7 @@
 /*   By: asablayr <marvin@42.fr>                    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2021/08/02 16:27:33 by asablayr          #+#    #+#             */
-/*   Updated: 2021/09/22 12:14:19 by asablayr         ###   ########.fr       */
+/*   Updated: 2021/10/01 11:29:43 by asablayr         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -47,15 +47,32 @@ HttpResponse::HttpResponse(unsigned short status_code, std::string body_path)
 	setConnectionStatus();
 	if (status_code == 301 || status_code == 302)
 	{
+		_location = body_path;
 		setHeader(status_code);
-		_header.append("Location: ");
-		_header.append(body_path);
-		_header.append("\r\n");
 	}
 	else if(!setBody(body_path))
 		setHeader(500);
 	else
 		setHeader(status_code);
+}
+
+HttpResponse::HttpResponse(unsigned short status_code, std::string::const_iterator begin, std::string::const_iterator end)
+{
+	setConnectionStatus();
+	if (status_code == 301 || status_code == 302)
+	{
+		_location = std::string(begin, end);
+		setHeader(status_code);
+	}
+	try// Not secure
+	{
+		setBody(begin, end);
+		setHeader(status_code);
+	}
+	catch (std::exception const& e)
+	{
+		setHeader(500);
+	}
 }
 
 HttpResponse&	HttpResponse::operator = (HttpResponse const& copy)
@@ -176,6 +193,12 @@ std::string	HttpResponse::headerToString(void) const
 	header.append("Connection: ");
 	header.append(_connection);
 	header.append("\r\n");
+	if (!_location.empty())
+	{
+		header.append("Location: ");
+		header.append(_location);
+		header.append("\r\n");
+	}
 	return header;
 }
 
