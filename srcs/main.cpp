@@ -117,8 +117,9 @@ int main(int ac, char** av)
 					continue; 
 				if (output_pipe_map.count(i))
 				{
+					// GERER ERREUR ICI, si cgiReadOnPipe retourne -1, il faut renvoyer une erreur type 500
 					cgiReadOnPipe((*(output_pipe_map.find(i))).second);
-					if (!((*(output_pipe_map.find(i))).second.HasToReadOnPipe()))
+					if (!((*(output_pipe_map.find(i))).second.HasToReadOnPipe())) //si j'ai fini de lire sur le pipe
 					{
 						FD_CLR((*(output_pipe_map.find(i))).second.getOutputFd(), &rfds);
 						(*(output_pipe_map.find(i))).second.setHasDoneCgi(1);
@@ -160,6 +161,7 @@ int main(int ac, char** av)
 //				std::cout << "is in wfds" << std::endl;
 				if (input_pipe_map.count(i))
 				{
+					// GERER ERREUR ICI, si cgiWriteOnPipe retourne -1, il faut renvoyer une erreur type 500
 					cgiWriteOnPipe((*(input_pipe_map.find(i))).second);
 					FD_SET((*(input_pipe_map.find(i))).second.getOutputFd(), &rfds);
 					output_pipe_map.insert(std::pair<int, ConnectionClass&>((*(input_pipe_map.find(i))).second.getOutputFd(), (*(input_pipe_map.find(i))).second));
