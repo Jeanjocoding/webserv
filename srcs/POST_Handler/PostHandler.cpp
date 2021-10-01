@@ -126,7 +126,6 @@ HttpResponse	answer_post(HttpRequest const& request, LocationClass const& locati
 {
 	t_CgiParams	params;
 	struct stat	st_stat;
-	std::ifstream body;
 	int				retset;
 
 
