@@ -133,6 +133,8 @@ static HttpResponse& answer_cgi_get(HttpRequest const& request, LocationClass co
 static HttpResponse&	answer_get(HttpRequest const& request, LocationClass const& location, ConnectionClass& connection)
 {
 	std::string		tmp = location.getRoot();// Put the root working directory in tmp
+	struct stat		file_infos;
+//	int			retstat;
 	
 	tmp.append(request.getRequestLineInfos().target);// Append the requested  uri
 	if (request.isCGI())// If cgi is requested
@@ -160,13 +162,15 @@ static HttpResponse&	answer_get(HttpRequest const& request, LocationClass const&
 		}
 		else
 		{
-			try// Try to input requested file in response body
+//			body.close();
+			stat(tmp.c_str(), &file_infos);
+			if (S_ISREG(file_infos.st_mode))// check if file is a "regular file"
 			{
 				tmp = std::string(std::istreambuf_iterator<char>(body), std::istreambuf_iterator<char>());
 				connection._currentResponse->setBody(tmp.begin(), tmp.end());
 				connection._currentResponse->setHeader(200);
 			}
-			catch (std::ios_base::failure const& e)// If requested file is a folder return 404
+			else
 			{
 				delete connection._currentResponse;
 				connection._currentResponse = new HttpResponse(404, location.getErrorPage(404));
@@ -185,13 +189,14 @@ static HttpResponse&	answer_get(HttpRequest const& request, LocationClass const&
 		else
 		{
 //			std::cout << "body of: " << tmp << " is open" << std::endl;
-			try// Try to input requested file in response body
+			stat(tmp.c_str(), &file_infos);
+			if (S_ISREG(file_infos.st_mode))// check if file is a "regular file"
 			{
 				tmp = std::string(std::istreambuf_iterator<char>(body), std::istreambuf_iterator<char>());
 				connection._currentResponse->setBody(tmp.begin(), tmp.end());
 				connection._currentResponse->setHeader(200);
 			}
-			catch (std::ios_base::failure const& e)// If requested file is a folder return 404
+			else// If requested file is a folder return 404
 			{
 				delete connection._currentResponse;
 				connection._currentResponse = new HttpResponse(404, location.getErrorPage(404));// If requested file is not open return 404
