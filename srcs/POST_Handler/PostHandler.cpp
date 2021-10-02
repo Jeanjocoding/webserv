@@ -132,21 +132,18 @@ HttpResponse	answer_post(HttpRequest const& request, LocationClass const& locati
 	retset = setCgiParams(params, request, location);
 	if (retset == EXTENSION_NOT_VALID)
 	{
-		delete connection._currentResponse;
-		connection._currentResponse = new HttpResponse(405, location.getErrorPage(405));
-		return (*(connection._currentResponse));
+		connection._currentResponse = HttpResponse(405, location.getErrorPage(405));
+		return (connection._currentResponse);
 	}
 	else if ( retset == FILE_NOT_FOUND || stat(params.scriptFilename.c_str(), &st_stat) == -1)
 	{
-		delete connection._currentResponse;
-		connection._currentResponse = new HttpResponse(404, location.getErrorPage(404));
-		return (*(connection._currentResponse));
+		connection._currentResponse = HttpResponse(404, location.getErrorPage(404));
+		return (connection._currentResponse);
 	}
 	if (ExecAndSetPipes(params, location, connection) == -1)
 	{
-		delete connection._currentResponse;
-		connection._currentResponse = new HttpResponse(500, location.getErrorPage(500));
-		return (*(connection._currentResponse));
+		connection._currentResponse = HttpResponse(500, location.getErrorPage(500));
+		return (connection._currentResponse);
 	}
-	return (*connection._currentResponse);
+	return (connection._currentResponse);
 }

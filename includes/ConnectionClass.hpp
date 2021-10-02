@@ -52,10 +52,16 @@
 #define	MAX_LINE_LENGTH 12000	// POUR SECURITY
 #define	MAX_HEAD_LINES 100	// POUR SECURITY
 #define	MAX_URI_SIZE 1000 // POUR SECURITY
-#define CO_ISOPEN 1
-#define CO_ISREADY 2
-#define CO_ISDONE 3
-#define CO_ISCLOSED 4
+#define CO_ISOPEN 1 // initial state
+#define CO_ISREADY 2 // at least one request in request pipeline
+#define CO_ISDONE 3 // request pipeline is empty
+#define CO_ISCLOSED 4 // has to clear fd and delete from connection map
+#define CO_HAS_TO_SETUP_CGI 5 // has to setup and launch the cgi
+#define CO_HAS_TO_WRITE_CGI 6 // has to wrtie on cgi input
+#define CO_HAS_TO_READ_CGI 7 // has to read the cgi output
+#define CO_HAS_TO_ANSWER 8 // has to generate and send response
+#define CO_HAS_TO_SEND 9 // has to send already set response
+#define CO_IS_CLOSING 10 // has started the closing procedure
 #define TCP_ERROR -1
 #define HTTP_ERROR -2
 #define FORCE_CLOSE_NEEDED -3
@@ -107,22 +113,16 @@ public:
 //	int				answerRequest(HttpRequest& request);//might be const
 
 	int				sendResponse(std::string response);//move to private
+	int				sendResponse(void);//move to private
 	int				simpleCloseConnection(void);
 	int				closeWriteConnection(void);
 	int				closeReadConnection(void);
-	bool				isClosing(void) const;
 	HttpRequest const&	getRequest(unsigned int request_number = 0) const;
 	time_t			getTimer() const;
 	void			resetTimer();
 	int				getStatus(void) const;
 	void			setStatus(int state);
 	bool			isPersistent(void) const;
-	void			setHasToWriteOnPipe(int value);
-	int			HasToWriteOnPipe();
-	void			setHasToReadOnPipe(int value);
-	int			HasToReadOnPipe();
-	void			setHasDoneCgi(int value);
-	int			HasDoneCgi();
 	void			setInputFd(int value);
 	int			getInputFd();			
 	void			setOutputFd(int value);
@@ -130,17 +130,20 @@ public:
 	void			setChildPid(int value);
 	int			getChildPid();
 	void		print_pipeline();
+	void		errorOccured(); // set up status and response for send error 500
+//	int			setUpCGI(); // set and launch the cgi
+//	void		answerCGI(); // set and send response from cgi output
 
 	// this constructor should be private, but it doesn't work for now when it is.
 	//need to fix, probably an unwanted copy at some point.
 	ConnectionClass(void); 
 
 	std::vector<HttpRequest>	_request_pipeline;//might try to switch back to private
-	int				_socketNbr;
+	int							_socketNbr;
 	std::vector<serverClass*>	_servers;
-	HttpResponse			*_currentResponse;
-	char				*_cgiOutput;
-	long				_cgiOutput_len;
+	HttpResponse				_currentResponse;
+	char						*_cgiOutput;
+	long						_cgiOutput_len;
 
 
 private:

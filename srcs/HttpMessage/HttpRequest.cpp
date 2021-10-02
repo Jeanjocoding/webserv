@@ -220,8 +220,12 @@ bool			HttpRequest::isValid(void) const
 
 bool			HttpRequest::isCGI(void) const
 {
-	if (_location->isCGI() || _method == POST_METHOD)
+	if (_location->isCGI() || _requestLine.int_method == POST_METHOD)
+	{
+		std::cout << "request is cgi\n";//testing
 		return true;
+	}
+	std::cout << "request is not cgi\n";//testing
 	return (false);
 }
 

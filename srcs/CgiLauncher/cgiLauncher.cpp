@@ -1,9 +1,10 @@
 #include "cgiLauncher.hpp"
 #include <cstdlib>
 #include <cstring>
-#include "utils.hpp"
 #include <sys/types.h>
 #include <sys/stat.h>
+#include "webserv.hpp"
+#include "utils.hpp"
 
 void		printtab(char ** tab, int length)
 {
@@ -76,6 +77,7 @@ int		ExecAndSetPipes(t_CgiParams& params, LocationClass const& location, Connect
 	if (stat(execname.c_str(), &st_stat) == -1)
 	{
 		std::cout << "MANUAL SETUP REQUIRED: the path to the php-cgi binary given in srcs/CgiLauncher/CgiLauncher.cpp is wrong. Please update it with the path to the php-cgi binnary on your machine" << std::endl;
+		connection.errorOccured();
 		return (-1);
 	}
 	args[0] = new char[execname.length() + 1];
@@ -95,7 +97,6 @@ int		ExecAndSetPipes(t_CgiParams& params, LocationClass const& location, Connect
 		return (-1);
 	}
 	connection.setInputFd(script_input_pipe[1]);
-	connection.setHasToWriteOnPipe(1);
 	if ((pid = fork()) < 0)
 	{
 		perror("fork");
@@ -120,6 +121,8 @@ int		ExecAndSetPipes(t_CgiParams& params, LocationClass const& location, Connect
 	{
 		close(script_input_pipe[0]);
 		close(script_output_pipe[1]);
+		connection.setOutputFd(script_input_pipe[1]);// TODO
+		connection.setInputFd(script_output_pipe[0]);// TODO
 		connection.setChildPid(pid);
 		delete [] args[0];
 		delete [] args;
@@ -135,12 +138,12 @@ int		cgiWriteOnPipe(ConnectionClass& connection)
 		if (write(connection.getInputFd(), connection._request_pipeline[0].getContent(), connection._request_pipeline[0].getContentLength()) == -1)
 		{
 			perror("write");
+			connection.errorOccured(); // sets response to 500 et connection status to CO_HAS_TO_SEND
 			return (-1);
 		}
 	}
 	close (connection.getInputFd());
-	connection.setHasToWriteOnPipe(0);
-	connection.setHasToReadOnPipe(1);
+	connection.setStatus(CO_HAS_TO_READ_CGI);
 	return (0);
 }
 
@@ -156,11 +159,12 @@ int		cgiReadOnPipe(ConnectionClass& connection)
 	if (read_ret == -1)
 	{
 		perror("read in cgiReadonPipe");
+		connection.errorOccured(); // sets response to 500 et connection status to CO_HAS_TO_SEND
 		return (-1);
 	}
 	else if (read_ret == 0)
 	{
-		connection.setHasToReadOnPipe(0);
+		connection.setStatus(CO_HAS_TO_ANSWER);
 		close(connection.getOutputFd());
 		wait_ret = waitpid(connection.getChildPid(), &wait_status, 0);
 	}
@@ -170,4 +174,52 @@ int		cgiReadOnPipe(ConnectionClass& connection)
 		std::cout << std::endl;
 	}
 	return (0);
+}
+
+bool	setup_CGI(ConnectionClass& connection)
+{
+	t_CgiParams     params;
+    int             retset;
+    struct stat     st_stat;
+
+    std::cout << "in setup CGI\n";//testing
+    retset = setCgiParams(params, connection._request_pipeline[0], *(connection._request_pipeline[0].getLocation()));
+    if (retset == EXTENSION_NOT_VALID)
+    {
+        connection._currentResponse = HttpResponse(405, connection._request_pipeline[0].getLocation()->getErrorPage(405));
+		connection.setStatus(CO_HAS_TO_SEND);
+		std::cout << "method not allowed found\n";
+        return false;
+    }
+    else if (retset == FILE_NOT_FOUND || stat(params.scriptFilename.c_str(), &st_stat) == -1)
+    {
+        connection._currentResponse = HttpResponse(404, connection._request_pipeline[0].getLocation()->getErrorPage(404));
+		connection.setStatus(CO_HAS_TO_SEND);
+		std::cout << "file not found\n";
+        return false;
+    }
+    if (ExecAndSetPipes(params, *(connection._request_pipeline[0].getLocation()), connection) == -1)
+    {
+        connection.errorOccured();
+		std::cout << "error\n";
+        return false;
+    }
+	connection.setStatus(CO_HAS_TO_WRITE_CGI);
+	return true;
+}
+
+void	answer_CGI(ConnectionClass& connection)
+{
+	size_t body_beginning = 0;
+
+    std::cout << "in answer CGI\n";//testing
+	add_header_part(connection._currentResponse, connection._cgiOutput, connection._cgiOutput_len, body_beginning);
+	connection._currentResponse.setBody(&(connection._cgiOutput[body_beginning]), connection._cgiOutput_len - body_beginning);
+	connection._currentResponse.setHeader(200);
+	if (!connection.isPersistent() || connection._request_pipeline[0].getLocation()->getKeepaliveTimeout() == 0)
+		connection._currentResponse.setConnectionStatus(false);
+	connection.sendResponse(connection._currentResponse.toString());// Handles all of the response sending and adjust the connection accordingly (cf: pop request list close connection etc...)
+	delete [] connection._cgiOutput;
+	connection._cgiOutput = 0;
+	connection._cgiOutput_len = 0;
 }

@@ -6,7 +6,7 @@
 /*   By: asablayr <marvin@42.fr>                    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2021/06/06 15:27:02 by asablayr          #+#    #+#             */
-/*   Updated: 2021/09/22 15:40:41 by asablayr         ###   ########.fr       */
+/*   Updated: 2021/10/02 18:18:27 by asablayr         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -56,20 +56,69 @@ static void	start_servers(std::vector<serverClass*> server_map, fd_set& rfds)
 	}
 }
 
+static ConnectionClass* find_connection(int fd, std::map<int, ConnectionClass>& map)
+{
+	for (std::map<int, ConnectionClass>::iterator it = map.begin(); it != map.end(); it++)
+		if (fd == it->second._socketNbr || fd == it->second.getOutputFd() || fd == it->second.getInputFd())
+			return &(it->second);
+	return 0;
+}
+
+static void checkConnectionTimeouts(fd_set& rfds, fd_set& wfds, std::map<int, ConnectionClass>& connection_map)
+{
+	for (std::map<int, ConnectionClass>::iterator i = connection_map.begin(); i != connection_map.end(); i ++)// TODO unit test
+	{
+		if (time(0) - i->second.getTimer() > i->second._servers[0]->getKeepAliveTimeout())// if connection is timing out
+		{
+			if (FD_ISSET(i->first, &rfds))
+			{
+				if (i->second.getStatus() == CO_IS_CLOSING && ((time(0) - i->second.getTimer()) > (i->second._servers[0]->getKeepAliveTimeout() * 2))) // si j'essaye de fermer depuis timeout * 2
+				{
+					std::cout << "clean closing was taking too much time on fd " << i->first <<", forcing closure" << std::endl;
+					i->second.simpleCloseConnection(); //je force fermeture
+					FD_CLR(i->first, &rfds);
+					connection_map.erase(i->first);
+					break;
+				}
+				else if (i->second.getStatus() != CO_IS_CLOSING)
+				{
+					std::cout << "close cuz timeout in rfds" << std::endl;
+					if (connection_map[i->first].closeWriteConnection() == -1)
+					{
+						FD_CLR(i->first, &rfds);
+						connection_map.erase(i->first);
+						continue;
+					}
+				}
+			}
+			else if (FD_ISSET(i->first, &wfds))
+			{
+				std::cout << "close cuz timeout in wfds" << std::endl;
+				if (connection_map[i->first].closeWriteConnection() == -1)
+				{
+					FD_CLR(i->first, &wfds);
+					connection_map.erase(i->first);
+					continue;
+				}
+				else
+				{
+					FD_CLR(i->first, &wfds);
+					FD_SET(i->first, &rfds);
+				}
+			}
+		}
+	}
+}
+
 int main(int ac, char** av)
 {
 	std::vector<serverClass*>			server_map;
 	std::map<int, ConnectionClass>		connection_map;
-	std::map<int, ConnectionClass&>		input_pipe_map;
-	std::map<int, ConnectionClass&>		output_pipe_map;
 	fd_set								rfds, rfds_copy;
 	fd_set								wfds, wfds_copy;
-	struct timeval				st_timeout;
-	int					close_return_value;
-	int					receive_return_value;
-//	int								receive_return;
+	struct timeval						st_timeout;
 
-	if (ac == 2)//&& av[1] == *.conf
+	if (ac == 2)//&& av[1] != *.conf
 		server_map = setup_server(av[1]);
 	else
 		server_map = setup_server(DEFAULT_CONF_FILE);
@@ -114,72 +163,85 @@ int main(int ac, char** av)
 					}
 				}
 				if (check)
-					continue; 
-				if (output_pipe_map.count(i))
-				{
-					cgiReadOnPipe((*(output_pipe_map.find(i))).second);
-					if (!((*(output_pipe_map.find(i))).second.HasToReadOnPipe()))
-					{
-						FD_CLR((*(output_pipe_map.find(i))).second.getOutputFd(), &rfds);
-						(*(output_pipe_map.find(i))).second.setHasDoneCgi(1);
-						FD_SET((*(output_pipe_map.find(i))).second._socketNbr, &wfds);
-						output_pipe_map.erase(i);
-					}
 					continue;
-				}
-				if (connection_map[i].isClosing())
+				ConnectionClass* connection = find_connection(i, connection_map);
+				if (connection->getStatus() == CO_HAS_TO_READ_CGI)// if connection is awaiting cgi
 				{
-					close_return_value = connection_map[i].closeReadConnection();
-					if (close_return_value == 1)
+					cgiReadOnPipe(*connection);
+					if (connection->getStatus() == CO_HAS_TO_ANSWER || connection->getStatus() == CO_HAS_TO_SEND) // if read cgi is done or has failed
 					{
 						FD_CLR(i, &rfds);
-						connection_map.erase(i);
+						FD_SET(connection->_socketNbr, &wfds);
 					}
 					continue;
-
 				}
-				if ((receive_return_value = connection_map[i].receiveRequest()) <= 0) // close connection if error while receiving paquets
+				else if (connection->receiveRequest() <= 0) // close connection if error while receiving paquets
 				{
 					std::cout << "close cuz recv request" << std::endl;
-					if (receive_return_value == 0 || receive_return_value == TCP_ERROR)
-						connection_map[i].simpleCloseConnection();
+					connection->simpleCloseConnection();
 				}
-				if (connection_map[i].getStatus() == CO_ISCLOSED) // erases if connection has encoutered an error
+				if (connection->getStatus() == CO_IS_CLOSING) // if connection is trying to close
+					connection->closeReadConnection(); // try to close the read part of the connection
+				if (connection->getStatus() == CO_ISCLOSED) // erase if connection has been closed and clear fd_set
 				{
 					FD_CLR(i, &rfds);
 					connection_map.erase(i);
 				}
-				else if (connection_map[i].getStatus() == CO_ISREADY) // at least one request ready to be answered
+				else if (connection->getStatus() == CO_ISREADY) // at least one request ready to be answered
 				{
 					FD_CLR(i, &rfds);
-					FD_SET(i, &wfds);
+					if (connection->_request_pipeline[0].isCGI())// if cgi is requested 
+					{
+						FD_CLR(i, &rfds);
+						connection->setStatus(CO_HAS_TO_SETUP_CGI);
+						if (setup_CGI(*connection))
+						{
+							std::cout << "cgi has been setup\n";
+							FD_SET(connection->getInputFd(), &wfds);
+						}
+						else
+							FD_SET(connection->_socketNbr, &wfds);
+							
+					}
+					else // if cgi is not needed
+						FD_SET(i, &wfds);
 				}
 			}
-			else if (FD_ISSET(i, &wfds_copy))
+			else if (FD_ISSET(i, &wfds_copy)) // fd is ready for write
 			{
-//				std::cout << "is in wfds" << std::endl;
-				if (input_pipe_map.count(i))
+				ConnectionClass* connection = find_connection(i, connection_map);
+				switch (connection->getStatus())
 				{
-					cgiWriteOnPipe((*(input_pipe_map.find(i))).second);
-					FD_SET((*(input_pipe_map.find(i))).second.getOutputFd(), &rfds);
-					output_pipe_map.insert(std::pair<int, ConnectionClass&>((*(input_pipe_map.find(i))).second.getOutputFd(), (*(input_pipe_map.find(i))).second));
-					FD_CLR((*(input_pipe_map.find(i))).second.getInputFd(), &wfds);
-					input_pipe_map.erase(i);
-					continue;
+					case CO_ISREADY :  // if request doesn't need cgi
+						std::cout << "case co is ready\n";
+						answer_connection(*connection); // set and send response for one request
+						break;
+					case CO_HAS_TO_WRITE_CGI : //if cgi is requested
+						std::cout << "case co has to write CGI\n";
+						if (cgiWriteOnPipe(*connection) == -1) // if write on cgi fd fails
+						{
+							FD_CLR(i, &wfds);
+							FD_SET(connection->_socketNbr, &wfds);
+							connection->setStatus(CO_HAS_TO_ANSWER);
+						}
+						else // if write cgi is complete
+						{
+							FD_CLR(i, &wfds);
+							FD_SET(connection->getOutputFd(), &rfds);
+							connection->setStatus(CO_HAS_TO_READ_CGI);
+						}
+						break;
+					case CO_HAS_TO_ANSWER : // connection is ready to answer cgi request
+						std::cout << "case co has to answer\n";
+						answer_CGI(*connection); // put cgi buffer in response and send response
+					case CO_HAS_TO_SEND : // response ready and has to be sent
+						std::cout << "case co has to send\n";
+						connection->sendResponse(); // send _currentResponse
+						break;
 				}
-				answer_connection(connection_map[i]);
-				if (connection_map[i].HasToWriteOnPipe() && !input_pipe_map.count(i))
+				if (connection->getStatus() == CO_ISDONE && !connection->isPersistent()) // all request answered but connection not persistent
 				{
-					input_pipe_map.insert(std::pair<int, ConnectionClass&>(connection_map[i].getInputFd(), connection_map[i]));
-					FD_SET(connection_map[i].getInputFd(), &wfds);
-					FD_CLR(i, &wfds);  //A TESTER AVEC ATTENTION
-					continue;
-				}
-				connection_map[i].setStatus(CO_ISDONE);
-				if (connection_map[i].getStatus() != CO_ISCLOSED && !connection_map[i].isPersistent())
-				{
-					close_return_value = connection_map[i].closeWriteConnection();
-					if (close_return_value == -1)
+					if (connection->closeWriteConnection() == -1) // try to close connection
 					{
 						FD_CLR(i, &wfds);
 						connection_map.erase(i);
@@ -191,62 +253,13 @@ int main(int ac, char** av)
 						FD_SET(i, &rfds);
 					}
 				}
-				else if (connection_map[i].getStatus() == CO_ISDONE) // all requests have been answered
+				else if (connection->getStatus() == CO_ISDONE) // all request have been answered
 				{
 					FD_CLR(i, &wfds);
 					FD_SET(i, &rfds);
 				}
 			}
 		}
-		for (std::map<int, ConnectionClass>::iterator i = connection_map.begin(); i != connection_map.end(); i ++)// TODO unit test
-		{
-//			std::cout << "i in timeout check: " << i->first << ", map size: " << connection_map.size() << ", iterations: " << iterations << std::endl;
-			if (!i->second.isPersistent() && !i->second.isClosing())
-				continue;
-			if (time(0) - i->second.getTimer() > i->second._servers[0]->getKeepAliveTimeout())// TODO switch server selection and unit from sec to ms
-			{
-				if (FD_ISSET(i->first, &rfds))
-				{
-					if (i->second.isClosing() && ((time(0) - i->second.getTimer()) > (i->second._servers[0]->getKeepAliveTimeout() * 2))) // si j'essaye de fermer depuis timeout * 2
-					{
-						std::cout << "clean closing was taking too much time on fd " << i->first <<", forcing closure" << std::endl;
-						i->second.simpleCloseConnection(); //je force fermeture
-						FD_CLR(i->first, &rfds);
-						connection_map.erase(i->first);
-						break;
-					}
-					else if (!i->second.isClosing())
-					{
-						std::cout << "close cuz timeout in rfds" << std::endl;
-						close_return_value = connection_map[i->first].closeWriteConnection();
-						if (close_return_value == -1)
-						{
-							FD_CLR(i->first, &rfds);
-							connection_map.erase(i->first);
-							continue;
-						}
-					}
-//					FD_CLR(i->first, &rfds);
-				}
-				else if (FD_ISSET(i->first, &wfds))
-				{
-					std::cout << "close cuz timeout in wfds" << std::endl;
-					close_return_value = connection_map[i->first].closeWriteConnection();
-					if (close_return_value == -1)
-					{
-						FD_CLR(i->first, &wfds);
-//						FD_CLR(i->first, &rfds);
-						connection_map.erase(i->first);
-						continue;
-					}
-					else
-					{
-						FD_CLR(i->first, &wfds);
-						FD_SET(i->first, &rfds);
-					}
-					
-				}
-			}
-		}
+		checkConnectionTimeouts(rfds, wfds, connection_map); // check all connections timeout and remove or set connection accordingly
 	}
 }

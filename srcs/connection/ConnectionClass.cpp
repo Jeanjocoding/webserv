@@ -6,7 +6,7 @@
 /*   By: asablayr <marvin@42.fr>                    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2021/07/04 17:42:52 by asablayr          #+#    #+#             */
-/*   Updated: 2021/09/30 21:09:00 by asablayr         ###   ########.fr       */
+/*   Updated: 2021/10/02 17:47:22 by asablayr         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -171,9 +171,6 @@ ConnectionClass&	ConnectionClass::operator=(ConnectionClass const& to_copy)
 	if (to_copy._hasBegRest)
 		_beginningRestBuffer = new std::string(*(to_copy._beginningRestBuffer));
 	_timer = to_copy._timer;
-	_hasToWriteOnPipe = to_copy._hasToWriteOnPipe;
-	_hasToReadOnPipe = to_copy._hasToReadOnPipe;
-	_hasDoneCgi = to_copy._hasDoneCgi;	
 	if (_cgiOutput_len)
 	{
 		delete [] _cgiOutput;
@@ -185,7 +182,7 @@ ConnectionClass&	ConnectionClass::operator=(ConnectionClass const& to_copy)
 		append_to_buffer(&_cgiOutput, _cgiOutput_len, to_copy._cgiOutput, to_copy._cgiOutput_len);
 	}
 	_request_pipeline = to_copy._request_pipeline;
-	_isClosing = to_copy._isClosing;
+	_currentResponse = to_copy._currentResponse;
 	_nbrReadsSinceClose = to_copy._nbrReadsSinceClose;
 	return (*this);
 }
@@ -1549,9 +1546,14 @@ int			ConnectionClass::receiveRequest(void)
 	return (1);
 }
 
+int			ConnectionClass::sendResponse(void)
+{
+	sendResponse(_currentResponse.toString());
+	return (0);
+}
+
 int			ConnectionClass::sendResponse(std::string response)
 {
-//	std::cout << "in send response" << std::endl;
 	if (send(_socketNbr, response.c_str(), response.length(), 0) == -1)
 	{
 		std::perror("send");
@@ -1560,12 +1562,8 @@ int			ConnectionClass::sendResponse(std::string response)
 	}
 	_request_pipeline.erase(_request_pipeline.begin());
 	if (_request_pipeline.empty())
-	{
-		if (isPersistent())
-			setStatus(CO_ISDONE);
-//		else
-//			closeConnection();
-	}
+		setStatus(CO_ISDONE);
+	_currentResponse = HttpResponse();
 	resetTimer();
 	return (0);
 }
@@ -1585,12 +1583,7 @@ int				ConnectionClass::simpleCloseConnection(void)
  * procedure is supposed to minimize the risk of TCP connection reset */
 int				ConnectionClass::closeWriteConnection(void)
 {
-//	int empty_read_value;
-//	int return_value;
-
-//	std::cout << "clean close attempt on " << _socketNbr << "..." << std::endl;
-
-	_isClosing = 1;
+	_status = CO_IS_CLOSING;
 //	_request_pipeline[1000].~HttpRequest(); /*line only useful to provoke crashes */
 	if (shutdown(_socketNbr, SHUT_WR) < 0)
 	{
@@ -1598,7 +1591,6 @@ int				ConnectionClass::closeWriteConnection(void)
 		std::cout << "clean close failure, socket closure forced on " << _socketNbr << std::endl;
 		if (close(_socketNbr) < 0)
 			perror("close");
-		_isClosing = 0;
 		_nbrReadsSinceClose = 0;
 		_status = CO_ISCLOSED;
 		return (-1);
@@ -1615,6 +1607,7 @@ int				ConnectionClass::closeReadConnection(void)
 	read_ret = recv(_socketNbr, buffer, EMPTYBUF_READ_SIZE, 0);
 	_nbrReadsSinceClose += 1;
 //	std::cout << "nbr reads since close: " << _nbrReadsSinceClose << std::endl;
+	_status = CO_IS_CLOSING;
 	if (read_ret == 0)
 	{
 		std::cout << "we received the FIN packet (read_ret = 0), connection " << _socketNbr << " is properly closed" << std::endl;
@@ -1622,7 +1615,6 @@ int				ConnectionClass::closeReadConnection(void)
 //			perror("shutdown");
 		if (close(_socketNbr)  < 0)
 			perror("close");
-		_isClosing = 0;
 		_nbrReadsSinceClose = 0;
 		_status = CO_ISCLOSED;
 		return (1);
@@ -1632,7 +1624,6 @@ int				ConnectionClass::closeReadConnection(void)
 		std::cout << "read_ret returned negative value during closing process: dirty close" << std::endl;
 		if (close(_socketNbr)  < 0)
 			perror("close");
-		_isClosing = 0;
 		_nbrReadsSinceClose = 0;
 		_status = CO_ISCLOSED;
 		return (1);
@@ -1642,7 +1633,6 @@ int				ConnectionClass::closeReadConnection(void)
 		std::cout << "client kept writing after 1000 select loops: closing socket" << std::endl;;
 		if (close(_socketNbr)  < 0)
 			perror("close");
-		_isClosing = 0;
 		_nbrReadsSinceClose = 0;
 		_status = CO_ISCLOSED;
 		return (1);
@@ -1742,36 +1732,6 @@ void			ConnectionClass::resetTimer(void)
 	_timer = time(0);
 }
 
-void			ConnectionClass::setHasToWriteOnPipe(int value)
-{
-	_hasToWriteOnPipe = value;
-}
-
-int			ConnectionClass::HasToWriteOnPipe()
-{
-	return (_hasToWriteOnPipe);
-}
-
-void			ConnectionClass::setHasToReadOnPipe(int value)
-{
-	_hasToReadOnPipe = value;
-}
-
-int			ConnectionClass::HasToReadOnPipe()
-{
-	return (_hasToReadOnPipe);
-}
-
-void			ConnectionClass::setHasDoneCgi(int value)
-{
-	_hasDoneCgi = value;
-}
-
-int			ConnectionClass::HasDoneCgi()
-{
-	return (_hasDoneCgi);
-}
-
 void			ConnectionClass::setInputFd(int value)
 {
 	_input_fd = value;
@@ -1802,7 +1762,8 @@ int			ConnectionClass::getChildPid()
 	return (_childPid);
 }
 
-bool			ConnectionClass::isClosing(void) const
+void		ConnectionClass::errorOccured(void)
 {
-	return (_isClosing);
+	_currentResponse = HttpResponse(500, "");
+	_status = CO_HAS_TO_SEND;
 }
