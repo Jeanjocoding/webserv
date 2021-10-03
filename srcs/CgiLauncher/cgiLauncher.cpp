@@ -75,7 +75,7 @@ int		ExecAndSetPipes(t_CgiParams& params, LocationClass const& location, Connect
 
 	if (stat(execname.c_str(), &st_stat) == -1)
 	{
-		std::cout << "the path to the php-cgi " << execname << " given in is wrong. Please update it with the path to the php-cgi binnary on your machine" << std::endl;
+		std::cout << "the path to the php-cgi \"" << execname << "\" is wrong. Please update it with the path to the php-cgi binnary on your machine" << std::endl;
 		connection.errorOccured();
 		return (-1);
 	}
@@ -167,7 +167,7 @@ int		cgiReadOnPipe(ConnectionClass& connection)
 	else
 	{
 		append_to_buffer(&connection._cgiOutput, connection._cgiOutput_len, read_buffer, read_ret);
-		std::cout << std::endl;
+		std::cout << "appended buffer" << std::endl;
 	}
 	return (0);
 }
@@ -182,22 +182,22 @@ bool	setup_CGI(ConnectionClass& connection)
     retset = setCgiParams(params, connection._request_pipeline[0], *(connection._request_pipeline[0].getLocation()));
     if (retset == EXTENSION_NOT_VALID)
     {
+		std::cout << "method not allowed found\n";
         connection._currentResponse = HttpResponse(405, connection._request_pipeline[0].getLocation()->getErrorPage(405));
 		connection.setStatus(CO_HAS_TO_SEND);
-		std::cout << "method not allowed found\n";
         return false;
     }
     else if (retset == FILE_NOT_FOUND || stat(params.scriptFilename.c_str(), &st_stat) == -1)
     {
+		std::cout << "file not found\n";
         connection._currentResponse = HttpResponse(404, connection._request_pipeline[0].getLocation()->getErrorPage(404));
 		connection.setStatus(CO_HAS_TO_SEND);
-		std::cout << "file not found\n";
         return false;
     }
     if (ExecAndSetPipes(params, *(connection._request_pipeline[0].getLocation()), connection) == -1)
     {
-        connection.errorOccured();
 		std::cout << "error\n";
+        connection.errorOccured();
         return false;
     }
 	connection.setStatus(CO_HAS_TO_WRITE_CGI);
