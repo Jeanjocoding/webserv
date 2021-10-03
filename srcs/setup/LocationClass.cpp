@@ -6,7 +6,7 @@
 /*   By: asablayr <marvin@42.fr>                    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2021/07/15 13:31:12 by asablayr          #+#    #+#             */
-/*   Updated: 2021/09/29 14:35:00 by asablayr         ###   ########.fr       */
+/*   Updated: 2021/10/03 11:59:51 by asablayr         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -387,17 +387,10 @@ std::string	LocationClass::generateAutoindex(std::string const& request_uri) con
 {
 	DIR					*dir;
 	struct dirent		*ent;
-	std::string			tmp;
 	std::string			autoindex;
 
-//	if (tmp[tmp.size() - 1] != '/' && _uri[0] != '/')
-//		tmp.append("/");
-	tmp.append(request_uri);
-//	if (tmp[tmp.size() - 1] != '/')
-//		tmp.append("/");
-//	std::cout << "root : " << _root << std::endl;
-	std::cout << "tmp : " << tmp << std::endl;
-	if ((dir = opendir(tmp.c_str())) != NULL)
+	std::cout << "tmp : " << request_uri << std::endl;
+	if ((dir = opendir(request_uri.c_str())) != NULL)
 	{
 		autoindex.append("<html>\n<head><title>Index of ");
 		autoindex.append(_uri);
@@ -530,6 +523,11 @@ void	LocationClass::setSendfile(bool sendfile)
 	_sendfile = sendfile;
 }
 
+long LocationClass::getClientBodySizeMax(void) const
+{
+	return (_client_body_size_max);
+}
+
 /***********************************************************************************/
 /*							TESTING												   */
 /***********************************************************************************/
@@ -565,9 +563,4 @@ void	LocationClass::printDirectives(void) const
 	std::cout << "directives : " << _directives.size() << "\n";
 	for (std::multimap<std::string, std::string>::const_iterator it = _directives.begin(); it != _directives.end(); it++)
 		std::cout << "_directive " << it->first << " : " << it->second << std::endl;
-}
-
-long LocationClass::getClientBodySizeMax(void) const
-{
-	return (_client_body_size_max);
 }

@@ -6,7 +6,7 @@
 /*   By: asablayr <marvin@42.fr>                    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2021/06/06 21:54:40 by asablayr          #+#    #+#             */
-/*   Updated: 2021/10/03 11:43:48 by asablayr         ###   ########.fr       */
+/*   Updated: 2021/10/03 12:19:39 by asablayr         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -56,6 +56,17 @@ void	print_request(HttpRequest& request)
 	std::cout <<  "              ------------------------------              " << std::endl;
 }
 
+bool	is_index_requested(std::string const& requested_uri)
+{
+	struct stat file_info;
+
+	stat(requested_uri.c_str(), &file_info);
+	if (S_ISDIR(file_info.st_mode))
+		return true;
+	else
+		return false;
+}
+
 static void	send_error(unsigned short error_nb, std::map<unsigned short, std::string> const& error_map, ConnectionClass& connection)
 {
 	HttpResponse response = HttpResponse(error_nb, error_map.find(error_nb)->second);
@@ -68,8 +79,9 @@ static HttpResponse&	answer_get(HttpRequest const& request, LocationClass const&
 	struct stat		file_infos;
 	
 	tmp.append(request.getRequestLineInfos().target);// Append the requested  uri
-	if (request.getRequestLineInfos().target == location.getUri() + "/" ||
-		(request.getRequestLineInfos().target == location.getUri() && *(--request.getRequestLineInfos().target.end()) == '/'))// If index is requested
+//	if (request.getRequestLineInfos().target == location.getUri() + "/" ||
+//		(request.getRequestLineInfos().target == location.getUri() && *(--request.getRequestLineInfos().target.end()) == '/'))// If index is requested
+	if (is_index_requested(tmp))
 	{
 		tmp.append(location.getIndex());// Append the name of the index file
 		stat(tmp.c_str(), &file_infos);
@@ -83,7 +95,8 @@ static HttpResponse&	answer_get(HttpRequest const& request, LocationClass const&
 		}
 		else if (location.autoIndexIsOn())
 		{
-			tmp.erase(tmp.rfind('/') + 1, tmp.size());
+			if (tmp.rfind('/') < tmp.size() - 1)
+				tmp.erase(tmp.rfind('/') + 1, tmp.size());
 			tmp = location.getAutoindex(tmp);
 			connection._currentResponse.setBody(tmp.begin(), tmp.end());
 			connection._currentResponse.setHeader(200);
@@ -134,7 +147,6 @@ void	answer_connection(ConnectionClass& connection)
 		return ;
 	}
 	HttpRequest& request = connection._request_pipeline[0];
-	print_request(request);// Testing
 	serverClass& server = (request.getHeaders().find("Host") != request.getHeaders().end()) ? *(connection.getServer(request.getHeaders().find("Host")->second)) : *(connection.getServer());
 	if (!request.isValid())
 		return send_error(request.getErrorCode(), server._default_error_pages, connection);

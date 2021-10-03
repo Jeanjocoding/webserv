@@ -115,7 +115,6 @@ int		setCgiParams(t_CgiParams& params, HttpRequest const& request, LocationClass
 		params.contentType = (*(request.getHeaders().find("Content-Type"))).second;
 	}
 	params.pathInfo = target;
-	params.serverName = location.getServerName(); // a modif
 	params.serverProtocol = "HTTP/1.1";
 	params.requestUri = target;
 	params.serverName = location.getServerName(); // a modif
