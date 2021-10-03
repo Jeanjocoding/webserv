@@ -6,7 +6,7 @@
 /*   By: asablayr <marvin@42.fr>                    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2021/06/06 15:27:02 by asablayr          #+#    #+#             */
-/*   Updated: 2021/10/03 11:01:09 by asablayr         ###   ########.fr       */
+/*   Updated: 2021/10/03 11:07:43 by asablayr         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -262,8 +262,6 @@ int main(int ac, char** av)
 				{
 					if (connection->_request_pipeline[0].isCGI())// if cgi is requested 
 					{
-						FD_CLR(i, &rfds);
-						connection->setStatus(CO_HAS_TO_SETUP_CGI);
 						if (setup_CGI(*connection))
 						{
 							std::cout << "cgi has been setup\n";
