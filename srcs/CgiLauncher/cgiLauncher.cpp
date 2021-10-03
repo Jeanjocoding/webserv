@@ -72,11 +72,10 @@ int		ExecAndSetPipes(t_CgiParams& params, LocationClass const& location, Connect
 	std::string	argname("php-cgi");
 
 	std::cout << "in exec and set pipes" << std::endl;
-	std::cout << "execname: " << execname << std::endl;
 
 	if (stat(execname.c_str(), &st_stat) == -1)
 	{
-		std::cout << "MANUAL SETUP REQUIRED: the path to the php-cgi binary given in srcs/CgiLauncher/CgiLauncher.cpp is wrong. Please update it with the path to the php-cgi binnary on your machine" << std::endl;
+		std::cout << "the path to the php-cgi " << execname << " given in is wrong. Please update it with the path to the php-cgi binnary on your machine" << std::endl;
 		connection.errorOccured();
 		return (-1);
 	}
@@ -84,7 +83,6 @@ int		ExecAndSetPipes(t_CgiParams& params, LocationClass const& location, Connect
 	std::strncpy(args[0], execname.c_str(), execname.length());
 	args[0][execname.length()] = '\0';
 	args[1] = (char*)0;
-	location.getUri(); // pour eviter pbs de compilation
 	if (pipe(script_output_pipe) < 0)
 	{
 		perror("pipe");
@@ -121,8 +119,6 @@ int		ExecAndSetPipes(t_CgiParams& params, LocationClass const& location, Connect
 	{
 		close(script_input_pipe[0]);
 		close(script_output_pipe[1]);
-		connection.setOutputFd(script_input_pipe[1]);// TODO
-		connection.setInputFd(script_output_pipe[0]);// TODO
 		connection.setChildPid(pid);
 		delete [] args[0];
 		delete [] args;

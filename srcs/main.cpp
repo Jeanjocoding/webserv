@@ -6,7 +6,7 @@
 /*   By: asablayr <marvin@42.fr>                    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2021/06/06 15:27:02 by asablayr          #+#    #+#             */
-/*   Updated: 2021/10/02 18:18:27 by asablayr         ###   ########.fr       */
+/*   Updated: 2021/10/03 11:01:09 by asablayr         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -201,7 +201,6 @@ int main(int ac, char** av)
 						}
 						else
 							FD_SET(connection->_socketNbr, &wfds);
-							
 					}
 					else // if cgi is not needed
 						FD_SET(i, &wfds);
@@ -234,6 +233,7 @@ int main(int ac, char** av)
 					case CO_HAS_TO_ANSWER : // connection is ready to answer cgi request
 						std::cout << "case co has to answer\n";
 						answer_CGI(*connection); // put cgi buffer in response and send response
+						break;
 					case CO_HAS_TO_SEND : // response ready and has to be sent
 						std::cout << "case co has to send\n";
 						connection->sendResponse(); // send _currentResponse
@@ -257,6 +257,21 @@ int main(int ac, char** av)
 				{
 					FD_CLR(i, &wfds);
 					FD_SET(i, &rfds);
+				}
+				else if (connection->getStatus() == CO_ISREADY || connection->getStatus() == CO_HAS_TO_ANSWER || connection->getStatus() == CO_HAS_TO_SEND)
+				{
+					if (connection->_request_pipeline[0].isCGI())// if cgi is requested 
+					{
+						FD_CLR(i, &rfds);
+						connection->setStatus(CO_HAS_TO_SETUP_CGI);
+						if (setup_CGI(*connection))
+						{
+							std::cout << "cgi has been setup\n";
+							FD_SET(connection->getInputFd(), &wfds);
+						}
+						else
+							FD_SET(connection->_socketNbr, &wfds);
+					}
 				}
 			}
 		}
