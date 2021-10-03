@@ -6,7 +6,7 @@
 /*   By: asablayr <marvin@42.fr>                    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2021/06/06 21:54:40 by asablayr          #+#    #+#             */
-/*   Updated: 2021/10/03 11:27:03 by asablayr         ###   ########.fr       */
+/*   Updated: 2021/10/03 11:43:48 by asablayr         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -72,58 +72,41 @@ static HttpResponse&	answer_get(HttpRequest const& request, LocationClass const&
 		(request.getRequestLineInfos().target == location.getUri() && *(--request.getRequestLineInfos().target.end()) == '/'))// If index is requested
 	{
 		tmp.append(location.getIndex());// Append the name of the index file
+		stat(tmp.c_str(), &file_infos);
 		std::ifstream body;
 		body.open(tmp.c_str());
-		if (!body.is_open())
+		if (body.is_open() && S_ISREG(file_infos.st_mode))// check if file is a "regular file"
 		{
-			if (location.autoIndexIsOn())
-			{
-				tmp.erase(tmp.rfind('/') + 1, tmp.size());
-				tmp = location.getAutoindex(tmp);
-				connection._currentResponse.setBody(tmp.begin(), tmp.end());
-				connection._currentResponse.setHeader(200);
-			}
-			else
-			{
-				connection._currentResponse = HttpResponse(404, location.getErrorPage(404));
-			}
+			tmp = std::string(std::istreambuf_iterator<char>(body), std::istreambuf_iterator<char>());
+			connection._currentResponse.setBody(tmp.begin(), tmp.end());
+			connection._currentResponse.setHeader(200);
+		}
+		else if (location.autoIndexIsOn())
+		{
+			tmp.erase(tmp.rfind('/') + 1, tmp.size());
+			tmp = location.getAutoindex(tmp);
+			connection._currentResponse.setBody(tmp.begin(), tmp.end());
+			connection._currentResponse.setHeader(200);
 		}
 		else
 		{
-			try// Try to input requested file in response body
-			{
-				tmp = std::string(std::istreambuf_iterator<char>(body), std::istreambuf_iterator<char>());
-				connection._currentResponse.setBody(tmp.begin(), tmp.end());
-				connection._currentResponse.setHeader(200);
-			}
-			catch (std::ios_base::failure const& e)// If requested file is a folder return 404
-			{
-				connection._currentResponse = HttpResponse(404, location.getErrorPage(404));
-			}
+			connection._currentResponse = HttpResponse(404, location.getErrorPage(404));
 		}
 	}
 	else // If request is not index
 	{
 		std::ifstream body;// Creates a buffer to put file content
 		body.open(tmp.c_str());
-		if (!body.is_open())
+		stat(tmp.c_str(), &file_infos);
+		if (body.is_open() && S_ISREG(file_infos.st_mode))// check if file is a "regular file"
 		{
-			connection._currentResponse = HttpResponse(404, location.getErrorPage(404));// If requested file is not open return 404
+			tmp = std::string(std::istreambuf_iterator<char>(body), std::istreambuf_iterator<char>());
+			connection._currentResponse.setBody(tmp.begin(), tmp.end());
+			connection._currentResponse.setHeader(200);
 		}
-		else
+		else// If requested file is a folder return 404
 		{
-//			std::cout << "body of: " << tmp << " is open" << std::endl;
-			stat(tmp.c_str(), &file_infos);
-			if (S_ISREG(file_infos.st_mode))// check if file is a "regular file"
-			{
-				tmp = std::string(std::istreambuf_iterator<char>(body), std::istreambuf_iterator<char>());
-				connection._currentResponse.setBody(tmp.begin(), tmp.end());
-				connection._currentResponse.setHeader(200);
-			}
-			else// If requested file is a folder return 404
-			{
-				connection._currentResponse = HttpResponse(404, location.getErrorPage(404));
-			}
+			connection._currentResponse = HttpResponse(404, location.getErrorPage(404));
 		}
 	}
 	return connection._currentResponse;
