@@ -1,10 +1,10 @@
-#include "PostHandler.hpp"
-#include "cgiLauncher.hpp"
 #include <sstream>
 #include <utility>
 #include <fstream>
 #include <sys/types.h>
 #include <sys/stat.h>
+#include "webserv.hpp"
+#include "cgiLauncher.hpp"
 
 // 	adds cgi headers to other headers and sets index of the beginning of the messager body
 
@@ -120,30 +120,4 @@ int		setCgiParams(t_CgiParams& params, HttpRequest const& request, LocationClass
 	params.requestUri = target;
 	params.serverName = location.getServerName(); // a modif
 	return (0);
-}
-
-HttpResponse	answer_post(HttpRequest const& request, LocationClass const& location, ConnectionClass& connection)
-{
-	t_CgiParams	params;
-	struct stat	st_stat;
-	int				retset;
-
-
-	retset = setCgiParams(params, request, location);
-	if (retset == EXTENSION_NOT_VALID)
-	{
-		connection._currentResponse = HttpResponse(405, location.getErrorPage(405));
-		return (connection._currentResponse);
-	}
-	else if ( retset == FILE_NOT_FOUND || stat(params.scriptFilename.c_str(), &st_stat) == -1)
-	{
-		connection._currentResponse = HttpResponse(404, location.getErrorPage(404));
-		return (connection._currentResponse);
-	}
-	if (ExecAndSetPipes(params, location, connection) == -1)
-	{
-		connection._currentResponse = HttpResponse(500, location.getErrorPage(500));
-		return (connection._currentResponse);
-	}
-	return (connection._currentResponse);
 }

@@ -6,7 +6,7 @@
 /*   By: asablayr <marvin@42.fr>                    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2021/06/06 21:54:40 by asablayr          #+#    #+#             */
-/*   Updated: 2021/10/02 17:04:05 by asablayr         ###   ########.fr       */
+/*   Updated: 2021/10/03 11:27:03 by asablayr         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -21,47 +21,8 @@
 #include <sys/types.h>
 
 #include "webserv.hpp"
-#include "ConnectionUtils.hpp"
 #include "ConnectionClass.hpp"
 #include "HttpResponse.hpp"
-
-
-void	print_pipeline(std::vector<HttpRequest>& requestPipeline, ConnectionClass& connection)
-{
-	size_t i = 0;
-
-	std::cout << std::endl;
-	std::cout <<  " ----------------- FULL REQUEST PIPELINE -------------- " << std::endl;
-	std::cout << std::endl;
-	while (i < requestPipeline.size())
-	{	
-		std::cout << "                 REQUEST NBR:  " << i << std::endl;
-		std::cout << std::endl;
-		std::cout << "START LINE: "  << requestPipeline[i].getStartLine() << std::endl;
-		std::cout << "URI: " << requestPipeline[i].getRequestLineInfos().target << std::endl;
-		std::cout << std::endl;
-		std::cout << "HEADERS: " << std::endl;
-		requestPipeline[i].printHeaders();
-		std::cout << std::endl;
-		std::cout << "ENCODINGS: " << std::endl;
-		print_vec(requestPipeline[i].getModifyableTE());
-		std::cout << std::endl;
-		if (requestPipeline[i].isChunked())
-			std::cout << "content length of chunked: " << requestPipeline[i].getCurrentContentLength() << std::endl;
-		std::cout << "BODY: ";
-	std::string to_print(requestPipeline[i].getContent(), requestPipeline[i].getCurrentContentLength());
-	std::cout << to_print << std::endl;
-		std::cout << "TRAILERS: " << std::endl;
-		requestPipeline[i].printTrailers();
-		std::cout << std::endl;
-		std::cout << "validity: " << requestPipeline[i].isValid() << std::endl;
-		std::cout << "persistence: " << connection.isPersistent() << std::endl;
-		std::cout << std::endl;
-		std::cout << std::endl;
-		i++;
-	}
-	std::cout <<  "              ------------------------------              " << std::endl;
-}
 
 void	print_request(HttpRequest& request)
 {
@@ -104,6 +65,7 @@ static void	send_error(unsigned short error_nb, std::map<unsigned short, std::st
 static HttpResponse&	answer_get(HttpRequest const& request, LocationClass const& location, ConnectionClass& connection)
 {
 	std::string		tmp = location.getRoot();// Put the root working directory in tmp
+	struct stat		file_infos;
 	
 	tmp.append(request.getRequestLineInfos().target);// Append the requested  uri
 	if (request.getRequestLineInfos().target == location.getUri() + "/" ||
@@ -143,7 +105,7 @@ static HttpResponse&	answer_get(HttpRequest const& request, LocationClass const&
 	else // If request is not index
 	{
 		std::ifstream body;// Creates a buffer to put file content
-		body.open(tmp.c_str());//might put all this part in the HttpResponse object
+		body.open(tmp.c_str());
 		if (!body.is_open())
 		{
 			connection._currentResponse = HttpResponse(404, location.getErrorPage(404));// If requested file is not open return 404
@@ -151,15 +113,16 @@ static HttpResponse&	answer_get(HttpRequest const& request, LocationClass const&
 		else
 		{
 //			std::cout << "body of: " << tmp << " is open" << std::endl;
-			try// Try to input requested file in response body
+			stat(tmp.c_str(), &file_infos);
+			if (S_ISREG(file_infos.st_mode))// check if file is a "regular file"
 			{
 				tmp = std::string(std::istreambuf_iterator<char>(body), std::istreambuf_iterator<char>());
 				connection._currentResponse.setBody(tmp.begin(), tmp.end());
 				connection._currentResponse.setHeader(200);
 			}
-			catch (std::ios_base::failure const& e)// If requested file is a folder return 404
+			else// If requested file is a folder return 404
 			{
-				connection._currentResponse = HttpResponse(404, location.getErrorPage(404));// If requested file is not open return 404
+				connection._currentResponse = HttpResponse(404, location.getErrorPage(404));
 			}
 		}
 	}

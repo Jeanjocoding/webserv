@@ -6,7 +6,7 @@
 /*   By: asablayr <marvin@42.fr>                    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2021/06/06 22:00:11 by asablayr          #+#    #+#             */
-/*   Updated: 2021/10/02 16:55:35 by asablayr         ###   ########.fr       */
+/*   Updated: 2021/10/03 11:19:05 by asablayr         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -21,10 +21,11 @@
 #include "HttpRequest.hpp"
 #include "contextClass.hpp"
 #include "cgiLauncher.hpp"
-#include "PostHandler.hpp"
 #include "deleteHandler.hpp"
 
 #define DEFAULT_CONF_FILE "conf.conf"
+#define FILE_NOT_FOUND -1
+#define EXTENSION_NOT_VALID -2
 
 std::vector<serverClass*>			setup_server(std::string conf_file);
 std::string							read_file(std::string filename);

@@ -6,7 +6,7 @@
 #    By: asablayr <marvin@42.fr>                    +#+  +:+       +#+         #
 #                                                 +#+#+#+#+#+   +#+            #
 #    Created: 2020/11/26 10:50:04 by asablayr          #+#    #+#              #
-#    Updated: 2021/09/30 10:59:00 by asablayr         ###   ########.fr        #
+#    Updated: 2021/10/03 11:18:51 by asablayr         ###   ########.fr        #
 #                                                                              #
 # **************************************************************************** #
 
@@ -31,7 +31,6 @@ HDRS =	webserv.hpp \
 		HttpRequest.hpp \
 		ConnectionUtils.hpp \
 		ConnectionClass.hpp \
-		PostHandler.hpp \
 		deleteHandler.hpp \
 		cgiLauncher.hpp \
 		utils.hpp
