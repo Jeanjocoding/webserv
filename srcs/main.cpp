@@ -6,7 +6,7 @@
 /*   By: asablayr <marvin@42.fr>                    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2021/06/06 15:27:02 by asablayr          #+#    #+#             */
-/*   Updated: 2021/10/03 11:07:43 by asablayr         ###   ########.fr       */
+/*   Updated: 2021/10/04 17:48:09 by asablayr         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -165,6 +165,8 @@ int main(int ac, char** av)
 				if (check)
 					continue;
 				ConnectionClass* connection = find_connection(i, connection_map);
+				if (!connection)
+					continue;
 				if (connection->getStatus() == CO_HAS_TO_READ_CGI)// if connection is awaiting cgi
 				{
 					cgiReadOnPipe(*connection);
@@ -209,6 +211,8 @@ int main(int ac, char** av)
 			else if (FD_ISSET(i, &wfds_copy)) // fd is ready for write
 			{
 				ConnectionClass* connection = find_connection(i, connection_map);
+				if (!connection)
+					continue;
 				switch (connection->getStatus())
 				{
 					case CO_ISREADY :  // if request doesn't need cgi
@@ -268,7 +272,7 @@ int main(int ac, char** av)
 							FD_SET(connection->getInputFd(), &wfds);
 						}
 						else
-							FD_SET(connection->_socketNbr, &wfds);
+							FD_SET(connection->_socketNbr, &rfds);
 					}
 				}
 			}
