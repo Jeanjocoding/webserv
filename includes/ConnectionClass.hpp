@@ -129,6 +129,8 @@ public:
 	int			getOutputFd();
 	void			setChildPid(int value);
 	int			getChildPid();
+	void			setCgiError(int value);
+	int			hasCgiError() const;
 	void		print_pipeline();
 
 	// this constructor should be private, but it doesn't work for now when it is.
@@ -185,6 +187,8 @@ private:
 
 	int				_isClosing;
 	int				_nbrReadsSinceClose;
+
+	int				_hasCgiError;
 
 	time_t			_timer;
 

@@ -118,8 +118,15 @@ int main(int ac, char** av)
 				if (output_pipe_map.count(i))
 				{
 					// GERER ERREUR ICI, si cgiReadOnPipe retourne -1, il faut renvoyer une erreur type 500
-					cgiReadOnPipe((*(output_pipe_map.find(i))).second);
-					if (!((*(output_pipe_map.find(i))).second.HasToReadOnPipe())) //si j'ai fini de lire sur le pipe
+					std::cout << "in input pipe count" << std::endl;
+					if (cgiReadOnPipe((*(output_pipe_map.find(i))).second) == -1)
+					{
+						FD_CLR((*(output_pipe_map.find(i))).second.getOutputFd(), &rfds);
+						FD_SET((*(output_pipe_map.find(i))).second._socketNbr, &wfds);
+						output_pipe_map.erase(i);
+
+					}
+					else if (!((*(output_pipe_map.find(i))).second.HasToReadOnPipe())) //si j'ai fini de lire sur le pipe
 					{
 						FD_CLR((*(output_pipe_map.find(i))).second.getOutputFd(), &rfds);
 						(*(output_pipe_map.find(i))).second.setHasDoneCgi(1);
@@ -158,13 +165,18 @@ int main(int ac, char** av)
 			}
 			else if (FD_ISSET(i, &wfds_copy))
 			{
-//				std::cout << "is in wfds" << std::endl;
 				if (input_pipe_map.count(i))
 				{
 					// GERER ERREUR ICI, si cgiWriteOnPipe retourne -1, il faut renvoyer une erreur type 500
-					cgiWriteOnPipe((*(input_pipe_map.find(i))).second);
-					FD_SET((*(input_pipe_map.find(i))).second.getOutputFd(), &rfds);
-					output_pipe_map.insert(std::pair<int, ConnectionClass&>((*(input_pipe_map.find(i))).second.getOutputFd(), (*(input_pipe_map.find(i))).second));
+					if (cgiWriteOnPipe((*(input_pipe_map.find(i))).second) == -1)
+					{
+						FD_SET((*(input_pipe_map.find(i))).second._socketNbr, &wfds);
+					}
+					else
+					{
+						FD_SET((*(input_pipe_map.find(i))).second.getOutputFd(), &rfds);
+						output_pipe_map.insert(std::pair<int, ConnectionClass&>((*(input_pipe_map.find(i))).second.getOutputFd(), (*(input_pipe_map.find(i))).second));
+					}
 					FD_CLR((*(input_pipe_map.find(i))).second.getInputFd(), &wfds);
 					input_pipe_map.erase(i);
 					continue;

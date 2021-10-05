@@ -239,6 +239,12 @@ void	answer_connection(ConnectionClass& connection)
 	{
 			if (!connection.isPersistent() || location.getKeepaliveTimeout() == 0)
 				connection._currentResponse->setConnectionStatus(false);
+			if (connection.hasCgiError())
+			{
+				delete connection._currentResponse;
+				connection.setHasDoneCgi(0);
+				return send_error(500, location.getErrorMap(), connection);
+			}
 			size_t body_beginning = 0;
 			add_header_part((*connection._currentResponse), connection._cgiOutput, connection._cgiOutput_len, body_beginning);
 			connection._currentResponse->setBody(&(connection._cgiOutput[body_beginning]), connection._cgiOutput_len - body_beginning);

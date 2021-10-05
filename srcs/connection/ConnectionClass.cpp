@@ -39,6 +39,7 @@ ConnectionClass::ConnectionClass(void)
 	_cgiOutput = 0;
 	_isClosing = 0;
 	_nbrReadsSinceClose = 0;
+	_hasCgiError = 0;
 	return;
 }
 
@@ -76,6 +77,7 @@ ConnectionClass::ConnectionClass(ConnectionClass const& to_copy): _socketNbr(to_
 	_request_pipeline = to_copy._request_pipeline;
 	_isClosing = to_copy._isClosing;
 	_nbrReadsSinceClose = to_copy._nbrReadsSinceClose;
+	_hasCgiError = to_copy._hasCgiError;
 	return;
 }
 
@@ -104,6 +106,7 @@ ConnectionClass::ConnectionClass(int socknum, serverClass* server): _socketNbr(s
 	_cgiOutput = 0;
 	_isClosing = 0;
 	_nbrReadsSinceClose = 0;
+	_hasCgiError = 0;
 	return;	
 }
 
@@ -131,6 +134,7 @@ ConnectionClass::ConnectionClass(int socknum): _socketNbr(socknum)
 	_cgiOutput = 0;
 	_isClosing = 0;
 	_nbrReadsSinceClose = 0;
+	_hasCgiError = 0;
 	return;	
 }
 
@@ -187,6 +191,7 @@ ConnectionClass&	ConnectionClass::operator=(ConnectionClass const& to_copy)
 	_request_pipeline = to_copy._request_pipeline;
 	_isClosing = to_copy._isClosing;
 	_nbrReadsSinceClose = to_copy._nbrReadsSinceClose;
+	_hasCgiError = to_copy._hasCgiError;
 	return (*this);
 }
 
@@ -1805,4 +1810,14 @@ int			ConnectionClass::getChildPid()
 bool			ConnectionClass::isClosing(void) const
 {
 	return (_isClosing);
+}
+
+void			ConnectionClass::setCgiError(int value)
+{
+	_hasCgiError = value;
+}
+
+int			ConnectionClass::hasCgiError() const
+{
+	return (_hasCgiError);
 }

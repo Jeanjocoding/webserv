@@ -3,7 +3,7 @@
 $uploaddir = getcwd() . '/';
 $uploadfile = $uploaddir . basename($_FILES['userfile']['name']);
 
-
+//phpinfo();
 echo '<pre>';
 print_r($_SERVER);
 echo "uploadfile: ".$uploadfile."\n";

@@ -135,6 +135,10 @@ int		cgiWriteOnPipe(ConnectionClass& connection)
 		if (write(connection.getInputFd(), connection._request_pipeline[0].getContent(), connection._request_pipeline[0].getContentLength()) == -1)
 		{
 			perror("write");
+			connection.setHasToWriteOnPipe(0);
+			connection.setHasToReadOnPipe(0);
+			connection.setHasDoneCgi(1);
+			connection.setCgiError(1);
 			return (-1);
 		}
 	}
@@ -155,6 +159,16 @@ int		cgiReadOnPipe(ConnectionClass& connection)
 	read_ret = read(connection.getOutputFd(), read_buffer, 4096);
 	if (read_ret == -1)
 	{
+		connection.setHasToWriteOnPipe(0);
+		connection.setHasToReadOnPipe(0);
+		connection.setHasDoneCgi(1);
+		connection.setCgiError(1);
+		if (connection._cgiOutput_len)
+		{
+			delete [] connection._cgiOutput;
+			connection._cgiOutput = 0;
+			connection._cgiOutput_len = 0;
+		}
 		perror("read in cgiReadonPipe");
 		return (-1);
 	}
@@ -167,6 +181,7 @@ int		cgiReadOnPipe(ConnectionClass& connection)
 	else
 	{
 		append_to_buffer(&connection._cgiOutput, connection._cgiOutput_len, read_buffer, read_ret);
+		std::cerr << "cgi output len: " << connection._cgiOutput_len << std::endl;
 		std::cout << std::endl;
 	}
 	return (0);
