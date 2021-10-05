@@ -6,7 +6,7 @@
 /*   By: asablayr <marvin@42.fr>                    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2021/06/06 15:27:02 by asablayr          #+#    #+#             */
-/*   Updated: 2021/10/04 17:48:09 by asablayr         ###   ########.fr       */
+/*   Updated: 2021/10/05 10:54:29 by asablayr         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -66,6 +66,7 @@ static ConnectionClass* find_connection(int fd, std::map<int, ConnectionClass>& 
 
 static void checkConnectionTimeouts(fd_set& rfds, fd_set& wfds, std::map<int, ConnectionClass>& connection_map)
 {
+	std::cout << "in check timeout\n";
 	for (std::map<int, ConnectionClass>::iterator i = connection_map.begin(); i != connection_map.end(); i ++)// TODO unit test
 	{
 		if (time(0) - i->second.getTimer() > i->second._servers[0]->getKeepAliveTimeout())// if connection is timing out
@@ -167,6 +168,7 @@ int main(int ac, char** av)
 				ConnectionClass* connection = find_connection(i, connection_map);
 				if (!connection)
 					continue;
+				std::cout << "connection " << connection->_socketNbr << " in rfds\n";
 				if (connection->getStatus() == CO_HAS_TO_READ_CGI)// if connection is awaiting cgi
 				{
 					cgiReadOnPipe(*connection);
@@ -177,17 +179,19 @@ int main(int ac, char** av)
 					}
 					continue;
 				}
-				else if (connection->receiveRequest() <= 0) // close connection if error while receiving paquets
+				else if (connection->getStatus() == CO_IS_CLOSING) // if connection is trying to close
+					connection->closeReadConnection(); // try to close the read part of the connection
+				else if (connection->getStatus() == CO_ISDONE && connection->receiveRequest() <= 0) // close connection if error while receiving paquets
 				{
 					std::cout << "close cuz recv request" << std::endl;
 					connection->simpleCloseConnection();
 				}
-				if (connection->getStatus() == CO_IS_CLOSING) // if connection is trying to close
-					connection->closeReadConnection(); // try to close the read part of the connection
 				if (connection->getStatus() == CO_ISCLOSED) // erase if connection has been closed and clear fd_set
 				{
 					FD_CLR(i, &rfds);
 					connection_map.erase(i);
+					std::cout << "connection " << connection->_socketNbr << " closed and cleared\n";
+					continue;
 				}
 				else if (connection->getStatus() == CO_ISREADY) // at least one request ready to be answered
 				{
@@ -213,6 +217,7 @@ int main(int ac, char** av)
 				ConnectionClass* connection = find_connection(i, connection_map);
 				if (!connection)
 					continue;
+				std::cout << "connection " << connection->_socketNbr << " in wfds\n";
 				switch (connection->getStatus())
 				{
 					case CO_ISREADY :  // if request doesn't need cgi
@@ -274,6 +279,11 @@ int main(int ac, char** av)
 						else
 							FD_SET(connection->_socketNbr, &rfds);
 					}
+				}
+				if (connection->getStatus() == CO_ISCLOSED)
+				{
+					FD_CLR(i, &wfds);
+					connection_map.erase(i);
 				}
 			}
 		}

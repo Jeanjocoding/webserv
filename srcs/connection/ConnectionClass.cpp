@@ -6,7 +6,7 @@
 /*   By: asablayr <marvin@42.fr>                    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2021/07/04 17:42:52 by asablayr          #+#    #+#             */
-/*   Updated: 2021/10/02 17:47:22 by asablayr         ###   ########.fr       */
+/*   Updated: 2021/10/05 10:56:59 by asablayr         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -81,7 +81,7 @@ ConnectionClass::ConnectionClass(ConnectionClass const& to_copy): _socketNbr(to_
 
 ConnectionClass::ConnectionClass(int socknum, serverClass* server): _socketNbr(socknum)
 {
-	_status = CO_ISOPEN;
+	_status = CO_ISDONE;
 	_servers.push_back(server);
 	_hasRestBuffer = 0;
 	_hasRestRequest = 0;
@@ -1535,13 +1535,13 @@ int			ConnectionClass::receiveRequest(void)
 	}
 	else if (read_ret == 0)
 	{
-		_status = CO_ISCLOSED;
+		setStatus(CO_ISCLOSED);
 		std::cout << "the connection has been closed" << std::endl;
 		return (0);
 	}
 	if (_request_pipeline.size())
 	{
-		_status = CO_ISREADY;
+		setStatus(CO_ISREADY);
 	}
 	return (1);
 }
@@ -1572,8 +1572,8 @@ int				ConnectionClass::simpleCloseConnection(void)
 {
 	if (close(_socketNbr) < 0)
 		perror("close");
-	_status = CO_ISCLOSED;
-	std::cout << "basic closing procedure completed" << std::endl;	
+	setStatus(CO_ISCLOSED);
+	std::cout << "connection " << _socketNbr << " basic closing procedure completed" << std::endl;	
 	return (1);
 }
 
@@ -1583,7 +1583,7 @@ int				ConnectionClass::simpleCloseConnection(void)
  * procedure is supposed to minimize the risk of TCP connection reset */
 int				ConnectionClass::closeWriteConnection(void)
 {
-	_status = CO_IS_CLOSING;
+	setStatus(CO_IS_CLOSING);
 //	_request_pipeline[1000].~HttpRequest(); /*line only useful to provoke crashes */
 	if (shutdown(_socketNbr, SHUT_WR) < 0)
 	{
@@ -1592,7 +1592,7 @@ int				ConnectionClass::closeWriteConnection(void)
 		if (close(_socketNbr) < 0)
 			perror("close");
 		_nbrReadsSinceClose = 0;
-		_status = CO_ISCLOSED;
+		setStatus(CO_ISCLOSED);
 		return (-1);
 	}
 //	empty_read_value = _emptyReadBuffers();
@@ -1607,7 +1607,7 @@ int				ConnectionClass::closeReadConnection(void)
 	read_ret = recv(_socketNbr, buffer, EMPTYBUF_READ_SIZE, 0);
 	_nbrReadsSinceClose += 1;
 //	std::cout << "nbr reads since close: " << _nbrReadsSinceClose << std::endl;
-	_status = CO_IS_CLOSING;
+	setStatus(CO_IS_CLOSING);
 	if (read_ret == 0)
 	{
 		std::cout << "we received the FIN packet (read_ret = 0), connection " << _socketNbr << " is properly closed" << std::endl;
@@ -1616,7 +1616,7 @@ int				ConnectionClass::closeReadConnection(void)
 		if (close(_socketNbr)  < 0)
 			perror("close");
 		_nbrReadsSinceClose = 0;
-		_status = CO_ISCLOSED;
+		setStatus(CO_ISCLOSED);
 		return (1);
 	}
 	else if (read_ret < 0)
@@ -1625,7 +1625,7 @@ int				ConnectionClass::closeReadConnection(void)
 		if (close(_socketNbr)  < 0)
 			perror("close");
 		_nbrReadsSinceClose = 0;
-		_status = CO_ISCLOSED;
+		setStatus(CO_ISCLOSED);
 		return (1);
 	}
 	else if (_nbrReadsSinceClose == MAX_READ_BEFORE_FORCE_CLOSE)
@@ -1634,7 +1634,7 @@ int				ConnectionClass::closeReadConnection(void)
 		if (close(_socketNbr)  < 0)
 			perror("close");
 		_nbrReadsSinceClose = 0;
-		_status = CO_ISCLOSED;
+		setStatus(CO_ISCLOSED);
 		return (1);
 	}
 	else
@@ -1708,6 +1708,7 @@ int				ConnectionClass::getStatus(void) const
 void			ConnectionClass::setStatus(int state)
 {
 	_status = state;
+	std::cout << "connection " << _socketNbr << " state : " << _status << std::endl;//testing
 }
 
 bool				ConnectionClass::isPersistent() const
@@ -1765,5 +1766,5 @@ int			ConnectionClass::getChildPid()
 void		ConnectionClass::errorOccured(void)
 {
 	_currentResponse = HttpResponse(500, "");
-	_status = CO_HAS_TO_SEND;
+	setStatus(CO_HAS_TO_SEND);
 }
