@@ -6,7 +6,7 @@
 /*   By: asablayr <marvin@42.fr>                    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2021/07/15 13:31:12 by asablayr          #+#    #+#             */
-/*   Updated: 2021/09/29 14:35:00 by asablayr         ###   ########.fr       */
+/*   Updated: 2021/10/05 18:40:58 by asablayr         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -136,14 +136,20 @@ std::map<unsigned short, std::string> LocationClass::getErrorMap(void) const
 	return _error_pages;
 }
 
-std::string&	LocationClass::getErrorPage(unsigned short error_code)
+std::string		LocationClass::getErrorPage(unsigned short error_code)
 {
-	return _error_pages[error_code];
+	if (_error_pages.find(error_code) != error_pages.end())
+		return _error_pages.find(error_code)->second;
+	else
+		return "";
 }
 
 std::string		LocationClass::getErrorPage(unsigned short error_code) const
 {
-	return _error_pages.find(error_code)->second;
+	if (_error_pages.find(error_code) != error_pages.end())
+		return _error_pages.find(error_code)->second;
+	else
+		return "";
 }
 
 void	LocationClass::setErrorPages(std::map<unsigned short, std::string> const& error_map)
