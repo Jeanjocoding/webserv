@@ -74,6 +74,7 @@ int		setCgiParams(t_CgiParams& params, HttpRequest const& request, LocationClass
 		return (FILE_NOT_FOUND);
 	else if (S_ISDIR(st_stat.st_mode))
 	{
+		std::cout << "is dir" << std::endl;
 		if (tmp[tmp.size() - 1] == '/')
 		{	
 			params.scriptFilename = tmp.append(location.getIndex());		

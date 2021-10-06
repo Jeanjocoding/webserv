@@ -1,0 +1,1 @@
+curl -i -F 'userfile=@/path/to/test/file' 127.0.0.1:8001/test_upload/uploader.php
