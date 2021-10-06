@@ -6,7 +6,7 @@
 /*   By: asablayr <marvin@42.fr>                    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2021/06/06 21:54:40 by asablayr          #+#    #+#             */
-/*   Updated: 2021/10/01 13:50:27 by asablayr         ###   ########.fr       */
+/*   Updated: 2021/10/06 11:02:49 by asablayr         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -95,6 +95,17 @@ void	print_request(HttpRequest& request)
 	std::cout <<  "              ------------------------------              " << std::endl;
 }
 
+bool		is_index_requested(std::string const& requested_uri)
+{
+	struct stat file_info;
+
+	stat(requested_uri.c_str(), &file_info);
+	if (S_ISDIR(file_info.st_mode))
+		return true;
+	else
+		return false;
+}
+
 static void	send_error(unsigned short error_nb, std::map<unsigned short, std::string> const& error_map, ConnectionClass& connection)
 {
 	HttpResponse response = HttpResponse(error_nb, error_map.find(error_nb)->second);
@@ -137,11 +148,14 @@ static HttpResponse&	answer_get(HttpRequest const& request, LocationClass const&
 //	int			retstat;
 	
 	tmp.append(request.getRequestLineInfos().target);// Append the requested  uri
+	std::cout << "yo tmp : " << tmp << std::endl;
+	std::cout << "target : " << request.getRequestLineInfos().target << std::endl;
 	if (request.isCGI())// If cgi is requested
 		return answer_cgi_get(request, location, connection); //Return response returned by answer_cgi
-	if (request.getRequestLineInfos().target == location.getUri() + "/" ||
-		(request.getRequestLineInfos().target == location.getUri() && *(--request.getRequestLineInfos().target.end()) == '/'))// If index is requested
+	if (is_index_requested(tmp))// If index is requested
 	{
+		if (*(--tmp.end()) != '/')
+			tmp.append("/");
 		tmp.append(location.getIndex());// Append the name of the index file
 		std::ifstream body;
 		body.open(tmp.c_str());
@@ -188,7 +202,6 @@ static HttpResponse&	answer_get(HttpRequest const& request, LocationClass const&
 		}
 		else
 		{
-//			std::cout << "body of: " << tmp << " is open" << std::endl;
 			stat(tmp.c_str(), &file_infos);
 			if (S_ISREG(file_infos.st_mode))// check if file is a "regular file"
 			{
