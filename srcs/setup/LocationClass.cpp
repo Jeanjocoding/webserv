@@ -6,7 +6,7 @@
 /*   By: asablayr <marvin@42.fr>                    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2021/07/15 13:31:12 by asablayr          #+#    #+#             */
-/*   Updated: 2021/10/06 11:29:14 by asablayr         ###   ########.fr       */
+/*   Updated: 2021/10/06 13:08:19 by asablayr         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -16,14 +16,14 @@
 #include <dirent.h>
 #include "LocationClass.hpp"
 
-LocationClass::LocationClass(): _uri("/"), _param(""), _root("."), _index(""), _autoindex_bool(false)
+LocationClass::LocationClass(): _uri("/"), _param(""), _root("."), _index(""), _autoindex_bool(false), _redirect_bool(false)
 {
 	_methods[GET_METHOD] = true;
 	_methods[POST_METHOD] = true;
 	_methods[DELETE_METHOD] = true;
 }
 
-LocationClass::LocationClass(std::string const& params, std::string const& buff) : contextClass("location", buff), _uri("/"), _param(""), _server_name("webserv"), _root("."), _index("index.html"), _autoindex_bool(false)
+LocationClass::LocationClass(std::string const& params, std::string const& buff) : contextClass("location", buff), _uri("/"), _param(""), _server_name("webserv"), _root("."), _index("index.html"), _autoindex_bool(false), _redirect_bool(false)
 {
 	std::istringstream iss(params);
 	std::string tmp;
@@ -417,10 +417,13 @@ void	LocationClass::setRedirect(void)
 {
 	std::map<std::string, std::string>::const_iterator it = _directives.find("return");
 	if (it == _directives.end())
+	{
+		_redirect_bool = false;
 		return ;
+	}
+	_redirect_bool = true;
 	std::istringstream ss(it->second);
 	std::string tmp;
-	_redirect_bool = true;
 	ss >> tmp;
 	_redirect_code = std::atoi(tmp.c_str());
 	ss >> tmp;

@@ -6,7 +6,7 @@
 /*   By: asablayr <marvin@42.fr>                    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2021/06/06 21:54:40 by asablayr          #+#    #+#             */
-/*   Updated: 2021/10/06 11:37:49 by asablayr         ###   ########.fr       */
+/*   Updated: 2021/10/06 12:28:49 by asablayr         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -236,6 +236,7 @@ void	answer_connection(ConnectionClass& connection)
 	}
 	if (location.isRedirect())
 	{
+		location.printLocation();
 		connection.sendResponse(answer_redirection(request, location).toString());
 		return ;
 	}
