@@ -6,7 +6,7 @@
 /*   By: asablayr <marvin@42.fr>                    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2021/06/06 21:54:40 by asablayr          #+#    #+#             */
-/*   Updated: 2021/10/06 11:23:01 by asablayr         ###   ########.fr       */
+/*   Updated: 2021/10/06 11:37:49 by asablayr         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -194,7 +194,6 @@ void	answer_connection(ConnectionClass& connection)
 		connection.setStatus(CO_ISDONE);
 		return ;
 	}
-	std::cout << "requestline infos: " << connection._request_pipeline[0].getRequestLineInfos().target << std::endl;
 	HttpRequest& request = connection._request_pipeline[0];
 	serverClass& server = (request.getHeaders().find("Host") != request.getHeaders().end()) ? *(connection.getServer(request.getHeaders().find("Host")->second)) : *(connection.getServer());
 	if (!request.isValid())
