@@ -360,10 +360,7 @@ int		ConnectionClass::_read_buffer(readingBuffer& buffer, std::vector<HttpReques
 	read_ret = recv(_socketNbr, &(buffer.buf[buffer.end]), SINGLE_READ_SIZE, 0);
 	_hasRead = 1;
 	if (read_ret == -1)
-	{	
-		perror("read in read_buffer"); // a faire partout pour le debugging?
 		return (-1);
-	}
 	if (read_ret == 0)
 		return (0);
 	buffer.end += read_ret;
@@ -401,9 +398,7 @@ int		ConnectionClass::_read_buffer(readingBuffer& buffer, std::vector<HttpReques
 
 int		ConnectionClass::_invalidRequestProcedure(HttpRequest& currentRequest, int errorCode)
 {
-	std::cout << "invalid request procedure is called. , persistence desactivated. headers:" << std::endl;
 	currentRequest.printHeaders();
-	std::cout << std::endl;
 	currentRequest.setValidity(0);
 	currentRequest.setErrorCode(errorCode);
 	_isPersistent = 0;
@@ -617,10 +612,7 @@ int		ConnectionClass::_parseHeaderLine(const char *line, int len, HttpRequest& c
 	header.second.append(&(line[deb_value]), end_value - deb_value);
 	int find_ret = _findAndParseContentHeaders(currentRequest, header);
 	if (find_ret == -1 || find_ret == HTTP_ERROR)
-	{
-		std::cout << "findAndparse returns an error" << std::endl;
 		return (find_ret);
-	}
 	_findAndParsePersistanceHeaders(currentRequest, header);
 	currentRequest.addHeader(header);
 	return (1);
@@ -1445,7 +1437,6 @@ int				ConnectionClass::simpleCloseConnection(void)
 	if (close(_socketNbr) < 0)
 		perror("close");
 	_status = CO_ISCLOSED;
-	std::cout << "basic closing procedure completed" << std::endl;	
 	return (1);
 }
 
@@ -1459,8 +1450,6 @@ int				ConnectionClass::closeWriteConnection(void)
 	_isClosing = 1;
 	if (shutdown(_socketNbr, SHUT_WR) < 0)
 	{
-		perror("shutdown");
-		std::cout << "clean close failure, socket closure forced on " << _socketNbr << std::endl;
 		if (close(_socketNbr) < 0)
 			perror("close");
 		_isClosing = 0;
