@@ -18,9 +18,6 @@ void		printtab(char ** tab, int length)
 	std::cout << " ----------------------- " << std::endl;
 }
 
-/** a lancer à l'intérieur du processus fils pour que les changements d'env ne durent que
- * le temps de son éxécution */
-
 int			allocateCustomEnv(char ***customEnv)
 {
 	*customEnv = new char*[ENV_SIZE];
@@ -70,9 +67,6 @@ int		ExecAndSetPipes(t_CgiParams& params, LocationClass const& location, Connect
 	std::string	execname(location.getCGI());
 	std::string	argname("php-cgi");
 
-	std::cout << "in exec and set pipes" << std::endl;
-	std::cout << "execname: " << execname << std::endl;
-
 	if (stat(execname.c_str(), &st_stat) == -1)
 	{
 		std::cout << "MANUAL SETUP REQUIRED: the path to the php-cgi binary given in srcs/CgiLauncher/CgiLauncher.cpp is wrong. Please update it with the path to the php-cgi binnary on your machine" << std::endl;
@@ -112,8 +106,7 @@ int		ExecAndSetPipes(t_CgiParams& params, LocationClass const& location, Connect
 		allocateCustomEnv(&customEnv);
 		setCgiParamsAsEnvironmentVariables(params, customEnv);
 		if (execve(args[0], (char *const *) args, customEnv) == -1)
-			perror("execvezz");
-		std::cout << "execve failed" << std::endl;
+			perror("execve");
 		return (-1);
 	}
 	else
@@ -129,12 +122,10 @@ int		ExecAndSetPipes(t_CgiParams& params, LocationClass const& location, Connect
 
 int		cgiWriteOnPipe(ConnectionClass& connection)
 {
-	std::cout << "in write on pipes" << std::endl;
 	if (connection._request_pipeline[0].getContentLength())
 	{
 		if (write(connection.getInputFd(), connection._request_pipeline[0].getContent(), connection._request_pipeline[0].getContentLength()) == -1)
 		{
-			perror("write");
 			connection.setHasToWriteOnPipe(0);
 			connection.setHasToReadOnPipe(0);
 			connection.setHasDoneCgi(1);
@@ -155,7 +146,6 @@ int		cgiReadOnPipe(ConnectionClass& connection)
 	int	wait_ret;
 	int	wait_status;
 
-	std::cout << "in read on pipe" << std::endl;
 	read_ret = read(connection.getOutputFd(), read_buffer, 4096);
 	if (read_ret == -1)
 	{
@@ -169,7 +159,6 @@ int		cgiReadOnPipe(ConnectionClass& connection)
 			connection._cgiOutput = 0;
 			connection._cgiOutput_len = 0;
 		}
-		perror("read in cgiReadonPipe");
 		return (-1);
 	}
 	else if (read_ret == 0)
@@ -179,10 +168,6 @@ int		cgiReadOnPipe(ConnectionClass& connection)
 		wait_ret = waitpid(connection.getChildPid(), &wait_status, 0);
 	}
 	else
-	{
 		append_to_buffer(&connection._cgiOutput, connection._cgiOutput_len, read_buffer, read_ret);
-		std::cerr << "cgi output len: " << connection._cgiOutput_len << std::endl;
-		std::cout << std::endl;
-	}
 	return (0);
 }

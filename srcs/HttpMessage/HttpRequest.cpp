@@ -4,40 +4,26 @@ HttpRequest::HttpRequest(void): HttpMessage()
 {
 	_lineCount = 0;
 	_isValid = 0;
-//	_contentLength = 0;
 	_hasTE = 0;
 	_hasTrailers = 0;
-//	_hasBody = 0;
 	_isChunked = 0;
-//	_currentContentLength = 0;
-//	_content = 0;
 	return;	
 }
 
 HttpRequest::HttpRequest(HttpRequest const& to_copy) : HttpMessage(to_copy)
 {
 	*this = to_copy;
-//	std::cout << "copy constructor called on request" << std::endl;
 }
-
-/*HttpRequest::HttpRequest(std::string str_message) : HttpMessage(str_message)
-{
-	parseFromString(_stringMessage);
-}*/
 
 HttpRequest::~HttpRequest(void)
 {
 	clear();
 }
 
-
-
 HttpRequest&	HttpRequest::operator=(HttpRequest const& to_copy)
 {
-//	std::cout << "operator= called, current length is: " << _currentContentLength << std::endl;
-	clear(); //POSSIBLE FUITE ICI DU A CE COMMENTAIRE
+	clear();
 	HttpMessage::operator=(to_copy)	;
-//	HttpMessage::_headers = to_copy._headers;
 	_isValid = to_copy._isValid;
 	_startLine = to_copy._startLine;
 	_method = to_copy._method;
@@ -45,9 +31,6 @@ HttpRequest&	HttpRequest::operator=(HttpRequest const& to_copy)
 	_requestLine = to_copy._requestLine;
 	_errorCode = to_copy._errorCode;
 	_lineCount = to_copy._lineCount;
-//	_contentLength = to_copy._contentLength;
-//	_currentContentLength = 0;
-//	append_to_buffer(&_content, _currentContentLength, to_copy._content, to_copy._currentContentLength);
 	_hasBody = to_copy._hasBody;
 	_hasTE = to_copy._hasTE;
 	_transferEncodings = to_copy._transferEncodings;
@@ -68,13 +51,9 @@ void		HttpRequest::clear(void)
 	_errorCode = 0;
 	_requestLine.method.clear();
 	_requestLine.target.clear();
-//	if (_currentContentLength)
-//		delete _content;
-//	_content = 0;
 	_requestLine.protocol.first = 0;
 	_requestLine.protocol.second = 0;
 	_lineCount = 0;
-//	_contentLength = 0;
 	_hasBody = 0;
 	_hasTE = 0;
 	_transferEncodings.clear();
@@ -150,43 +129,13 @@ std::string const& HttpRequest::getStartLine(void) const
 
 int			HttpRequest::getMethod(void) const
 {
-	return (_requestLine.int_method);//why request line ?
+	return (_requestLine.int_method);
 }
-
-/*void		HttpRequest::setContentLength(long content_length)
-{
-	_contentLength = content_length;
-}
-
-long		HttpRequest::getContentLength(void) const
-{
-	return (_contentLength);
-}
-
-void		HttpRequest::setContent(std::string const& req_content)
-{
-	append_to_buffer(&_content, _currentContentLength, (char*)req_content.c_str(), req_content.length());
-}
-
-char	*HttpRequest::getContent() const
-{
-	return (_content);
-}*/
 
 requestLineInfos const&		HttpRequest::getRequestLineInfos(void) const
 {
 	return (_requestLine);
 }
-
-/*int			HttpRequest::hasContent(void) const
-{
-	return (_hasBody);
-}
-
-void			HttpRequest::setHasContent(bool hasContent)
-{
-	_hasBody = hasContent;
-}*/
 
 std::vector<std::string>& HttpRequest::getModifyableTE()
 {
@@ -225,16 +174,6 @@ bool			HttpRequest::isCGI(void) const
 	return (false);
 }
 
-/*void			HttpRequest::appendToContent(std::string& to_append)
-{
-	append_to_buffer(&_content, _currentContentLength, (char*)to_append.c_str(), to_append.length());
-}
-
-void			HttpRequest::appendToContent(char *str, int len)
-{
-	append_to_buffer(&_content, _currentContentLength, str, len);
-}*/
-
 void			HttpRequest::setLocation(LocationClass* location)
 {
 	_location = location;
@@ -264,8 +203,3 @@ std::vector<std::string>&	HttpRequest::getModifyableConnectionOptions(void)
 {
 	return (_connectionOptions);
 }
-
-/*long		HttpRequest::getCurrentContentLength() const
-{
-	return (_currentContentLength);
-}*/

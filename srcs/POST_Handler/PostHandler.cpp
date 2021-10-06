@@ -6,9 +6,6 @@
 #include <sys/types.h>
 #include <sys/stat.h>
 
-// 	adds cgi headers to other headers and sets index of the beginning of the messager body
-
-
 int				_findStrIndex(std::string to_find, char *buf, size_t buffer_size)
 {
 	size_t		i = 0;
@@ -68,13 +65,11 @@ int		setCgiParams(t_CgiParams& params, HttpRequest const& request, LocationClass
 	struct stat	st_stat;
 	struct stat	st_stat2;
 
-	std::cout << "query : " << request.getRequestLineInfos().query_string << std::endl;
 	tmp.append(target);
 	if (stat(tmp.c_str(), &st_stat) == -1)
 		return (FILE_NOT_FOUND);
 	else if (S_ISDIR(st_stat.st_mode))
 	{
-		std::cout << "is dir" << std::endl;
 		if (tmp[tmp.size() - 1] == '/')
 		{	
 			params.scriptFilename = tmp.append(location.getIndex());		
@@ -104,8 +99,6 @@ int		setCgiParams(t_CgiParams& params, HttpRequest const& request, LocationClass
 		else
 			return (EXTENSION_NOT_VALID);
 	}
-	std::cout << "scriptFilename : " << params.scriptFilename << std::endl;// testing
-	std::cout << "scriptName : " << params.scriptName << std::endl;// testing
 	params.redirectStatus = "200";
 	params.requestMethod = request.getRequestLineInfos().method;
 	if (request.getContentLength())
