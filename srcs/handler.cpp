@@ -194,6 +194,7 @@ void	answer_connection(ConnectionClass& connection)
 		connection.setStatus(CO_ISDONE);
 		return ;
 	}
+	std::cout << "requestline infos: " << connection._request_pipeline[0].getRequestLineInfos().target << std::endl;
 	HttpRequest& request = connection._request_pipeline[0];
 	serverClass& server = (request.getHeaders().find("Host") != request.getHeaders().end()) ? *(connection.getServer(request.getHeaders().find("Host")->second)) : *(connection.getServer());
 	if (!request.isValid())

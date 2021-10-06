@@ -135,7 +135,7 @@ void			HttpMessage::appendToContent(char *str, int len)
 	append_to_buffer(&_content, _currentContentLength, str, len);
 }
 
-long 		HttpMessage::getCurrentContentLength() const
+long			HttpMessage::getCurrentContentLength() const
 {
 	return (_currentContentLength);
 }
