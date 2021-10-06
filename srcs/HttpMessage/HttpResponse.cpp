@@ -6,7 +6,7 @@
 /*   By: asablayr <marvin@42.fr>                    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2021/08/02 16:27:33 by asablayr          #+#    #+#             */
-/*   Updated: 2021/10/01 11:29:43 by asablayr         ###   ########.fr       */
+/*   Updated: 2021/10/06 11:32:18 by asablayr         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -17,7 +17,6 @@
 
 HttpResponse::HttpResponse(void): HttpMessage()
 {
-	//TODO
 	_connection = "keepalive";
 	_isError = 0;
 }
@@ -39,7 +38,6 @@ HttpResponse::HttpResponse(HttpResponse const& copy) : HttpMessage(copy)
 
 HttpResponse::~HttpResponse(void)
 {
-	//TODO
 }
 
 HttpResponse::HttpResponse(unsigned short status_code, std::string body_path)
@@ -64,7 +62,7 @@ HttpResponse::HttpResponse(unsigned short status_code, std::string::const_iterat
 		_location = std::string(begin, end);
 		setHeader(status_code);
 	}
-	try// Not secure
+	try
 	{
 		setBody(begin, end);
 		setHeader(status_code);
@@ -164,7 +162,7 @@ void	HttpResponse::setHeader(void)
 {
 	setDateTime();
 	setLength();
-	setServerName();//might put it in calling "parent" function
+	setServerName();
 }
 
 std::string	HttpResponse::headerToString(void) const
@@ -206,7 +204,6 @@ bool	HttpResponse::setBody(std::string const& body_path)
 {
 	std::ifstream	file;
 
-	std::cout << "trying to respond file : " << body_path << std::endl;
 	file.open(body_path.c_str());
 	if (!file.is_open())
 	{

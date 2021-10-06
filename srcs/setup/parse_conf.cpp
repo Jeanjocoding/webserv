@@ -6,7 +6,7 @@
 /*   By: asablayr <marvin@42.fr>                    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2021/06/07 19:42:54 by asablayr          #+#    #+#             */
-/*   Updated: 2021/07/04 21:09:06 by asablayr         ###   ########.fr       */
+/*   Updated: 2021/10/06 11:29:55 by asablayr         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -62,7 +62,7 @@ std::string	read_file(std::string filename)
 	while (getline(file, line))
 	{
 		i = line.find("#");
-		if (i != std::string::npos)//erase commented parts
+		if (i != std::string::npos)
 			line.erase(i, line.size() - i);
 		buff += line;
 	}
@@ -80,10 +80,10 @@ bool	parse_conf_file(std::string& buff)
 	std::string::size_type n = 0;
 	while ((n = buff.find(t, n)) != std::string::npos)
 	{
-	    buff.replace(n, t.size(), s);//convert tabs to single space
+	    buff.replace(n, t.size(), s);
 	    n += s.size();
 	}
-	if (check_brackets(buff) && check_quotes(buff))// && check_http(buff))
+	if (check_brackets(buff) && check_quotes(buff))
 		return true;
 	return false;
 }

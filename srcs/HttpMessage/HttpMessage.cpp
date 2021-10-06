@@ -26,13 +26,11 @@ HttpMessage::~HttpMessage(void)
 
 void		HttpMessage::clear(void)
 {
-//	std::cout << "clear called on httpmessage" << std::endl;
 	_headers.clear();
 	if (_currentContentLength)
 		delete [] _content;
 	_content = 0;
 	_contentLength = 0;
-//	_body.clear();
 	_protocol.clear();
 	_stringMessage.clear();
 	_trailing_headers.clear();
@@ -40,22 +38,12 @@ void		HttpMessage::clear(void)
 
 HttpMessage&	HttpMessage::operator=(HttpMessage const& to_copy)
 {
-//	std::multimap<std::string, std::string>::const_iterator	itdeb = to_copy._headers.begin();
-//	std::multimap<std::string, std::string>::const_iterator	itend = to_copy._headers.end();
-//	clear();
-//	std::cout << "header size: " << to_copy._headers.size() << std::endl;
 	_headers = to_copy._headers;
-//	if (to_copy._headers.size())
-//	{
-//		std::cout << "first: " << (*itdeb).first <<std::endl;
-//		_headers.insert(*itdeb);
-//	}
 	_trailing_headers = to_copy._trailing_headers;
 	_contentLength = to_copy._contentLength;
 	_currentContentLength = 0;
 	if (to_copy._currentContentLength)
 		append_to_buffer(&_content, _currentContentLength, to_copy._content, to_copy._currentContentLength);
-//	_body = to_copy._body;
 	return (*this);
 
 }
@@ -70,7 +58,6 @@ void		HttpMessage::printHeaders()
 	std::multimap<std::string, std::string>::iterator itdeb = _headers.begin();
 	std::multimap<std::string, std::string>::iterator itend = _headers.end();
 
-//	std::cout << "print all headers: " << std::endl;
 	while (itdeb != itend)
 	{
 		std::cout << (*itdeb).first << " : " << (*itdeb).second << std::endl;
@@ -146,10 +133,9 @@ void			HttpMessage::appendToContent(std::string& to_append)
 void			HttpMessage::appendToContent(char *str, int len)
 {
 	append_to_buffer(&_content, _currentContentLength, str, len);
-//	std::cout << "current content length: " << _currentContentLength << std::endl;
 }
 
-long /*const&	*/		HttpMessage::getCurrentContentLength() const
+long 		HttpMessage::getCurrentContentLength() const
 {
 	return (_currentContentLength);
 }

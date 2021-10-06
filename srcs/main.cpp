@@ -6,7 +6,7 @@
 /*   By: asablayr <marvin@42.fr>                    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2021/06/06 15:27:02 by asablayr          #+#    #+#             */
-/*   Updated: 2021/09/22 15:40:41 by asablayr         ###   ########.fr       */
+/*   Updated: 2021/10/06 11:10:32 by asablayr         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -31,10 +31,10 @@ static void	start_servers(std::vector<serverClass*> server_map, fd_set& rfds)
 	{
 		try 
 		{
-			(*it)->startServer();//binds set to listen etc...
+			(*it)->startServer();
 			std::cout << "server " << (*it)->_server_name << " started on : " << (*it)->_listen << std::endl;
 			serv_up.push_back(*it);
-			FD_SET((*it)->_server_socket, &rfds);//add server socket to fd_set
+			FD_SET((*it)->_server_socket, &rfds);
 		}
 		catch (char const*)
 		{
@@ -67,18 +67,16 @@ int main(int ac, char** av)
 	struct timeval				st_timeout;
 	int					close_return_value;
 	int					receive_return_value;
-//	int								receive_return;
 
-	if (ac == 2)//&& av[1] == *.conf
+	if (ac == 2)
 		server_map = setup_server(av[1]);
 	else
 		server_map = setup_server(DEFAULT_CONF_FILE);
 
-	FD_ZERO(&rfds);//memset fd_set
-	FD_ZERO(&wfds);//memset fd_set
+	FD_ZERO(&rfds);
+	FD_ZERO(&wfds);
 	start_servers(server_map, rfds);
-	st_timeout.tv_sec = std::atoi(server_map[0]->_keepalive_timeout.c_str());//set keepalive_timeout
-	std::cout << "timeout: " << st_timeout.tv_sec;
+	st_timeout.tv_sec = std::atoi(server_map[0]->_keepalive_timeout.c_str());
 	st_timeout.tv_usec = 0;
 	while (true)
 	{
@@ -98,7 +96,7 @@ int main(int ac, char** av)
 				bool check = false;
 				for (std::vector<serverClass*>::iterator it = server_map.begin(); it != server_map.end(); it++)
 				{
-					if (i == (*it)->_server_socket)//new connection on server n°j
+					if (i == (*it)->_server_socket)
 					{
 						int client_socket = accept(i, (*it)->_addr->ai_addr, &((*it)->_addr->ai_addrlen));
 						if (client_socket < 0)
@@ -117,8 +115,6 @@ int main(int ac, char** av)
 					continue; 
 				if (output_pipe_map.count(i))
 				{
-					// GERER ERREUR ICI, si cgiReadOnPipe retourne -1, il faut renvoyer une erreur type 500
-					std::cout << "in input pipe count" << std::endl;
 					if (cgiReadOnPipe((*(output_pipe_map.find(i))).second) == -1)
 					{
 						FD_CLR((*(output_pipe_map.find(i))).second.getOutputFd(), &rfds);
@@ -126,7 +122,7 @@ int main(int ac, char** av)
 						output_pipe_map.erase(i);
 
 					}
-					else if (!((*(output_pipe_map.find(i))).second.HasToReadOnPipe())) //si j'ai fini de lire sur le pipe
+					else if (!((*(output_pipe_map.find(i))).second.HasToReadOnPipe()))
 					{
 						FD_CLR((*(output_pipe_map.find(i))).second.getOutputFd(), &rfds);
 						(*(output_pipe_map.find(i))).second.setHasDoneCgi(1);
@@ -146,18 +142,17 @@ int main(int ac, char** av)
 					continue;
 
 				}
-				if ((receive_return_value = connection_map[i].receiveRequest()) <= 0) // close connection if error while receiving paquets
+				if ((receive_return_value = connection_map[i].receiveRequest()) <= 0)
 				{
-					std::cout << "close cuz recv request" << std::endl;
 					if (receive_return_value == 0 || receive_return_value == TCP_ERROR)
 						connection_map[i].simpleCloseConnection();
 				}
-				if (connection_map[i].getStatus() == CO_ISCLOSED) // erases if connection has encoutered an error
+				if (connection_map[i].getStatus() == CO_ISCLOSED)
 				{
 					FD_CLR(i, &rfds);
 					connection_map.erase(i);
 				}
-				else if (connection_map[i].getStatus() == CO_ISREADY) // at least one request ready to be answered
+				else if (connection_map[i].getStatus() == CO_ISREADY)
 				{
 					FD_CLR(i, &rfds);
 					FD_SET(i, &wfds);
@@ -167,7 +162,6 @@ int main(int ac, char** av)
 			{
 				if (input_pipe_map.count(i))
 				{
-					// GERER ERREUR ICI, si cgiWriteOnPipe retourne -1, il faut renvoyer une erreur type 500
 					if (cgiWriteOnPipe((*(input_pipe_map.find(i))).second) == -1)
 					{
 						FD_SET((*(input_pipe_map.find(i))).second._socketNbr, &wfds);
@@ -186,7 +180,7 @@ int main(int ac, char** av)
 				{
 					input_pipe_map.insert(std::pair<int, ConnectionClass&>(connection_map[i].getInputFd(), connection_map[i]));
 					FD_SET(connection_map[i].getInputFd(), &wfds);
-					FD_CLR(i, &wfds);  //A TESTER AVEC ATTENTION
+					FD_CLR(i, &wfds);
 					continue;
 				}
 				connection_map[i].setStatus(CO_ISDONE);
@@ -205,33 +199,30 @@ int main(int ac, char** av)
 						FD_SET(i, &rfds);
 					}
 				}
-				else if (connection_map[i].getStatus() == CO_ISDONE) // all requests have been answered
+				else if (connection_map[i].getStatus() == CO_ISDONE)
 				{
 					FD_CLR(i, &wfds);
 					FD_SET(i, &rfds);
 				}
 			}
 		}
-		for (std::map<int, ConnectionClass>::iterator i = connection_map.begin(); i != connection_map.end(); i ++)// TODO unit test
+		for (std::map<int, ConnectionClass>::iterator i = connection_map.begin(); i != connection_map.end(); i ++)
 		{
-//			std::cout << "i in timeout check: " << i->first << ", map size: " << connection_map.size() << ", iterations: " << iterations << std::endl;
 			if (!i->second.isPersistent() && !i->second.isClosing())
 				continue;
-			if (time(0) - i->second.getTimer() > i->second._servers[0]->getKeepAliveTimeout())// TODO switch server selection and unit from sec to ms
+			if (time(0) - i->second.getTimer() > i->second._servers[0]->getKeepAliveTimeout())
 			{
 				if (FD_ISSET(i->first, &rfds))
 				{
-					if (i->second.isClosing() && ((time(0) - i->second.getTimer()) > (i->second._servers[0]->getKeepAliveTimeout() * 2))) // si j'essaye de fermer depuis timeout * 2
+					if (i->second.isClosing() && ((time(0) - i->second.getTimer()) > (i->second._servers[0]->getKeepAliveTimeout() * 2)))
 					{
-						std::cout << "clean closing was taking too much time on fd " << i->first <<", forcing closure" << std::endl;
-						i->second.simpleCloseConnection(); //je force fermeture
+						i->second.simpleCloseConnection();
 						FD_CLR(i->first, &rfds);
 						connection_map.erase(i->first);
 						break;
 					}
 					else if (!i->second.isClosing())
 					{
-						std::cout << "close cuz timeout in rfds" << std::endl;
 						close_return_value = connection_map[i->first].closeWriteConnection();
 						if (close_return_value == -1)
 						{
@@ -240,16 +231,13 @@ int main(int ac, char** av)
 							continue;
 						}
 					}
-//					FD_CLR(i->first, &rfds);
 				}
 				else if (FD_ISSET(i->first, &wfds))
 				{
-					std::cout << "close cuz timeout in wfds" << std::endl;
 					close_return_value = connection_map[i->first].closeWriteConnection();
 					if (close_return_value == -1)
 					{
 						FD_CLR(i->first, &wfds);
-//						FD_CLR(i->first, &rfds);
 						connection_map.erase(i->first);
 						continue;
 					}

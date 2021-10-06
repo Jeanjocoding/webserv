@@ -6,7 +6,7 @@
 /*   By: asablayr <marvin@42.fr>                    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2021/06/07 18:49:16 by asablayr          #+#    #+#             */
-/*   Updated: 2021/09/30 19:56:12 by asablayr         ###   ########.fr       */
+/*   Updated: 2021/10/06 11:24:15 by asablayr         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -100,7 +100,7 @@ serverClass& serverClass::operator = (serverClass const& to_copy)
 
 std::string*	serverClass::operator [] (std::string setting_name)
 {
-	if (setting_name == "listen")//change for switch
+	if (setting_name == "listen")
 		return &_listen;
 	else if (setting_name == "port")
 		return &_port;
@@ -305,11 +305,7 @@ void			serverClass::setLocation(LocationClass& location) const
 	if (location._directives.find("autoindex") == location._directives.end())
 		location.setAutoindex(_autoindex);
 	location.setErrorPages(_default_error_pages);
-/*	if (location._directives.find("error_log") == location._directives.end())
-		location.setErrorLog(_root);
-	if (location._directives.find("access_log") == location._directives.end())
-		location.setAccessLog(_root);
-*/}
+}
 
 void serverClass::startServer()
 {
@@ -376,17 +372,17 @@ std::map<unsigned short, std::string>	serverClass::baseErrorPages(void)
 	res[404] = ERR_404_PATH;
 	res[405] = ERR_405_PATH;
 	res[413] = ERR_413_PATH;
-	res[501] = ERR_501_PATH;//TODO complete error map
+	res[501] = ERR_501_PATH;
 	return res;
 }
 
 unsigned long	serverClass::caseSensitiveReMatch(std::string const& s1, std::string const& s2) const
-{//TODO
+{
 	return caseSensitiveMatch(s1, s2);
 }
 
 unsigned long	serverClass::caseInsensitiveReMatch(std::string const& s1, std::string const& s2) const
-{//TODO
+{
 	return caseSensitiveMatch(s1, s2);
 }
 

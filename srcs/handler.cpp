@@ -6,7 +6,7 @@
 /*   By: asablayr <marvin@42.fr>                    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2021/06/06 21:54:40 by asablayr          #+#    #+#             */
-/*   Updated: 2021/10/06 11:02:49 by asablayr         ###   ########.fr       */
+/*   Updated: 2021/10/06 11:23:01 by asablayr         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -26,43 +26,6 @@
 #include "HttpResponse.hpp"
 
 
-void	print_pipeline(std::vector<HttpRequest>& requestPipeline, ConnectionClass& connection)
-{
-	size_t i = 0;
-
-	std::cout << std::endl;
-	std::cout <<  " ----------------- FULL REQUEST PIPELINE -------------- " << std::endl;
-	std::cout << std::endl;
-	while (i < requestPipeline.size())
-	{	
-		std::cout << "                 REQUEST NBR:  " << i << std::endl;
-		std::cout << std::endl;
-		std::cout << "START LINE: "  << requestPipeline[i].getStartLine() << std::endl;
-		std::cout << "URI: " << requestPipeline[i].getRequestLineInfos().target << std::endl;
-		std::cout << std::endl;
-		std::cout << "HEADERS: " << std::endl;
-		requestPipeline[i].printHeaders();
-		std::cout << std::endl;
-		std::cout << "ENCODINGS: " << std::endl;
-		print_vec(requestPipeline[i].getModifyableTE());
-		std::cout << std::endl;
-		if (requestPipeline[i].isChunked())
-			std::cout << "content length of chunked: " << requestPipeline[i].getCurrentContentLength() << std::endl;
-		std::cout << "BODY: ";
-	std::string to_print(requestPipeline[i].getContent(), requestPipeline[i].getCurrentContentLength());
-	std::cout << to_print << std::endl;
-		std::cout << "TRAILERS: " << std::endl;
-		requestPipeline[i].printTrailers();
-		std::cout << std::endl;
-		std::cout << "validity: " << requestPipeline[i].isValid() << std::endl;
-		std::cout << "persistence: " << connection.isPersistent() << std::endl;
-		std::cout << std::endl;
-		std::cout << std::endl;
-		i++;
-	}
-	std::cout <<  "              ------------------------------              " << std::endl;
-}
-
 void	print_request(HttpRequest& request)
 {
 	std::cout << std::endl;
@@ -81,10 +44,6 @@ void	print_request(HttpRequest& request)
 	if (request.isChunked() || request.getContentLength())
 		std::cout << "current content length: " << request.getCurrentContentLength() << std::endl;
 	std::cout << std::endl;
-/*	std::cout << "BODY: ";
-	write (1, request.getContent(), request.getCurrentContentLength());*/
-//	std::string to_print(request.getContent(), request.getCurrentContentLength());
-//	std::cout << to_print << std::endl;
 	std::cout << std::endl;
 	std::cout << "TRAILERS: " << std::endl;
 	request.printTrailers();
@@ -118,7 +77,6 @@ static HttpResponse& answer_cgi_get(HttpRequest const& request, LocationClass co
 	int				retset;
 	struct stat		st_stat;
 
-	std::cout << "answer cgi get" << std::endl;
 	retset = setCgiParams(params, request, location);
 	if (retset == EXTENSION_NOT_VALID)
 	{
@@ -143,20 +101,17 @@ static HttpResponse& answer_cgi_get(HttpRequest const& request, LocationClass co
 
 static HttpResponse&	answer_get(HttpRequest const& request, LocationClass const& location, ConnectionClass& connection)
 {
-	std::string		tmp = location.getRoot();// Put the root working directory in tmp
+	std::string		tmp = location.getRoot();
 	struct stat		file_infos;
-//	int			retstat;
 	
-	tmp.append(request.getRequestLineInfos().target);// Append the requested  uri
-	std::cout << "yo tmp : " << tmp << std::endl;
-	std::cout << "target : " << request.getRequestLineInfos().target << std::endl;
-	if (request.isCGI())// If cgi is requested
-		return answer_cgi_get(request, location, connection); //Return response returned by answer_cgi
-	if (is_index_requested(tmp))// If index is requested
+	tmp.append(request.getRequestLineInfos().target);
+	if (request.isCGI())
+		return answer_cgi_get(request, location, connection);
+	if (is_index_requested(tmp))
 	{
 		if (*(--tmp.end()) != '/')
 			tmp.append("/");
-		tmp.append(location.getIndex());// Append the name of the index file
+		tmp.append(location.getIndex());
 		std::ifstream body;
 		body.open(tmp.c_str());
 		if (!body.is_open())
@@ -176,9 +131,8 @@ static HttpResponse&	answer_get(HttpRequest const& request, LocationClass const&
 		}
 		else
 		{
-//			body.close();
 			stat(tmp.c_str(), &file_infos);
-			if (S_ISREG(file_infos.st_mode))// check if file is a "regular file"
+			if (S_ISREG(file_infos.st_mode))
 			{
 				tmp = std::string(std::istreambuf_iterator<char>(body), std::istreambuf_iterator<char>());
 				connection._currentResponse->setBody(tmp.begin(), tmp.end());
@@ -191,28 +145,28 @@ static HttpResponse&	answer_get(HttpRequest const& request, LocationClass const&
 			}
 		}
 	}
-	else // If request is not index
+	else
 	{
-		std::ifstream body;// Creates a buffer to put file content
-		body.open(tmp.c_str());//might put all this part in the HttpResponse object
+		std::ifstream body;
+		body.open(tmp.c_str());
 		if (!body.is_open())
 		{
 			delete connection._currentResponse;
-			connection._currentResponse = new HttpResponse(404, location.getErrorPage(404));// If requested file is not open return 404
+			connection._currentResponse = new HttpResponse(404, location.getErrorPage(404));
 		}
 		else
 		{
 			stat(tmp.c_str(), &file_infos);
-			if (S_ISREG(file_infos.st_mode))// check if file is a "regular file"
+			if (S_ISREG(file_infos.st_mode))
 			{
 				tmp = std::string(std::istreambuf_iterator<char>(body), std::istreambuf_iterator<char>());
 				connection._currentResponse->setBody(tmp.begin(), tmp.end());
 				connection._currentResponse->setHeader(200);
 			}
-			else// If requested file is a folder return 404
+			else
 			{
 				delete connection._currentResponse;
-				connection._currentResponse = new HttpResponse(404, location.getErrorPage(404));// If requested file is not open return 404
+				connection._currentResponse = new HttpResponse(404, location.getErrorPage(404));
 			}
 		}
 	}
@@ -224,13 +178,13 @@ static HttpResponse	answer_redirection(HttpRequest const& request, LocationClass
 	std::string tmp;
 	if (location.getRedirectUrl().find('$') != std::string::npos)
 	{
-		tmp = request.getRequestLineInfos().target;// Put original requested uri in tmp
-		tmp.erase(0, location.getUri().size());// Remove the location part of the url
-		tmp.insert(0, location.getRedirectUrl(), 0, location.getRedirectUrl().find('$'));// Put redirect uri at begining of requested uri
+		tmp = request.getRequestLineInfos().target;
+		tmp.erase(0, location.getUri().size());
+		tmp.insert(0, location.getRedirectUrl(), 0, location.getRedirectUrl().find('$'));
 	}
 	else
 		tmp = location.getRedirectUrl();
-	return HttpResponse(location.getRedirectCode(), tmp);// Send redirect response
+	return HttpResponse(location.getRedirectCode(), tmp);
 }
 
 void	answer_connection(ConnectionClass& connection)
@@ -241,9 +195,8 @@ void	answer_connection(ConnectionClass& connection)
 		return ;
 	}
 	HttpRequest& request = connection._request_pipeline[0];
-	print_request(request);// Testing
 	serverClass& server = (request.getHeaders().find("Host") != request.getHeaders().end()) ? *(connection.getServer(request.getHeaders().find("Host")->second)) : *(connection.getServer());
-	if (!request.isValid())//TODO check why is invalid and respond accordingly
+	if (!request.isValid())
 		return send_error(request.getErrorCode(), server._default_error_pages, connection);
 	LocationClass const& location = *(connection._request_pipeline[0].getLocation());
 	if (connection.HasToWriteOnPipe() || connection.HasToReadOnPipe())
@@ -262,7 +215,7 @@ void	answer_connection(ConnectionClass& connection)
 			add_header_part((*connection._currentResponse), connection._cgiOutput, connection._cgiOutput_len, body_beginning);
 			connection._currentResponse->setBody(&(connection._cgiOutput[body_beginning]), connection._cgiOutput_len - body_beginning);
 			connection._currentResponse->setHeader(200);
-			connection.sendResponse(connection._currentResponse->toString());// Handles all of the response sending and adjust the connection accordingly (cf: pop request list close connection etc...)
+			connection.sendResponse(connection._currentResponse->toString());
 			delete connection._currentResponse;
 			delete [] connection._cgiOutput;
 			connection._cgiOutput = 0;
@@ -273,25 +226,22 @@ void	answer_connection(ConnectionClass& connection)
 	connection._currentResponse = new HttpResponse();
 	if (request.getMethod() == -1)
 	{
-		std::cerr << "Not implemented Http request method on location " << location.getUri() << std::endl;
 		delete connection._currentResponse;
 		return send_error(501, location.getErrorMap(), connection);
 	}
 	else if (!location.methodIsAllowed(request.getMethod()))
 	{
-		std::cerr << "forbiden Http request method on location " << location.getUri() << std::endl;
 		delete connection._currentResponse;
 		return send_error(405, location.getErrorMap(), connection);
 	}
 	if (location.isRedirect())
 	{
-		connection.sendResponse(answer_redirection(request, location).toString());// Send redirect response
+		connection.sendResponse(answer_redirection(request, location).toString());
 		return ;
 	}
-	switch (request.getMethod())// Generate the HttpResponse depending on HttpMethod
+	switch (request.getMethod())
 	{
 		case GET_METHOD :
-			/* leak probable: */
 			answer_get(connection._request_pipeline[0], location, connection);
 			if (connection.HasToWriteOnPipe() && !connection._currentResponse->isError())
 				return;
@@ -299,17 +249,17 @@ void	answer_connection(ConnectionClass& connection)
 		case POST_METHOD :
 			answer_post(request, location, connection);
 			if (connection.HasToWriteOnPipe())
-				return; // a modif
+				return;
 			else
 				break;
 		case DELETE_METHOD :
 			*connection._currentResponse = answer_delete(request, location);
-			break; //uniformiser avec autres reponses pour ne plus retourner
+			break;
 		default :
 			return send_error(501, location.getErrorMap(), connection);
 	}
 	if (!connection.isPersistent() || location.getKeepaliveTimeout() == 0)
 		connection._currentResponse->setConnectionStatus(false);
-	connection.sendResponse(connection._currentResponse->toString());// Handles all of the response sending and adjust the connection accordingly (cf: pop request list close connection etc...)
+	connection.sendResponse(connection._currentResponse->toString());
 	delete connection._currentResponse;
 }

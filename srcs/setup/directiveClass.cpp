@@ -6,7 +6,7 @@
 /*   By: asablayr <marvin@42.fr>                    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2021/06/21 17:42:15 by asablayr          #+#    #+#             */
-/*   Updated: 2021/09/03 19:55:13 by asablayr         ###   ########.fr       */
+/*   Updated: 2021/10/06 11:28:21 by asablayr         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -357,7 +357,7 @@ static bool	codeUriParse(std::string arg)
 	arg.erase(0, i);
 	if (arg.empty())
 		return true;
-	if (pathParse(arg) || inputFileParse(arg))//might change inputFileParse by fileParse
+	if (pathParse(arg) || inputFileParse(arg))
 		return true;
 	return false;
 }
