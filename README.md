@@ -7,6 +7,6 @@ What it does:
   - it sends apropriate HTTP Responses
 
 constraints:
-  - use select, a new connection is handled through a thread or a process
+  - use select, and not threads or a processes
   - never read or write on a file descriptor before going through select
   - only one read each time we go through select
